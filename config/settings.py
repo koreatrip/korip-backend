@@ -91,7 +91,7 @@ DATABASES = {
         "HOST": config("DB_HOST"),
         "PORT": config("DB_PORT"),
         "OPTIONS": {
-            "charset": "utf8",
+            # "charset": "utf8",
         },
         # 개발 환경에서는 연결 재사용
         "CONN_MAX_AGE": 60 if DEBUG else 0,
