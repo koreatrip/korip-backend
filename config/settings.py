@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
@@ -90,9 +90,16 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST"),
         "PORT": config("DB_PORT"),
+        "OPTIONS": {
+            "charset": "utf8",
+        },
+        # 개발 환경에서는 연결 재사용
+        "CONN_MAX_AGE": 60 if DEBUG else 0,
     }
 }
 
+# Custom User Model
+AUTH_USER_MODEL = "accounts.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -116,13 +123,27 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ko-kr"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
 USE_TZ = True
+
+# 지원 언어 설정 (다국어 서비스용)
+LANGUAGES = [
+    ("ko", "한국어"),
+    ("en", "English"),
+    ("ja", "日本語"),
+    ("zh", "中文"),
+]
+
+# 국제화 파일 경로
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 
 
 # Static files (CSS, JavaScript, Images)
@@ -145,5 +166,34 @@ CORS_ALLOWED_ORIGINS = [
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20
 }
+
+# 개발 환경에서만 적용되는 설정들
+if DEBUG:
+    # SQL 쿼리 로깅 (개발시 유용)
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "loggers": {
+            "django.db.backends": {
+                "handlers": ["console"],
+                "level": "INFO",  # DEBUG로 하면 너무 많이 나와서 INFO로 설정
+                "propagate": False,
+            },
+        },
+    }
+
+    # 개발 환경용 CORS 설정 (모든 오리진 허용)
+    CORS_ALLOW_ALL_ORIGINS = True
+

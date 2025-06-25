@@ -172,3 +172,16 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# 환경설정 파일
+.env.local
+.env.production
+
+# 마이그레이션 파일은 포함시키기 (회의록)
+# migrations/ 폴더는 깃에 포함
+# 단, 마이그레이션 캐시는 제외
+*/migrations/__pycache__/
+
+# 개발용 데이터베이스 덤프
+*.sql
+*.dump
