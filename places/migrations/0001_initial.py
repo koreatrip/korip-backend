@@ -11,40 +11,6 @@ class Migration(migrations.Migration):
     dependencies = [
     ]
 
-    operations = [
-        migrations.CreateModel(
-            name='Category',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name_ko', models.CharField(max_length=50, verbose_name='한국어 이름')),
-                ('name_en', models.CharField(max_length=50, verbose_name='영어 이름')),
-                ('name_jp', models.CharField(max_length=50, verbose_name='일본어 이름')),
-                ('name_cn', models.CharField(max_length=50, verbose_name='중국어 이름')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='생성일시')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='수정일시')),
-            ],
-            options={
-                'verbose_name': '카테고리',
-                'verbose_name_plural': '카테고리들',
-                'db_table': 'category',
-            },
-        ),
-        migrations.CreateModel(
-            name='SubCategory',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name_ko', models.CharField(max_length=50, verbose_name='한국어 이름')),
-                ('name_en', models.CharField(max_length=50, verbose_name='영어 이름')),
-                ('name_jp', models.CharField(max_length=50, verbose_name='일본어 이름')),
-                ('name_cn', models.CharField(max_length=50, verbose_name='중국어 이름')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='생성일시')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='수정일시')),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subcategories', to='places.category', verbose_name='부모 카테고리')),
-            ],
-            options={
-                'verbose_name': '서브 카테고리',
-                'verbose_name_plural': '서브 카테고리들',
-                'db_table': 'subcategory',
-            },
-        ),
+    operations =[
+
     ]
