@@ -3,14 +3,12 @@ from categories.models import Category, CategoryTranslation, SubCategory, SubCat
 
 
 class Command(BaseCommand):
-    """기존 카테고리 데이터를 새로운 번역 구조로 이전하는 Django Management Command"""
 
     help = "기존 카테고리 데이터를 CategoryTranslation으로 이전"
 
     def handle(self, *args, **options):
         self.stdout.write("=== 카테고리 데이터 이전 시작 ===")
 
-        # 1. 현재 상황 확인
         category_count = Category.objects.count()
         translation_count = CategoryTranslation.objects.count()
 
@@ -23,7 +21,6 @@ class Command(BaseCommand):
             )
             return
 
-        # 2. 기존 카테고리 데이터 출력
         self.stdout.write("\n=== 기존 카테고리 데이터 ===")
         for category in Category.objects.all():
             self.stdout.write(f"ID: {category.id}")
@@ -33,13 +30,10 @@ class Command(BaseCommand):
             self.stdout.write(f"  중국어: {category.name_cn}")
             self.stdout.write("---")
 
-        # 3. 카테고리 데이터 이전
         self.migrate_categories()
 
-        # 4. 서브카테고리 데이터 이전
         self.migrate_subcategories()
 
-        # 5. 최종 결과
         final_translation_count = CategoryTranslation.objects.count()
         final_sub_translation_count = SubCategoryTranslation.objects.count()
 
@@ -52,13 +46,11 @@ class Command(BaseCommand):
         )
 
     def migrate_categories(self):
-        """카테고리 데이터 이전"""
         self.stdout.write("\n=== 카테고리 데이터 이전 실행 ===")
 
         for category in Category.objects.all():
             self.stdout.write(f"카테고리 {category.id} 이전 중...")
 
-            # 언어별 데이터 매핑
             languages = [
                 ("ko", category.name_ko),
                 ("en", category.name_en),
@@ -67,7 +59,7 @@ class Command(BaseCommand):
             ]
 
             for lang, name in languages:
-                if name:  # 이름이 있는 경우만 번역 생성
+                if name:
                     translation, created = CategoryTranslation.objects.get_or_create(
                         category=category,
                         lang=lang,
@@ -82,7 +74,6 @@ class Command(BaseCommand):
                         self.stdout.write(f"  {lang} 번역 이미 존재: {name}")
 
     def migrate_subcategories(self):
-        """서브카테고리 데이터 이전"""
         subcategory_count = SubCategory.objects.count()
 
         if subcategory_count == 0:
@@ -106,7 +97,7 @@ class Command(BaseCommand):
             ]
 
             for lang, name in languages:
-                if name:  # 이름이 있는 경우만 번역 생성
+                if name:
                     translation, created = SubCategoryTranslation.objects.get_or_create(
                         sub_category=subcategory,
                         lang=lang,

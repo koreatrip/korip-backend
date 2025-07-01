@@ -2,11 +2,6 @@ from django.db import models
 
 
 class Category(models.Model):
-    """기존 카테고리 모델 (당분간 유지)"""
-    name_ko = models.CharField(max_length=50, null=False, blank=False, verbose_name="한국어 이름")
-    name_en = models.CharField(max_length=50, null=False, blank=False, verbose_name="영어 이름")
-    name_jp = models.CharField(max_length=50, null=False, blank=False, verbose_name="일본어 이름")
-    name_cn = models.CharField(max_length=50, null=False, blank=False, verbose_name="중국어 이름")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
@@ -16,10 +11,10 @@ class Category(models.Model):
         verbose_name_plural = "카테고리"
 
     def __str__(self):
-        return self.name_ko
+        korean_name = self.get_name("ko")
+        return korean_name if korean_name else f"Category {self.id}"
 
     def get_name(self, lang):
-        """언어별 카테고리 이름 조회 헬퍼 메서드"""
         try:
             translation = self.translations.get(lang=lang)
             return translation.name
@@ -28,11 +23,6 @@ class Category(models.Model):
 
 
 class SubCategory(models.Model):
-    """기존 서브카테고리 모델 (당분간 유지)"""
-    name_ko = models.CharField(max_length=50, null=False, blank=False, verbose_name="한국어 이름")
-    name_en = models.CharField(max_length=50, null=False, blank=False, verbose_name="영어 이름")
-    name_jp = models.CharField(max_length=50, null=False, blank=False, verbose_name="일본어 이름")
-    name_cn = models.CharField(max_length=50, null=False, blank=False, verbose_name="중국어 이름")
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
@@ -48,10 +38,10 @@ class SubCategory(models.Model):
         verbose_name_plural = "서브 카테고리"
 
     def __str__(self):
-        return self.name_ko
+        korean_name = self.get_name("ko")
+        return korean_name if korean_name else f"SubCategory {self.id}"
 
     def get_name(self, lang):
-        """언어별 서브카테고리 이름 조회 헬퍼 메서드"""
         try:
             translation = self.translations.get(lang=lang)
             return translation.name
@@ -59,9 +49,7 @@ class SubCategory(models.Model):
             return None
 
 
-# 새로운 번역 방식 모델들
 class CategoryTranslation(models.Model):
-    """카테고리 번역 테이블"""
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
@@ -70,10 +58,11 @@ class CategoryTranslation(models.Model):
     )
     lang = models.CharField(
         max_length=10,
-        verbose_name="언어 코드"
+        verbose_name="언어 코드",
+        help_text="ko, en, jp, cn"
     )
     name = models.CharField(
-        max_length=50,
+        max_length=100,
         verbose_name="번역된 이름"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
@@ -83,7 +72,6 @@ class CategoryTranslation(models.Model):
         db_table = "category_translation"
         verbose_name = "카테고리 번역"
         verbose_name_plural = "카테고리 번역"
-        # 카테고리 + 언어 조합은 유일해야 함
         unique_together = (("category", "lang"),)
 
     def __str__(self):
@@ -91,7 +79,6 @@ class CategoryTranslation(models.Model):
 
 
 class SubCategoryTranslation(models.Model):
-    """서브카테고리 번역 테이블"""
     sub_category = models.ForeignKey(
         SubCategory,
         on_delete=models.CASCADE,
@@ -100,10 +87,11 @@ class SubCategoryTranslation(models.Model):
     )
     lang = models.CharField(
         max_length=10,
-        verbose_name="언어 코드"
+        verbose_name="언어 코드",
+        help_text="ko, en, jp, cn"
     )
     name = models.CharField(
-        max_length=50,
+        max_length=100,
         verbose_name="번역된 이름"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
@@ -113,7 +101,6 @@ class SubCategoryTranslation(models.Model):
         db_table = "subcategory_translation"
         verbose_name = "서브카테고리 번역"
         verbose_name_plural = "서브카테고리 번역"
-        # 서브카테고리 + 언어 조합은 유일해야 함
         unique_together = (("sub_category", "lang"),)
 
     def __str__(self):

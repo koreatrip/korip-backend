@@ -5,16 +5,16 @@ from categories.models import Category, SubCategory, CategoryTranslation, SubCat
 class Command(BaseCommand):
     help = "새로운 번역 구조로 카테고리 및 서브카테고리 기본 데이터를 생성합니다"
 
+# 명렁어 옵션 추가
     def add_arguments(self, parser):
-        """명령어 옵션 추가"""
         parser.add_argument(
             '--clear',
             action='store_true',
             help='기존 데이터를 삭제하고 새로 생성합니다',
         )
 
+# 명렁어 실행
     def handle(self, *args, **options):
-        """명령어 실행"""
 
         # 기존 데이터 삭제 (--clear 옵션 사용 시)
         if options['clear']:
@@ -25,7 +25,7 @@ class Command(BaseCommand):
             Category.objects.all().delete()
             self.stdout.write(self.style.SUCCESS("기존 데이터 삭제 완료"))
 
-        # 대분류 카테고리 데이터 (회의록 기준)
+        # 대분류 카테고리 데이터
         categories_data = {
             "문화": {"ko": "문화", "en": "Culture", "jp": "文化", "cn": "文化"},
             "자연": {"ko": "자연", "en": "Nature", "jp": "自然", "cn": "自然"},
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             "K-POP": {"ko": "K-POP", "en": "K-POP", "jp": "K-POP", "cn": "K-POP"}
         }
 
-        # 중분류 서브카테고리 데이터 (회의록 기준)
+        # 중분류 서브카테고리 데이터
         subcategories_data = {
             "문화": [
                 {"ko": "역사", "en": "History", "jp": "歴史", "cn": "历史"},
@@ -89,14 +89,11 @@ class Command(BaseCommand):
 
         self.stdout.write("카테고리 데이터 생성 시작...")
 
-        # 카테고리 생성 (새로운 번역 구조)
         created_categories = {}
         for category_key, translations in categories_data.items():
-            # 카테고리 생성 (기본 테이블)
             category = Category.objects.create()
             created_categories[category_key] = category
 
-            # 각 언어별 번역 생성
             for lang, name in translations.items():
                 CategoryTranslation.objects.create(
                     category=category,
@@ -108,16 +105,13 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"✅ 카테고리 생성: {translations['ko']} (ID: {category.id})")
             )
 
-        # 서브카테고리 생성 (새로운 번역 구조)
         total_subcategories = 0
         for category_key, subcategory_list in subcategories_data.items():
             category = created_categories[category_key]
 
             for subcategory_data in subcategory_list:
-                # 서브카테고리 생성 (기본 테이블)
                 subcategory = SubCategory.objects.create(category=category)
 
-                # 각 언어별 번역 생성
                 for lang, name in subcategory_data.items():
                     SubCategoryTranslation.objects.create(
                         sub_category=subcategory,
@@ -130,7 +124,6 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f"  ✅ 서브카테고리 생성: {subcategory_data['ko']} (ID: {subcategory.id})")
                 )
 
-        # 완료 메시지
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(self.style.SUCCESS("🎉 카테고리 데이터 생성 완료!"))
@@ -147,7 +140,6 @@ class Command(BaseCommand):
         self.stdout.write("  >>> Category.objects.first().get_name('ko')")
 
     def create_translation_safely(self, model_class, **kwargs):
-        """안전하게 번역 생성 (중복 방지)"""
         try:
             return model_class.objects.create(**kwargs)
         except Exception as e:
