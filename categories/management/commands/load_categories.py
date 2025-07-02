@@ -1,17 +1,29 @@
-# 다국어 카테고리 및 서브카테고리 기본 데이터를 DB에 삽입하는 management command
-# 번역된 카테고리 데이터를 일괄 생성
-
 from django.core.management.base import BaseCommand
-from categories.models import Category, SubCategory
+from categories.models import Category, SubCategory, CategoryTranslation, SubCategoryTranslation
 
 
 class Command(BaseCommand):
-    help = "다국어 카테고리 및 서브카테고리 기본 데이터를 생성합니다"
+    help = "새로운 번역 구조로 카테고리 및 서브카테고리 기본 데이터를 생성합니다"
 
+# 명렁어 옵션 추가
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--clear',
+            action='store_true',
+            help='기존 데이터를 삭제하고 새로 생성합니다',
+        )
+
+# 명렁어 실행
     def handle(self, *args, **options):
-        # 기존 데이터 삭제 (재실행 시)
-        SubCategory.objects.all().delete()
-        Category.objects.all().delete()
+
+        # 기존 데이터 삭제 (--clear 옵션 사용 시)
+        if options['clear']:
+            self.stdout.write("기존 카테고리 데이터 삭제 중...")
+            SubCategoryTranslation.objects.all().delete()
+            CategoryTranslation.objects.all().delete()
+            SubCategory.objects.all().delete()
+            Category.objects.all().delete()
+            self.stdout.write(self.style.SUCCESS("기존 데이터 삭제 완료"))
 
         # 대분류 카테고리 데이터
         categories_data = {
@@ -20,7 +32,7 @@ class Command(BaseCommand):
             "액티비티": {"ko": "액티비티", "en": "Activities", "jp": "アクティビティ", "cn": "活动"},
             "쇼핑": {"ko": "쇼핑", "en": "Shopping", "jp": "ショッピング", "cn": "购物"},
             "음식": {"ko": "음식", "en": "Food", "jp": "食べ物", "cn": "美食"},
-            "kpop": {"ko": "K-POP", "en": "K-POP", "jp": "K-POP", "cn": "K-POP"}
+            "K-POP": {"ko": "K-POP", "en": "K-POP", "jp": "K-POP", "cn": "K-POP"}
         }
 
         # 중분류 서브카테고리 데이터
@@ -50,11 +62,11 @@ class Command(BaseCommand):
                 {"ko": "수족관", "en": "Aquarium", "jp": "水族館", "cn": "水族馆"},
             ],
             "쇼핑": [
-                {"ko": "전통시장", "en": "Local Market", "jp": "伝統市場", "cn": "传统市场"},
+                {"ko": "전통시장", "en": "Traditional Market", "jp": "伝統市場", "cn": "传统市场"},
                 {"ko": "백화점", "en": "Department Store", "jp": "デパート", "cn": "百货商店"},
                 {"ko": "아울렛", "en": "Outlet Mall", "jp": "アウトレット", "cn": "奥特莱斯"},
                 {"ko": "면세점", "en": "Duty Free", "jp": "免税店", "cn": "免税店"},
-                {"ko": "기념품", "en": "Souvenir", "jp": "お土産", "cn": "纪念品"},
+                {"ko": "기념품", "en": "Souvenir Shop", "jp": "お土産店", "cn": "纪念品店"},
                 {"ko": "패션", "en": "Fashion", "jp": "ファッション", "cn": "时尚"},
                 {"ko": "화장품", "en": "Cosmetics", "jp": "化粧品", "cn": "化妆品"},
             ],
@@ -64,44 +76,73 @@ class Command(BaseCommand):
                 {"ko": "중식", "en": "Chinese Food", "jp": "中華料理", "cn": "中式料理"},
                 {"ko": "양식", "en": "Western Food", "jp": "洋食", "cn": "西式料理"},
             ],
-            "kpop": [
+            "K-POP": [
                 {"ko": "BTS", "en": "BTS", "jp": "BTS", "cn": "BTS"},
                 {"ko": "BLACKPINK", "en": "BLACKPINK", "jp": "BLACKPINK", "cn": "BLACKPINK"},
                 {"ko": "SEVENTEEN", "en": "SEVENTEEN", "jp": "SEVENTEEN", "cn": "SEVENTEEN"},
                 {"ko": "AESPA", "en": "AESPA", "jp": "AESPA", "cn": "AESPA"},
                 {"ko": "NEWJEANS", "en": "NEWJEANS", "jp": "NEWJEANS", "cn": "NEWJEANS"},
+                {"ko": "IVE", "en": "IVE", "jp": "IVE", "cn": "IVE"},
+                {"ko": "STRAY KIDS", "en": "STRAY KIDS", "jp": "STRAY KIDS", "cn": "STRAY KIDS"},
             ]
         }
 
-        # 카테고리 생성
+        self.stdout.write("카테고리 데이터 생성 시작...")
+
         created_categories = {}
         for category_key, translations in categories_data.items():
-            category = Category.objects.create(
-                name_ko=translations["ko"],
-                name_en=translations["en"],
-                name_jp=translations["jp"],
-                name_cn=translations["cn"]
-            )
+            category = Category.objects.create()
             created_categories[category_key] = category
+
+            for lang, name in translations.items():
+                CategoryTranslation.objects.create(
+                    category=category,
+                    lang=lang,
+                    name=name
+                )
+
             self.stdout.write(
-                self.style.SUCCESS(f"카테고리 생성: {translations['ko']} ({category.id})")
+                self.style.SUCCESS(f"✅ 카테고리 생성: {translations['ko']} (ID: {category.id})")
             )
 
-        # 서브카테고리 생성
+        total_subcategories = 0
         for category_key, subcategory_list in subcategories_data.items():
             category = created_categories[category_key]
+
             for subcategory_data in subcategory_list:
-                SubCategory.objects.create(
-                    name_ko=subcategory_data["ko"],
-                    name_en=subcategory_data["en"],
-                    name_jp=subcategory_data["jp"],
-                    name_cn=subcategory_data["cn"],
-                    category=category
-                )
+                subcategory = SubCategory.objects.create(category=category)
+
+                for lang, name in subcategory_data.items():
+                    SubCategoryTranslation.objects.create(
+                        sub_category=subcategory,
+                        lang=lang,
+                        name=name
+                    )
+
+                total_subcategories += 1
                 self.stdout.write(
-                    self.style.SUCCESS(f"  서브카테고리 생성: {subcategory_data['ko']}")
+                    self.style.SUCCESS(f"  ✅ 서브카테고리 생성: {subcategory_data['ko']} (ID: {subcategory.id})")
                 )
 
-        self.stdout.write(
-            self.style.SUCCESS("모든 다국어 카테고리 데이터 생성 완료!")
-        )
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS("=" * 60))
+        self.stdout.write(self.style.SUCCESS("🎉 카테고리 데이터 생성 완료!"))
+        self.stdout.write(self.style.SUCCESS(f"📊 생성된 카테고리: {len(created_categories)}개"))
+        self.stdout.write(self.style.SUCCESS(f"📊 생성된 서브카테고리: {total_subcategories}개"))
+        self.stdout.write(self.style.SUCCESS(f"🌍 지원 언어: 한국어, 영어, 일본어, 중국어"))
+        self.stdout.write(self.style.SUCCESS("=" * 60))
+        self.stdout.write("")
+
+        # 테스트 안내
+        self.stdout.write("🔍 테스트 방법:")
+        self.stdout.write("  python manage.py shell")
+        self.stdout.write("  >>> from categories.models import Category")
+        self.stdout.write("  >>> Category.objects.first().get_name('ko')")
+
+    def create_translation_safely(self, model_class, **kwargs):
+        try:
+            return model_class.objects.create(**kwargs)
+        except Exception as e:
+            self.stdout.write(
+                self.style.WARNING(f"번역 생성 실패: {kwargs} - {str(e)}")
+            )
