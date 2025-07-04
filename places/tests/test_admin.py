@@ -1,14 +1,14 @@
-# Place Admin 기본 테스트
+# places/tests/test_admin.py
 from django.test import TestCase
 from django.contrib.admin.sites import AdminSite
-from places.models import Place
-from places.admin import PlaceAdmin
+from django.contrib import admin
+from places.models import Place, PlaceTranslation
+from places.admin import PlaceAdmin, PlaceTranslationAdmin, PlaceTranslationInline
 
 
-# Place Admin 기본 설정 테스트
 class PlaceAdminBasicTest(TestCase):
 
-# 테스트용 Place 데이터 생성
+    # 테스트용 Place 데이터 생성
     def setUp(self):
         self.place = Place.objects.create(
             content_id="admin_test_001",
@@ -26,6 +26,7 @@ class PlaceAdminBasicTest(TestCase):
         expected_fields = [
             "id",
             "content_id",
+            "get_korean_name",
             "category_id",
             "sub_category_id",
             "region_id",
@@ -48,6 +49,7 @@ class PlaceAdminBasicTest(TestCase):
     def test_place_admin_search_fields(self):
         expected_search = [
             "content_id",
+            "translations__name",
         ]
         self.assertEqual(self.admin.search_fields, expected_search)
 
@@ -77,8 +79,12 @@ class PlaceAdminBasicTest(TestCase):
         system_fieldset = fieldsets[3][1]["fields"]
         self.assertIn("last_synced_at", system_fieldset)
 
-    def test_place_admin_has_no_inlines_yet(self):
-        self.assertEqual(len(self.admin.inlines), 0)
+# PlaceTranslationInline이 추가되었는지 확인
+    def test_place_admin_has_inlines(self):
+        self.assertEqual(len(self.admin.inlines), 1)
+
+        # PlaceTranslationInline이 제대로 등록되었는지 확인
+        self.assertIn(PlaceTranslationInline, self.admin.inlines)
 
     def test_admin_site_registration(self):
         from django.contrib import admin
@@ -129,3 +135,112 @@ class PlaceAdminBasicTest(TestCase):
 
         system_fields = self.admin.fieldsets[3][1]["fields"]
         self.assertIn("last_synced_at", system_fields)
+
+# PlaceAdmin의 get_korean_name 메서드가 올바르게 작동하는지 테스트
+    def test_place_admin_get_korean_name_method(self):
+
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="경복궁"
+        )
+
+        korean_name = self.admin.get_korean_name(self.place)
+        self.assertEqual(korean_name, "경복궁")
+
+        place_no_korean = Place.objects.create(content_id="no_korean_place")
+        korean_name_empty = self.admin.get_korean_name(place_no_korean)
+        self.assertEqual(korean_name_empty, "(번역 없음)")
+
+    def test_place_translation_inline_configuration(self):
+        inline = PlaceTranslationInline(Place, admin_site=self.site)
+
+        # extra 필드가 4로 설정되어 있는지 확인
+        self.assertEqual(inline.extra, 4)
+
+        # fields가 올바르게 설정되어 있는지 확인
+        expected_fields = ["lang", "name", "description", "address"]
+        self.assertEqual(inline.fields, expected_fields)
+
+
+class PlaceTranslationAdminTest(TestCase):
+    def setUp(self):
+        self.place = Place.objects.create(
+            content_id="translation_admin_test",
+            category_id=1,
+            sub_category_id=10
+        )
+
+        self.translation = PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="경복궁",
+            description="조선 왕조의 법궁으로 600년 역사를 자랑하는 대한민국 대표 궁궐입니다.",
+            address="서울특별시 종로구 사직로 161"
+        )
+
+        self.site = AdminSite()
+        self.admin = PlaceTranslationAdmin(PlaceTranslation, self.site)
+
+    def test_place_translation_admin_list_display(self):
+        expected_fields = ["place", "lang", "name", "get_short_description", "created_at"]
+        self.assertEqual(self.admin.list_display, expected_fields)
+
+    def test_place_translation_admin_list_filter(self):
+        expected_filters = ["lang", "created_at"]
+        self.assertEqual(self.admin.list_filter, expected_filters)
+
+    def test_place_translation_admin_search_fields(self):
+        expected_search = ["name", "description", "place__content_id"]
+        self.assertEqual(self.admin.search_fields, expected_search)
+
+    def test_place_translation_admin_readonly_fields(self):
+        expected_readonly = ["created_at", "updated_at"]
+        self.assertEqual(self.admin.readonly_fields, expected_readonly)
+
+# get_short_description 메서드 테스트
+    def test_get_short_description_method(self):
+        # 50자를 넘는 긴 설명 (실제 확인된 85자 문자열)
+        long_description = "조선 왕조의 법궁으로 1395년 태조 이성계에 의해 창건된 조선왕조 제일의 법궁입니다. 경복궁은 동궐이나 서궐에 비해 위치상 북궐이라 불리기도 했습니다."
+        self.translation.description = long_description
+
+        result = self.admin.get_short_description(self.translation)
+
+        # 길이와 형태 확인
+        self.assertGreater(len(long_description), 50)  # 원본이 50자 넘는지 확인
+        self.assertTrue(result.endswith("..."))  # "..."으로 끝나는지 확인
+        self.assertEqual(len(result), 53)  # 50자 + "..." = 53자
+
+        # 정확히 50자인 설명 (경계값 테스트)
+        exactly_50_chars = "A" * 50  # A를 50개 = 정확히 50자
+        self.translation.description = exactly_50_chars
+
+        result = self.admin.get_short_description(self.translation)
+        self.assertEqual(result, exactly_50_chars)  # 50자 이하이므로 그대로
+        self.assertFalse(result.endswith("..."))  # "..." 없어야 함
+
+        # 50자보다 짧은 설명
+        short_description = "짧은 설명"
+        self.translation.description = short_description
+
+        result = self.admin.get_short_description(self.translation)
+        self.assertEqual(result, short_description)
+
+        # 빈 설명
+        self.translation.description = ""
+
+        result = self.admin.get_short_description(self.translation)
+        self.assertEqual(result, "-")
+
+        # None 처리 테스트
+        self.translation.description = None
+
+        result = self.admin.get_short_description(self.translation)
+        self.assertEqual(result, "-")
+
+# PlaceTranslation Admin 등록 확인
+    def test_place_translation_admin_registration(self):
+        from django.contrib import admin
+
+        self.assertIn(PlaceTranslation, admin.site._registry)
+        self.assertIsInstance(admin.site._registry[PlaceTranslation], PlaceTranslationAdmin)
