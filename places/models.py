@@ -1,5 +1,13 @@
 from django.db import models
 
+# 언어 선택지 정의
+LANGUAGE_CHOICES = [
+    ("ko", "한국어"),
+    ("en", "English"),
+    ("ja", "日本語"),
+    ("zh", "中文"),
+]
+
 
 class Place(models.Model):
     content_id = models.CharField(
@@ -78,4 +86,77 @@ class Place(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
+        # 한국어 이름이 있으면 한국어, 없으면 기존 방식
+        korean_name = self.get_name("ko")
+        if korean_name:
+            return korean_name
         return f"Place {self.id} ({self.content_id})"
+
+    # 다국어 지원 메서드들 추가
+    def get_name(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.name
+        except PlaceTranslation.DoesNotExist:
+            return ""
+
+    def get_description(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.description
+        except PlaceTranslation.DoesNotExist:
+            return ""
+
+    def get_address(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.address
+        except PlaceTranslation.DoesNotExist:
+            return ""
+
+
+class PlaceTranslation(models.Model):
+    place = models.ForeignKey(
+        Place,
+        on_delete=models.CASCADE,
+        related_name="translations",
+        verbose_name="관광지"
+    )
+    lang = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        verbose_name="언어 코드"
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name="관광지명"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="설명"
+    )
+    address = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="주소"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="생성일시"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="수정일시"
+    )
+
+    class Meta:
+        db_table = "place_translation"
+        verbose_name = "관광지 번역"
+        verbose_name_plural = "관광지 번역들"
+        # 같은 Place에 같은 언어의 번역이 중복되지 않게
+        unique_together = ["place", "lang"]
+        ordering = ["place_id", "lang"]
+
+    def __str__(self):
+        return f"{self.name} ({self.lang})"
