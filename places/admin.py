@@ -19,7 +19,8 @@ class PlaceAdmin(admin.ModelAdmin):
         "category_id",
         "sub_category_id",
         "region_id",
-        "view_count",
+        "favorite_count",
+        "region_code",
         "created_at"
     ]
 
@@ -27,11 +28,13 @@ class PlaceAdmin(admin.ModelAdmin):
         "category_id",
         "sub_category_id",
         "region_id",
+        "region_code",
         "created_at"
     ]
 
     search_fields = [
         "content_id",
+        "region_code",
         "translations__name",
     ]
 
@@ -52,19 +55,21 @@ class PlaceAdmin(admin.ModelAdmin):
                 "latitude",
                 "longitude",
                 "phone_number",
-                "opening_hours"
+                "use_time",
+                "link_url"
             ]
         }),
         ("카테고리 및 지역", {
             "fields": [
                 "category_id",
                 "sub_category_id",
-                "region_id"
+                "region_id",
+                "region_code"
             ]
         }),
         ("통계", {
             "fields": [
-                "view_count"
+                "favorite_count"
             ]
         }),
         ("시스템", {

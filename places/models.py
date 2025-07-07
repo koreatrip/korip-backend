@@ -47,10 +47,16 @@ class Place(models.Model):
         blank=True,
         verbose_name="전화번호"
     )
-    opening_hours = models.CharField(
+
+    use_time = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name="운영시간"
+        verbose_name="이용시간"
+    )
+
+    link_url = models.URLField(
+        blank=True,
+        verbose_name="공식 사이트 URL"
     )
 
     region_id = models.BigIntegerField(
@@ -59,9 +65,15 @@ class Place(models.Model):
         verbose_name="지역 ID"
     )
 
-    view_count = models.IntegerField(
+    region_code = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="지역 코드"
+    )
+
+    favorite_count = models.IntegerField(
         default=0,
-        verbose_name="조회수"
+        verbose_name="즐겨찾기 수"
     )
 
     last_synced_at = models.DateTimeField(
@@ -91,6 +103,13 @@ class Place(models.Model):
         if korean_name:
             return korean_name
         return f"Place {self.id} ({self.content_id})"
+
+# 즐겨찾기 수를 실제 UserFavoritePlace 개수로 업데이트
+    def update_favorite_count(self):
+        # self.favorite_count = self.userfavoriteplace_set.count()
+        # self.save(update_fields=["favorite_count"])
+        pass  # 일단 pass로 두고 나중에 UserFavoritePlace 만들면 구현
+
 
     # 다국어 지원 메서드들 추가
     def get_name(self, lang="ko"):
