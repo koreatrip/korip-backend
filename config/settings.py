@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
 
-    "accounts",
+    "users",
     "places",
     "plans",
     "exports",
@@ -100,7 +100,7 @@ DATABASES = {
 }
 
 # Custom User Model
-AUTH_USER_MODEL = "accounts.User"
+AUTH_USER_MODEL = "users.CustomUser"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
