@@ -1,4 +1,3 @@
-# places/tests/test_admin.py
 from django.test import TestCase
 from django.contrib.admin.sites import AdminSite
 from django.contrib import admin
@@ -6,16 +5,17 @@ from places.models import Place, PlaceTranslation
 from places.admin import PlaceAdmin, PlaceTranslationAdmin, PlaceTranslationInline
 
 
+# 테스트용 Place 데이터 생성
 class PlaceAdminBasicTest(TestCase):
-
-    # 테스트용 Place 데이터 생성
     def setUp(self):
         self.place = Place.objects.create(
             content_id="admin_test_001",
             category_id=1,
             sub_category_id=10,
             region_id=1,
-            view_count=50
+            region_code="11",
+            link_url="https://example.com",
+            favorite_count=50
         )
 
         self.site = AdminSite()
@@ -30,7 +30,8 @@ class PlaceAdminBasicTest(TestCase):
             "category_id",
             "sub_category_id",
             "region_id",
-            "view_count",
+            "favorite_count",
+            "region_code",
             "created_at"
         ]
         self.assertEqual(self.admin.list_display, expected_fields)
@@ -41,6 +42,7 @@ class PlaceAdminBasicTest(TestCase):
             "category_id",
             "sub_category_id",
             "region_id",
+            "region_code",
             "created_at"
         ]
         self.assertEqual(self.admin.list_filter, expected_filters)
@@ -49,6 +51,7 @@ class PlaceAdminBasicTest(TestCase):
     def test_place_admin_search_fields(self):
         expected_search = [
             "content_id",
+            "region_code",
             "translations__name",
         ]
         self.assertEqual(self.admin.search_fields, expected_search)
@@ -75,15 +78,22 @@ class PlaceAdminBasicTest(TestCase):
 
         basic_info_fields = fieldsets[0][1]["fields"]
         self.assertEqual(basic_info_fields[0], "content_id")
+        self.assertIn("use_time", basic_info_fields)
+        self.assertIn("link_url", basic_info_fields)
+
+        # 카테고리 및 지역 그룹 확인
+        category_fields = fieldsets[1][1]["fields"]
+        self.assertIn("region_code", category_fields)
+
+        # 통계 그룹 확인
+        stats_fields = fieldsets[2][1]["fields"]
+        self.assertIn("favorite_count", stats_fields)
 
         system_fieldset = fieldsets[3][1]["fields"]
         self.assertIn("last_synced_at", system_fieldset)
 
-# PlaceTranslationInline이 추가되었는지 확인
     def test_place_admin_has_inlines(self):
         self.assertEqual(len(self.admin.inlines), 1)
-
-        # PlaceTranslationInline이 제대로 등록되었는지 확인
         self.assertIn(PlaceTranslationInline, self.admin.inlines)
 
     def test_admin_site_registration(self):
@@ -99,8 +109,10 @@ class PlaceAdminBasicTest(TestCase):
 
         expected_fields = [
             "content_id", "latitude", "longitude", "phone_number",
-            "opening_hours", "category_id", "sub_category_id", "region_id",
-            "view_count", "created_at", "updated_at", "last_synced_at"
+            "use_time", "link_url",
+            "category_id", "sub_category_id", "region_id", "region_code",
+            "favorite_count",
+            "created_at", "updated_at", "last_synced_at"
         ]
 
         for field in expected_fields:
@@ -111,12 +123,14 @@ class PlaceAdminBasicTest(TestCase):
             content_id="filter_test_place",
             category_id=2,
             sub_category_id=20,
-            region_id=2
+            region_id=2,
+            region_code="21"
         )
 
         self.assertIn("category_id", self.admin.list_filter)
         self.assertIn("sub_category_id", self.admin.list_filter)
         self.assertIn("region_id", self.admin.list_filter)
+        self.assertIn("region_code", self.admin.list_filter)
 
     def test_place_admin_category_foreign_key_display(self):
         self.assertIn("category_id", self.admin.list_display)
@@ -124,11 +138,11 @@ class PlaceAdminBasicTest(TestCase):
         self.assertIn("region_id", self.admin.list_display)
 
     def test_place_admin_view_count_display(self):
-        self.assertIn("view_count", self.admin.list_display)
+        self.assertIn("favorite_count", self.admin.list_display)
 
         statistics_fieldset = self.admin.fieldsets[2]
         self.assertEqual(statistics_fieldset[0], "통계")
-        self.assertIn("view_count", statistics_fieldset[1]["fields"])
+        self.assertIn("favorite_count", statistics_fieldset[1]["fields"])
 
     def test_place_admin_sync_time_management(self):
         self.assertIn("last_synced_at", self.admin.readonly_fields)
@@ -136,7 +150,6 @@ class PlaceAdminBasicTest(TestCase):
         system_fields = self.admin.fieldsets[3][1]["fields"]
         self.assertIn("last_synced_at", system_fields)
 
-# PlaceAdmin의 get_korean_name 메서드가 올바르게 작동하는지 테스트
     def test_place_admin_get_korean_name_method(self):
 
         PlaceTranslation.objects.create(
@@ -154,11 +167,7 @@ class PlaceAdminBasicTest(TestCase):
 
     def test_place_translation_inline_configuration(self):
         inline = PlaceTranslationInline(Place, admin_site=self.site)
-
-        # extra 필드가 4로 설정되어 있는지 확인
         self.assertEqual(inline.extra, 4)
-
-        # fields가 올바르게 설정되어 있는지 확인
         expected_fields = ["lang", "name", "description", "address"]
         self.assertEqual(inline.fields, expected_fields)
 
@@ -168,7 +177,9 @@ class PlaceTranslationAdminTest(TestCase):
         self.place = Place.objects.create(
             content_id="translation_admin_test",
             category_id=1,
-            sub_category_id=10
+            sub_category_id=10,
+            use_time="24시간",
+            favorite_count=0
         )
 
         self.translation = PlaceTranslation.objects.create(
@@ -198,7 +209,6 @@ class PlaceTranslationAdminTest(TestCase):
         expected_readonly = ["created_at", "updated_at"]
         self.assertEqual(self.admin.readonly_fields, expected_readonly)
 
-# get_short_description 메서드 테스트
     def test_get_short_description_method(self):
         # 50자를 넘는 긴 설명 (실제 확인된 85자 문자열)
         long_description = "조선 왕조의 법궁으로 1395년 태조 이성계에 의해 창건된 조선왕조 제일의 법궁입니다. 경복궁은 동궐이나 서궐에 비해 위치상 북궐이라 불리기도 했습니다."
@@ -206,33 +216,29 @@ class PlaceTranslationAdminTest(TestCase):
 
         result = self.admin.get_short_description(self.translation)
 
-        # 길이와 형태 확인
-        self.assertGreater(len(long_description), 50)  # 원본이 50자 넘는지 확인
-        self.assertTrue(result.endswith("..."))  # "..."으로 끝나는지 확인
-        self.assertEqual(len(result), 53)  # 50자 + "..." = 53자
+        self.assertGreater(len(long_description), 50)
+        self.assertTrue(result.endswith("..."))
+        self.assertEqual(len(result), 53)
 
-        # 정확히 50자인 설명 (경계값 테스트)
-        exactly_50_chars = "A" * 50  # A를 50개 = 정확히 50자
+
+        exactly_50_chars = "A" * 50
         self.translation.description = exactly_50_chars
 
         result = self.admin.get_short_description(self.translation)
-        self.assertEqual(result, exactly_50_chars)  # 50자 이하이므로 그대로
-        self.assertFalse(result.endswith("..."))  # "..." 없어야 함
+        self.assertEqual(result, exactly_50_chars)
+        self.assertFalse(result.endswith("..."))
 
-        # 50자보다 짧은 설명
         short_description = "짧은 설명"
         self.translation.description = short_description
 
         result = self.admin.get_short_description(self.translation)
         self.assertEqual(result, short_description)
 
-        # 빈 설명
         self.translation.description = ""
 
         result = self.admin.get_short_description(self.translation)
         self.assertEqual(result, "-")
 
-        # None 처리 테스트
         self.translation.description = None
 
         result = self.admin.get_short_description(self.translation)

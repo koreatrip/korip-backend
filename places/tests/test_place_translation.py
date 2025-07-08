@@ -3,7 +3,6 @@ from django.db import IntegrityError
 from places.models import Place, PlaceTranslation
 
 
-# PlaceTranslation 모델 기본 기능 테스트
 class PlaceTranslationModelTest(TestCase):
 
 # 테스트에서 사용할 기본 Place 데이터 생성
@@ -15,11 +14,14 @@ class PlaceTranslationModelTest(TestCase):
             latitude=37.5665,
             longitude=126.9780,
             phone_number="02-1234-5678",
-            opening_hours="09:00-18:00",
-            region_id=1
+            use_time="09:00-18:00",
+            region_id=1,
+            region_code="11",
+            link_url="https://example.com",
+            favorite_count=0
         )
 
-    # PlaceTranslation 모델이 올바르게 생성되는지 확인
+# PlaceTranslation 모델이 올바르게 생성되는지 확인
     def test_place_translation_creation(self):
         translation = PlaceTranslation.objects.create(
             place=self.place,
@@ -35,7 +37,7 @@ class PlaceTranslationModelTest(TestCase):
         self.assertEqual(translation.description, "조선 왕조의 법궁")
         self.assertEqual(translation.address, "서울특별시 종로구 사직로 161")
 
-    # PlaceTranslation의 __str__ 메서드가 올바르게 작동하는지 확인
+# PlaceTranslation의 __str__ 메서드가 올바르게 작동하는지 확인
     def test_place_translation_str_method(self):
         translation = PlaceTranslation.objects.create(
             place=self.place,
@@ -46,7 +48,7 @@ class PlaceTranslationModelTest(TestCase):
         expected = "경복궁 (ko)"
         self.assertEqual(str(translation), expected)
 
-    # 같은 Place에 여러 언어 번역이 가능한지 확인
+# 같은 Place에 여러 언어 번역이 가능한지 확인
     def test_multiple_language_translations(self):
         translations_data = [
             {"lang": "ko", "name": "경복궁", "description": "조선 왕조의 법궁"},
@@ -98,7 +100,7 @@ class PlaceTranslationModelTest(TestCase):
         translation = PlaceTranslation.objects.create(
             place=self.place,
             lang="en",
-            name="Test Place"  # description과 address는 비워둠
+            name="Test Place"
         )
 
         self.assertEqual(translation.name, "Test Place")
@@ -130,13 +132,10 @@ class PlaceTranslationModelTest(TestCase):
             name="Gyeongbokgung Palace"
         )
 
-        # 번역이 2개 생성되었는지 확인
         self.assertEqual(PlaceTranslation.objects.filter(place=self.place).count(), 2)
 
         place_id = self.place.id
         self.place.delete()
-
-        # 관련 번역들도 모두 삭제되었는지 확인
         self.assertEqual(PlaceTranslation.objects.filter(place_id=place_id).count(), 0)
 
 
@@ -148,7 +147,9 @@ class PlaceModelTranslationMethodTest(TestCase):
         self.place = Place.objects.create(
             content_id="test_translation_methods",
             latitude=37.5665,
-            longitude=126.9780
+            longitude=126.9780,
+            use_time="24시간",
+            favorite_count=0
         )
 
         # 한국어와 영어 번역 생성
@@ -211,12 +212,18 @@ class PlaceModelTranslationMethodTest(TestCase):
         expected = "경복궁"
         self.assertEqual(str(self.place), expected)
 
-        place_no_translation = Place.objects.create(content_id="no_translation_place")
+        place_no_translation = Place.objects.create(
+            content_id="no_translation_place",
+            favorite_count=0
+        )
         expected_no_trans = f"Place {place_no_translation.id} (no_translation_place)"
         self.assertEqual(str(place_no_translation), expected_no_trans)
 
     def test_translation_methods_with_no_translations(self):
-        place_empty = Place.objects.create(content_id="empty_place")
+        place_empty = Place.objects.create(
+            content_id="empty_place",
+            favorite_count=0
+        )
 
         self.assertEqual(place_empty.get_name("ko"), "")
         self.assertEqual(place_empty.get_description("en"), "")
