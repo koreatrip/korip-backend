@@ -1,15 +1,7 @@
 from django.urls import path
-from categories.views import (
-    CategoriesAPIView,
-    SubCategoriesAPIView,
-    SubCategoryCreateAPIView,
-    CategoryTranslationAPIView
-)
+from categories.views import CategoriesAPIView
 
+# 모든 카테고리 관련 기능을 하나의 엔드포인트에서 쿼리 파라미터로 처리
 urlpatterns = [
     path("", CategoriesAPIView.as_view(), name="categories-list"),
-    path("subcategories/", SubCategoryCreateAPIView.as_view(), name="subcategories-create"),
-    path("<int:category_id>/subcategories/", SubCategoriesAPIView.as_view(), name="subcategories-list"),
-    path("<int:category_id>/translations/<str:lang>/", CategoryTranslationAPIView.as_view(),
-         name="category-translation-update"),
 ]
