@@ -207,7 +207,7 @@ class SubCategoryAPITest(APITestCase):
 
     # 특정 카테고리의 서브카테고리 조회 테스트
     def test_get_subcategories_by_category_id(self):
-        url = f"/api/categories?type=subcategories&category_id={self.nature_category.id}&lang=ko"
+        url = f"/api/categories/{self.nature_category.id}/subcategories?lang=ko"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -223,7 +223,7 @@ class SubCategoryAPITest(APITestCase):
 
     # 영어로 서브카테고리 조회 테스트
     def test_get_subcategories_with_english_language(self):
-        url = f"/api/categories?type=subcategories&category_id={self.nature_category.id}&lang=en"
+        url = f"/api/categories/{self.nature_category.id}/subcategories?lang=en"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -235,7 +235,7 @@ class SubCategoryAPITest(APITestCase):
 
     # 존재하지 않는 카테고리의 서브카테고리 조회 테스트
     def test_get_subcategories_with_invalid_category_id(self):
-        url = "/api/categories?type=subcategories&category_id=9999&lang=ko"
+        url = "/api/categories/9999/subcategories?lang=ko"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -243,7 +243,7 @@ class SubCategoryAPITest(APITestCase):
 
     # 서브카테고리가 없는 카테고리 조회 테스트
     def test_get_subcategories_for_category_without_subcategories(self):
-        url = f"/api/categories?type=subcategories&category_id={self.food_category.id}&lang=ko"
+        url = f"/api/categories/{self.food_category.id}/subcategories?lang=ko"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
