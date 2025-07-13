@@ -198,3 +198,4 @@ if DEBUG:
     # 개발 환경용 CORS 설정 (모든 오리진 허용)
     CORS_ALLOW_ALL_ORIGINS = True
 
+APPEND_SLASH = False
