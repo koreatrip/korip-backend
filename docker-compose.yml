@@ -1,16 +1,17 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: korip_db
-      POSTGRES_USER: korip_user
-      POSTGRES_PASSWORD: K0r1p_S3cur3_P@ssw0rd2024!
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  # 로컬 PostgreSQL 서비스 주석처리 (AWS RDS 사용)
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_DB: korip_db
+  #     POSTGRES_USER: korip_user
+  #     POSTGRES_PASSWORD: K0r1p_S3cur3_P@ssw0rd2024!
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
 
   web:
     build: .
@@ -19,10 +20,12 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    depends_on:
-      - db
+    # AWS RDS 사용하므로 depends_on 제거
+    # depends_on:
+    #   - db
     environment:
       - DEBUG=True
 
-volumes:
-  postgres_data:
+# 로컬 PostgreSQL 볼륨도 주석처리
+# volumes:
+#   postgres_data:
