@@ -7,6 +7,7 @@ LANGUAGE_CHOICES = [
     ("zh", "中文"),
 ]
 
+
 # 기본 지역 모델
 class Region(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
@@ -74,7 +75,7 @@ class RegionTranslation(models.Model):
         return f"{self.region.id} - {self.lang}: {self.name}"
 
 
-# 지역구 모델 (관광지 수, 즐겨찾기 수, 날씨 연동용 위치 정보 포함)
+# 지역구 모델 (즐겨찾기 수, 날씨 연동용 위치 정보 포함)
 class SubRegion(models.Model):
     region = models.ForeignKey(
         Region,
@@ -82,8 +83,6 @@ class SubRegion(models.Model):
         related_name="subregions",
         verbose_name="부모 지역"
     )
-
-
 
     # 즐겨찾기 수 (인기순 정렬용)
     favorite_count = models.IntegerField(
@@ -143,6 +142,14 @@ class SubRegion(models.Model):
         except SubRegionTranslation.DoesNotExist:
             return ""
 
+    # 지정한 언어의 지역구 특징 가져오기
+    def get_features(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.features
+        except SubRegionTranslation.DoesNotExist:
+            return ""
+
     # 이 지역구의 즐겨찾기 수 업데이트 (UserFavoriteRegion 모델 연결 후 구현 예정)
     def update_favorite_count(self):
         pass
@@ -170,6 +177,13 @@ class SubRegionTranslation(models.Model):
         verbose_name="지역 설명",
         help_text="이 지역구에 대한 간단한 설명"
     )
+
+    features = models.TextField(
+        blank=True,
+        verbose_name="특징",
+        help_text="이 지역구의 특징 설명 (예: 트레디한 쇼핑몰과 고급 레스토랑)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 

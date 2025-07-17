@@ -82,6 +82,35 @@ class SubRegionModelTest(TestCase):
     def test_subregion_get_description_default_language(self):
         self.assertEqual(self.gangnam.get_description(), "서울의 대표적인 번화가")
 
+    # 한국어 특징 가져오기 테스트
+    def test_subregion_get_features_korean(self):
+        translation = self.gangnam.translations.get(lang="ko")
+        translation.features = "트레디한 쇼핑몰과 고급 레스토랑"
+        translation.save()
+
+        self.assertEqual(self.gangnam.get_features("ko"), "트레디한 쇼핑몰과 고급 레스토랑")
+
+    # 영어 특징 가져오기 테스트
+    def test_subregion_get_features_english(self):
+        translation = self.gangnam.translations.get(lang="en")
+        translation.features = "Trendy shopping malls and high-end restaurants"
+        translation.save()
+
+        self.assertEqual(self.gangnam.get_features("en"), "Trendy shopping malls and high-end restaurants")
+
+    # 없는 언어 특징 요청 시 빈 문자열 반환 테스트
+    def test_subregion_get_features_nonexistent_language(self):
+        self.assertEqual(self.gangnam.get_features("jp"), "")
+
+    # 기본 언어(ko) 특징 테스트
+    def test_subregion_get_features_default_language(self):
+        # 강남구에 한국어 특징 추가
+        translation = self.gangnam.translations.get(lang="ko")
+        translation.features = "현대적인 비즈니스 중심지"
+        translation.save()
+
+        self.assertEqual(self.gangnam.get_features(), "현대적인 비즈니스 중심지")
+
     def test_subregion_str_method(self):
         self.assertEqual(str(self.gangnam), "서울 강남구")
 
@@ -131,13 +160,8 @@ class SubRegionOrderingTest(TestCase):
     # 즐겨찾기 수가 같을 때 가나다순 정렬 테스트
     def test_subregion_ordering_by_name_when_favorite_count_same(self):
         subregions = list(SubRegion.objects.all())
-
-        # 즐겨찾기 수가 100인 지역구들만 추출
         favorite_100_subregions = [sr for sr in subregions if sr.favorite_count == 100]
-
-        # 가나다순으로 강남구, 마포구 순서여야 함
         self.assertEqual(len(favorite_100_subregions), 2)
-        # ordering이 translations__name으로 되어있어서 실제로는 join된 결과로 정렬됨
 
     def test_subregion_manual_count_update(self):
         original_favorite_count = self.gangnam.favorite_count
@@ -180,6 +204,72 @@ class SubRegionTranslationTest(TestCase):
         )
 
         self.assertEqual(translation.description, "")
+
+    # 특징 필드와 함께 지역구 번역 생성 테스트
+    def test_subregion_translation_creation_with_features(self):
+        translation = SubRegionTranslation.objects.create(
+            sub_region=self.subregion,
+            lang="ko",
+            name="강남구",
+            description="강남스타일의 발원지",
+            features="트레디한 쇼핑몰과 고급 레스토랑"
+        )
+
+        self.assertEqual(translation.features, "트레디한 쇼핑몰과 고급 레스토랑")
+        self.assertEqual(translation.name, "강남구")
+        self.assertEqual(translation.description, "강남스타일의 발원지")
+
+    # 특징 필드 없이 지역구 번역 생성 테스트 (빈 값 허용)
+    def test_subregion_translation_creation_without_features(self):
+        translation = SubRegionTranslation.objects.create(
+            sub_region=self.subregion,
+            lang="en",
+            name="Gangnam-gu"
+            # features, description 생략
+        )
+
+        self.assertEqual(translation.features, "")
+        self.assertEqual(translation.description, "")
+
+    # 지역구 특징 가져오기 메서드 테스트
+    def test_subregion_get_features_method(self):
+        # 한국어 특징 추가
+        SubRegionTranslation.objects.create(
+            sub_region=self.subregion,
+            lang="ko",
+            name="마포구",
+            description="홍대와 합정이 있는 문화의 거리",
+            features="젊은 에너지와 예술적 감성이 넘치는 곳"
+        )
+
+        # 영어 특징 추가
+        SubRegionTranslation.objects.create(
+            sub_region=self.subregion,
+            lang="en",
+            name="Mapo-gu",
+            description="Cultural street with Hongdae and Hapjeong",
+            features="A place overflowing with youthful energy and artistic sensibility"
+        )
+
+        # 한국어 특징 확인
+        self.assertEqual(self.subregion.get_features("ko"), "젊은 에너지와 예술적 감성이 넘치는 곳")
+        # 영어 특징 확인
+        self.assertEqual(self.subregion.get_features("en"),
+                         "A place overflowing with youthful energy and artistic sensibility")
+        # 없는 언어 요청 시 빈 문자열 반환
+        self.assertEqual(self.subregion.get_features("ja"), "")
+
+    # 기본 언어(ko) 특징 가져오기 테스트
+    def test_subregion_get_features_default_language(self):
+        SubRegionTranslation.objects.create(
+            sub_region=self.subregion,
+            lang="ko",
+            name="종로구",
+            features="전통과 현대가 공존하는 역사의 중심지"
+        )
+
+        # 기본 언어로 호출
+        self.assertEqual(self.subregion.get_features(), "전통과 현대가 공존하는 역사의 중심지")
 
     def test_subregion_translation_unique_constraint(self):
         SubRegionTranslation.objects.create(sub_region=self.subregion, lang="ko", name="용산구")
@@ -281,7 +371,8 @@ class KoripServiceSubRegionTest(TestCase):
             sub_region=self.gangnam,
             lang="ko",
             name="강남구",
-            description="강남스타일의 발원지, 현대적인 쇼핑과 엔터테인먼트의 중심지"
+            description="강남스타일의 발원지, 현대적인 쇼핑과 엔터테인먼트의 중심지",
+            features="트레디한 쇼핑몰과 고급 레스토랑"
         )
 
         self.jongno = SubRegion.objects.create(
@@ -294,7 +385,8 @@ class KoripServiceSubRegionTest(TestCase):
             sub_region=self.jongno,
             lang="ko",
             name="종로구",
-            description="조선왕조의 중심지, 경복궁과 창덕궁이 있는 역사문화의 심장"
+            description="조선왕조의 중심지, 경복궁과 창덕궁이 있는 역사문화의 심장",
+            features="전통과 현대가 공존하는 역사의 중심지"
         )
 
         self.mapo = SubRegion.objects.create(
@@ -307,7 +399,8 @@ class KoripServiceSubRegionTest(TestCase):
             sub_region=self.mapo,
             lang="ko",
             name="마포구",
-            description="홍대와 합정동의 젊음과 활력이 넘치는 문화예술 거리"
+            description="홍대와 합정동의 젊음과 활력이 넘치는 문화예술 거리",
+            features="젊은 에너지와 예술적 감성이 넘치는 곳"
         )
 
     def test_popular_districts_ordering_for_frontend(self):
@@ -329,6 +422,20 @@ class KoripServiceSubRegionTest(TestCase):
         mapo_desc = self.mapo.get_description("ko")
         self.assertIn("홍대", mapo_desc)
         self.assertIn("문화", mapo_desc)
+
+    # 특징 필드 테스트 추가
+    def test_tourist_district_features(self):
+        gangnam_features = self.gangnam.get_features("ko")
+        self.assertIn("트레디한", gangnam_features)
+        self.assertIn("쇼핑몰", gangnam_features)
+
+        jongno_features = self.jongno.get_features("ko")
+        self.assertIn("전통", jongno_features)
+        self.assertIn("역사", jongno_features)
+
+        mapo_features = self.mapo.get_features("ko")
+        self.assertIn("젊은", mapo_features)
+        self.assertIn("예술적", mapo_features)
 
     # 날씨 API 연동을 위한 서울 좌표 데이터 테스트
     def test_weather_api_coordinates_in_seoul(self):
