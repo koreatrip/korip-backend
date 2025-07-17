@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "plans",
     "exports",
     "categories",
+    "regions",
 ]
 
 MIDDLEWARE = [
