@@ -122,6 +122,11 @@ db-shell:
 	@echo "🗄️  PostgreSQL 접속..."
 	$(DC) exec db psql -U korip_user -d korip_db
 
+# Redis 데이터베이스 접속
+redis-shell:
+	@echo "💾  Redis 접속..."
+	docker compose exec redis redis-cli -h redis -p 6379
+
 # 의존성 설치 (pyproject.toml 변경 후)
 install:
 	@echo "📦 의존성 설치 중..."

@@ -199,6 +199,29 @@ if DEBUG:
     # 개발 환경용 CORS 설정 (모든 오리진 허용)
     CORS_ALLOW_ALL_ORIGINS = True
 
+# 디버깅용 로그 설정
+# if DEBUG:
+#     LOGGING = {
+#         "version": 1,
+#         "disable_existing_loggers": False,
+#         "handlers": {
+#             "console": {
+#                 "class": "logging.StreamHandler",
+#             },
+#         },
+#         "root": {
+#             "handlers": ["console"],
+#             "level": "INFO",
+#         },
+#         "loggers": {
+#             "django.db.backends": {
+#                 "handlers": ["console"],
+#                 "level": "DEBUG",
+#                 "propagate": False,
+#             },
+#         },
+#     }
+
 # 이메일 인증시 메일 발송을 위한 Gmail SMTP 설정
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config("EMAIL_SMTP_SERVER")
@@ -209,3 +232,14 @@ EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = config("EMAIL_ACCOUNT")
 
 APPEND_SLASH = False
+
+# Django Redis 캐시 설정
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': config("REDIS_URL"),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
