@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "plans",
     "exports",
     "categories",
+    "regions",
 ]
 
 MIDDLEWARE = [
@@ -92,7 +93,7 @@ DATABASES = {
         "HOST": config("DB_HOST"),
         "PORT": config("DB_PORT"),
         "OPTIONS": {
-            # "charset": "utf8",
+            "sslmode": config("DB_SSL_MODE", default="require"),
         },
         # 개발 환경에서는 연결 재사용
         "CONN_MAX_AGE": 60 if DEBUG else 0,
@@ -206,3 +207,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config("EMAIL_ACCOUNT")
 EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = config("EMAIL_ACCOUNT")
+
+APPEND_SLASH = False
