@@ -61,7 +61,7 @@ class EmailHelper:
             return False
         
         if verification_code == int(code):
-            redis_helper.set_with_expiry(f"email_verified:{email}", "True", 600)
+            redis_helper.set_with_expiry(f"email_verified:{email}", "True", 6000)
             redis_helper.delete_key(f"email_verification:{email}")
             return True
         return False
