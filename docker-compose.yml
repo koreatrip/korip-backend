@@ -34,8 +34,8 @@ services:
     #   - db
     depends_on:
       - redis
-    environment:
-      - DEBUG=True
+    env_file:
+      - .env
     networks:
       - korip-network
 
