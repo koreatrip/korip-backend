@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
 from django.urls import reverse
 from django.contrib import admin
-from .admin import CustomUserAdmin, CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser
+from users.admin import CustomUserAdmin, CustomUserCreationForm, CustomUserChangeForm
+from users.models import CustomUser
 
 User = get_user_model()
 
