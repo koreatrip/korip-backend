@@ -51,4 +51,24 @@ class EmailHelper:
         except Exception as e:
             logger.error(f"이메일 발송 실패 - 이메일: {email}, 에러: {e}")
             return None
+
+    @staticmethod
+    def check_verification_code(email, code):
+        """이메일 인증 코드 확인"""
+        verification_code = redis_helper.get_value(f"email_verification:{email}")
+
+        if verification_code is None:
+            return False
         
+        if verification_code == int(code):
+            redis_helper.set_with_expiry(f"email_verified:{email}", "True", 600)
+            redis_helper.delete_key(f"email_verification:{email}")
+            return True
+        return False
+    
+    @staticmethod
+    def check_verification_email(email):
+        """이메일 인증 여부 확인"""
+        if redis_helper.get_value(f"email_verified:{email}") == "True":
+           return True
+        return False 
