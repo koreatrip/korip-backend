@@ -198,3 +198,11 @@ if DEBUG:
     # 개발 환경용 CORS 설정 (모든 오리진 허용)
     CORS_ALLOW_ALL_ORIGINS = True
 
+# 이메일 인증시 메일 발송을 위한 Gmail SMTP 설정
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config("EMAIL_SMTP_SERVER")
+EMAIL_PORT = config("EMAIL_SMTP_PORT")
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_ACCOUNT")
+EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
+DEFAULT_FROM_EMAIL = config("EMAIL_ACCOUNT")
