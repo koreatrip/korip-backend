@@ -141,8 +141,8 @@ USE_TZ = True
 LANGUAGES = [
     ("ko", "한국어"),
     ("en", "English"),
-    ("ja", "日本語"),
-    ("zh", "中文"),
+    ("jp", "日本語"),
+    ("cn", "中文"),
 ]
 
 # 국제화 파일 경로
@@ -166,6 +166,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+]
+
+# CSRF 설정
+CSRF_TRUSTED_ORIGINS = [
+    "https://korip.me",      # 운영 도메인
+    "http://localhost:8000", # 로컬 개발용
+    "http://127.0.0.1:8000", # 로컬 개발용
+]
+
+ALLOWED_HOSTS = [
+    "korip.me",
+    "localhost",
+    "127.0.0.1",
+    "43.201.253.255",
 ]
 
 # REST Framework 설정

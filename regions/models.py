@@ -3,8 +3,8 @@ from django.db import models
 LANGUAGE_CHOICES = [
     ("ko", "한국어"),
     ("en", "English"),
-    ("ja", "日本語"),
-    ("zh", "中文"),
+    ("jp", "日本語"),
+    ("cn", "中文"),
 ]
 
 
