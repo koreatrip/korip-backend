@@ -190,7 +190,7 @@ class SubRegionTranslation(models.Model):
     class Meta:
         db_table = "subregion_translation"
         verbose_name = "지역구 번역"
-        verbose_name_plural = "서브지역 번역"
+        verbose_name_plural = "지역구 번역"
         # 같은 지역구에 같은 언어 조합은 한 번만 허용
         unique_together = [("sub_region", "lang")]
 

@@ -46,7 +46,7 @@ class CategorySerializerTest(TestCase):
         serializer = CategorySerializer(
             [self.category],
             many=True,
-            language="ko"
+            context={"language": "ko"}
         )
 
         data = serializer.data
@@ -65,7 +65,7 @@ class CategorySerializerTest(TestCase):
         serializer = CategorySerializer(
             [self.category],
             many=True,
-            language="en"
+            context={"language": "en"}
         )
 
         data = serializer.data
@@ -80,7 +80,7 @@ class CategorySerializerTest(TestCase):
         serializer = CategorySerializer(
             [self.category],
             many=True,
-            language="cn"
+            context={"language": "cn"}
         )
 
         data = serializer.data
@@ -92,7 +92,7 @@ class CategorySerializerTest(TestCase):
         serializer = CategorySerializer(
             [self.category],
             many=True,
-            language="jp"
+            context={"language": "jp"}
         )
 
         data = serializer.data
@@ -131,8 +131,10 @@ class SubCategoryListSerializerTest(TestCase):
 
         serializer = SubCategoryListSerializer(
             {},
-            language="ko",
-            subcategories_queryset=subcategories
+            context={
+                "language": "ko",
+                "subcategories_queryset": subcategories
+            }
         )
 
         data = serializer.data
@@ -150,8 +152,10 @@ class SubCategoryListSerializerTest(TestCase):
 
         serializer = SubCategoryListSerializer(
             {},
-            language="en",
-            subcategories_queryset=subcategories
+            context={
+                "language": "en",
+                "subcategories_queryset": subcategories
+            }
         )
 
         data = serializer.data
@@ -171,8 +175,10 @@ class SubCategoryListSerializerTest(TestCase):
 
         serializer = SubCategoryListSerializer(
             {},
-            language="ko",
-            subcategories_queryset=empty_queryset
+            context={
+                "language": "ko",
+                "subcategories_queryset": empty_queryset
+            }
         )
 
         data = serializer.data
