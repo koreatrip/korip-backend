@@ -7,8 +7,8 @@ class SubCategorySerializer(serializers.Serializer):
     name = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
-        self.language = kwargs.pop("language", "ko")
         super().__init__(*args, **kwargs)
+        self.language = self.context.get("language", "ko")
 
     def get_name(self, instance):
         return instance.get_name(self.language)
@@ -20,8 +20,8 @@ class CategorySerializer(serializers.Serializer):
     subcategories = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
-        self.language = kwargs.pop("language", "ko")
         super().__init__(*args, **kwargs)
+        self.language = self.context.get("language", "ko")
 
     def get_name(self, instance):
         return instance.get_name(self.language)
@@ -31,7 +31,7 @@ class CategorySerializer(serializers.Serializer):
         for subcategory in instance.subcategories.all():
             subcategory_serializer = SubCategorySerializer(
                 subcategory,
-                language=self.language
+                context={"language": self.language}
             )
             subcategories_data.append(subcategory_serializer.data)
         return subcategories_data
@@ -41,9 +41,9 @@ class SubCategoryListSerializer(serializers.Serializer):
     subcategories = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
-        self.language = kwargs.pop("language", "ko")
-        self.subcategories_queryset = kwargs.pop("subcategories_queryset", None)
         super().__init__(*args, **kwargs)
+        self.language = self.context.get("language", "ko")
+        self.subcategories_queryset = self.context.get("subcategories_queryset", None)
 
     def get_subcategories(self, instance):
         subcategories_data = []
@@ -51,7 +51,7 @@ class SubCategoryListSerializer(serializers.Serializer):
             for subcategory in self.subcategories_queryset:
                 subcategory_serializer = SubCategorySerializer(
                     subcategory,
-                    language=self.language
+                    context={"language": self.language}
                 )
                 subcategories_data.append(subcategory_serializer.data)
         return subcategories_data
