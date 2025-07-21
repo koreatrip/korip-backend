@@ -1,0 +1,28 @@
+
+version: '3.8'
+
+services:
+  # 로컬 PostgreSQL 추가
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: korip_db
+      POSTGRES_USER: korip_user
+      POSTGRES_PASSWORD: K0r1p_S3cur3_P@ssw0rd2024!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - korip-network
+
+  # web 서비스에 db 의존성 추가
+  web:
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env.local  # 로컬용 환경변수 사용
+
+volumes:
+  postgres_data:
