@@ -184,4 +184,5 @@ cython_debug/
 
 # 개발용 데이터베이스 덤프
 *.sql
-*.dump
+*.dumpdocker-compose.override.yml
+.env.local
