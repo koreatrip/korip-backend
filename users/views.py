@@ -18,6 +18,12 @@ from users.serializers import (
 )
 from helper.email_helper import EmailHelper
 from helper.redis_helper import RedisHelper
+from exceptions.error_code import ErrorCode
+from exceptions.custom_exception_handler import (
+    EmailError,
+    CustomTokenError,
+    AuthenticationError,
+)
 
 
 class BaseAPIView(APIView):
@@ -109,7 +115,7 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
             verification_code = EmailHelper.send_verification_email(email)
 
             if verification_code is None:
-                return Response(data={"error_message": "이메일 발송을 실패했습니다."}, status=status.HTTP_400_BAD_REQUEST)
+                raise EmailError(ErrorCode.EMAIL_NOT_CERTIFIED)
             self.redis_helper.set_with_expiry(f"email_verification:{email}", verification_code, 600)
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -148,7 +154,7 @@ class CheckVerificationCodeAPIView(BaseAPIView):
             code = serializer.validated_data['code']
 
             if not EmailHelper.check_verification_code(email, code):
-                return Response(data={"error_message": "이메일 인증번호가 일치하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+                raise EmailError(ErrorCode.EMAIL_CERTIFICATION_FAIL)
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -237,13 +243,9 @@ class LogoutAPIView(APIView):
             return Response(status=status.HTTP_200_OK)
         
         except TokenError as e:
-            return Response({
-                'error': '유효하지 않은 토큰입니다.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise CustomTokenError(ErrorCode.INVALID_REFRESH_TOKEN)
         except Exception as e:
-            return Response({
-                'error': '로그아웃 처리 중 오류가 발생했습니다.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise AuthenticationError(ErrorCode.LOGOUT_FAIL)
 
 
 
@@ -277,7 +279,6 @@ class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
             if 'refresh_token' in request.data and 'refresh' not in request.data:
-                # request.data를 복사해서 수정 (원본 보존)
                 modified_data = request.data.copy()
                 modified_data['refresh'] = modified_data.pop('refresh_token')
                 request._full_data = modified_data
@@ -291,6 +292,7 @@ class CustomTokenRefreshView(TokenRefreshView):
             return response
             
         except InvalidToken as e:
+            raise CustomTokenError(ErrorCode.INVALID_REFRESH_TOKEN)
             return Response({
                 'error': '유효하지 않은 리프레시 토큰입니다.'
             }, status=status.HTTP_401_UNAUTHORIZED)

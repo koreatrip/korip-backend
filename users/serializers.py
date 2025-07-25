@@ -5,6 +5,13 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.models import CustomUser
 from helper.email_helper import EmailHelper
+from exceptions.error_code import ErrorCode
+from exceptions.custom_exception_handler import (
+    EmailError,
+    AuthenticationError,
+    RequestError,
+    UserError,
+)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -17,14 +24,14 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if not EmailHelper.check_verification_email(value):
-            raise serializers.ValidationError("인증되지 않은 이메일 입니다.")
+            raise EmailError(ErrorCode.EMAIL_NOT_CERTIFIED)
         return value
     
     def validate_password(self, value):
         try:
             validate_password(value)
         except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+            raise ArithmeticError(ErrorCode.INVALID_PASSWORD)
         return value
 
     def create(self, validated_data):
@@ -37,7 +44,7 @@ class SendVerificationCodeSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         if CustomUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError("이미 가입된 이메일입니다.")
+            raise EmailError(ErrorCode.EMAIL_ALREADY_REGISTERED)
         return value
 
 
@@ -47,7 +54,7 @@ class CheckVerificationCodeSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         if CustomUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError("이미 가입된 이메일입니다.")
+            raise EmailError(ErrorCode.EMAIL_ALREADY_REGISTERED)
         return value
 
 
@@ -97,19 +104,12 @@ class LoginSerializer(serializers.Serializer):
             )
             
             if not user:
-                raise serializers.ValidationError(
-                    '이메일 또는 비밀번호가 올바르지 않습니다.'
-                )
+                raise AuthenticationError(ErrorCode.INVALID_USER_INFO)
             
             if not user.is_active:
-                raise serializers.ValidationError(
-                    '비활성화된 계정입니다.'
-                )
+                raise UserError(ErrorCode.ACCOUNT_INACTIVE)
             
             attrs['user'] = user
             return attrs
         else:
-            raise serializers.ValidationError(
-                '이메일과 비밀번호를 모두 입력해주세요.'
-            )
-
+            raise RequestError(ErrorCode.MISSING_CREDENTIALS)
