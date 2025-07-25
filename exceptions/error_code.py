@@ -6,6 +6,8 @@ class ErrorCode(Enum):
     EMAIL_NOT_CERTIFIED = ("EMAIL_NOT_CERTIFIED", "이메일 인증이 필요합니다")
     EMAIL_SEND_FAILED = ("EMAIL_SEND_FAILED", "이메일 발송을 실패했습니다.")
     EMAIL_CERTIFICATION_FAIL = ("EMAIL_CERTIFICATION_FAIL", "이메일 또는 인증번호가 일치하지 않거나 유효기간이 만료되었습니다.")
+    SAME_CURRENT_PASSWORD = ("SAME_CURRENT_PASSWORD", "현재 비밀번호와 새로 변경할 비밀번호가 일치합니다.")
+    MISSMATCHED_PASSWORD = ("MISSMATCHED_PASSWORD", "비밀번호가 일치하지 않습니다.")
     INVALID_USER_INFO = ("INVALID_USER_INFO", "이메일 또는 비밀번호가 올바르지 않습니다")
     INVALID_PASSWORD = ("INVALID_PASSWORD", "비밀번호 조건을 만족하지 않습니다.")
     INVALID_REFRESH_TOKEN = ("INVALID_REFRESH_TOKEN", "유효하지 않은 리프레시 토큰입니다.")

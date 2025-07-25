@@ -6,6 +6,7 @@ from users.views import (
     LoginAPIView,
     LogoutAPIView,
     CustomTokenRefreshView,
+    ChangePasswordAPIView
 )
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("login", LoginAPIView.as_view(), name="login-user"),
     path("logout", LogoutAPIView.as_view(), name="logout-user"),
     path("reissue-token", CustomTokenRefreshView.as_view(), name="reissue-token"),
+    path("change-pwd", ChangePasswordAPIView.as_view(), name="change-pwd"),
+    # path("{user_id}/change-pwd", ChangePasswordAPIView.as_view(), name="change-pwd"),
 ]
