@@ -29,7 +29,12 @@ class SignUpAPIView(BaseAPIView):
                 description="회원가입 성공",
                 examples={
                     "application/json": {
-                        "message": "회원가입이 완료되었습니다."
+                        "id": 1,
+                        "name": "홍길동",
+                        "email": "test@example.com",
+                        "phone_number": "01012345678",
+                        "created_at": "2024-07-01T12:00:00Z",
+                        "updated_at": "2024-07-01T12:00:00Z"
                     }
                 }
             ),
@@ -50,8 +55,15 @@ class SignUpAPIView(BaseAPIView):
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():     
-            serializer.save()
-            return Response(data={"message": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+            saved_user = serializer.save()
+            return Response(data={
+                "id": saved_user.id,
+                "name": saved_user.nickname,
+                "email": saved_user.email,
+                "phone_number": saved_user.phone_number,
+                "created_at": saved_user.created_at,
+                "updated_at": saved_user.updated_at
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -65,12 +77,7 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
         request_body=SendVerificationCodeSerializer,
         responses={
             200: openapi.Response(
-                description="이메일 발송 성공",
-                examples={
-                    "application/json": {
-                        "message": "이메일 발송이 완료되었습니다."
-                    }
-                }
+                description="이메일 발송 성공"
             ),
             400: openapi.Response(
                 description="이메일 발송 실패",
@@ -94,13 +101,13 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
             if verification_code is None:
                 return Response(data={"error_message": "이메일 발송을 실패했습니다."}, status=status.HTTP_400_BAD_REQUEST)
             self.redis_helper.set_with_expiry(f"email_verification:{email}", verification_code, 600)
-            return Response(data={"message": "이메일 발송이 완료되었습니다."}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CheckVerificationCodeAPIView(BaseAPIView):
     """이메일 인증 코드 확인"""
-    serializers_class = CheckVerificationCodeSerializer
+    serializer_class = CheckVerificationCodeSerializer
 
     @swagger_auto_schema(
         operation_summary="이메일 인증번호 확인",
@@ -108,12 +115,7 @@ class CheckVerificationCodeAPIView(BaseAPIView):
         request_body=CheckVerificationCodeSerializer,
         responses={
             200: openapi.Response(
-                description="인증번호 확인 성공",
-                examples={
-                    "application/json": {
-                        "message": "이메일 인증이 완료되었습니다."
-                    }
-                }
+                description="인증번호 확인 성공"
             ),
             400: openapi.Response(
                 description="인증번호 확인 실패",
@@ -128,7 +130,7 @@ class CheckVerificationCodeAPIView(BaseAPIView):
     )
 
     def post(self, request):
-        serializer = self.serializers_class(data=request.data)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -136,5 +138,6 @@ class CheckVerificationCodeAPIView(BaseAPIView):
 
             if not EmailHelper.check_verification_code(email, code):
                 return Response(data={"error_message": "이메일 인증번호가 일치하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
-            return Response(data={"message": "이메일 인증이 완료되었습니다."}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
