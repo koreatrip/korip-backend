@@ -1,16 +1,24 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate, update_session_auth_hash
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenVerifySerializer
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from users.serializers import (
     SignUpSerializer,
     SendVerificationCodeSerializer,
-    CheckVerificationCodeSerializer
+    CheckVerificationCodeSerializer,
+    LoginSerializer
 )
 from helper.email_helper import EmailHelper
 from helper.redis_helper import RedisHelper
+
 
 class BaseAPIView(APIView):
     redis_helper = RedisHelper()
@@ -18,6 +26,7 @@ class BaseAPIView(APIView):
 
 class SignUpAPIView(BaseAPIView):
     """회원가입"""
+    permission_classes = [AllowAny]
     serializer_class = SignUpSerializer
 
     @swagger_auto_schema(
@@ -69,6 +78,7 @@ class SignUpAPIView(BaseAPIView):
 
 class SendVerificationCodeAPIVIew(BaseAPIView):
     """이메일 발송 (인증번호)"""
+    permission_classes = [AllowAny]
     serializer_class = SendVerificationCodeSerializer
     
     @swagger_auto_schema(
@@ -107,6 +117,7 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
 
 class CheckVerificationCodeAPIView(BaseAPIView):
     """이메일 인증 코드 확인"""
+    permission_classes = [AllowAny]
     serializer_class = CheckVerificationCodeSerializer
 
     @swagger_auto_schema(
@@ -140,4 +151,146 @@ class CheckVerificationCodeAPIView(BaseAPIView):
                 return Response(data={"error_message": "이메일 인증번호가 일치하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginAPIView(BaseAPIView):
+    """일반 로그인"""
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_summary="일반 로그인",
+        operation_description="이메일과 비밀번호로 로그인하고 JWT 토큰을 발급받습니다.",
+        request_body=LoginSerializer,
+        responses={
+            200: openapi.Response(
+                description="로그인 성공",
+                examples={
+                    "application/json": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOi...",
+                        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOi..."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="로그인 실패",
+                examples={
+                    "application/json": {
+                        "non_field_errors": ["이메일 또는 비밀번호가 올바르지 않습니다."]
+                    }
+                }
+            )
+        },
+        tags=['인증']
+    )
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            
+            # JWT 토큰 생성
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+            
+            # 토큰에 추가 정보 포함
+            access_token['email'] = user.email
+            access_token['nickname'] = user.nickname
+            access_token['is_social'] = user.is_social
+            
+            return Response({
+                'access_token': str(access_token),
+                'refresh_token': str(refresh)
+            }, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutAPIView(APIView):
+    """로그아웃 (토큰 블랙리스트)"""
+    permission_classes = [IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_summary="로그아웃",
+        operation_description="사용자의 refresh 토큰을 블랙리스트에 등록하여 로그아웃 처리합니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='리프레시 토큰')
+            },
+            required=['refresh_token']
+        ),
+        responses={
+            200: openapi.Response(description="로그아웃 성공"),
+            400: openapi.Response(description="잘못된 요청 또는 토큰 오류")
+        },
+        tags=['인증']
+    )
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            
+            return Response(status=status.HTTP_200_OK)
+        
+        except TokenError as e:
+            return Response({
+                'error': '유효하지 않은 토큰입니다.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'error': '로그아웃 처리 중 오류가 발생했습니다.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    """액세스 토큰 갱신"""
+
+    @swagger_auto_schema(
+        operation_summary="액세스 토큰 갱신",
+        operation_description="리프레시 토큰을 이용하여 새로운 액세스 토큰을 발급합니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='리프레시 토큰')
+            },
+            required=['refresh_token']
+        ),
+        responses={
+            200: openapi.Response(
+                description="토큰 갱신 성공",
+                examples={
+                    "application/json": {
+                        "access_token": "new-access-token"
+                    }
+                }
+            ),
+            401: openapi.Response(description="유효하지 않은 리프레시 토큰")
+        },
+        tags=['인증']
+    )
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            if 'refresh_token' in request.data and 'refresh' not in request.data:
+                # request.data를 복사해서 수정 (원본 보존)
+                modified_data = request.data.copy()
+                modified_data['refresh'] = modified_data.pop('refresh_token')
+                request._full_data = modified_data
+            
+            response = super().post(request, *args, **kwargs)
+
+            if response.status_code == 200:
+                if 'access' in response.data:
+                    access_token = response.data.pop('access')
+                    response.data['access_token'] = access_token
+            return response
+            
+        except InvalidToken as e:
+            return Response({
+                'error': '유효하지 않은 리프레시 토큰입니다.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
