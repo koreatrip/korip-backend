@@ -92,14 +92,13 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
         operation_description="지정된 이메일로 인증번호를 발송합니다. 인증번호는 1분간 유효합니다.",
         request_body=SendVerificationCodeSerializer,
         responses={
-            200: openapi.Response(
-                description="이메일 발송 성공"
-            ),
+            200: openapi.Response(description="이메일 발송 성공"),
             400: openapi.Response(
                 description="이메일 발송 실패",
                 examples={
                     "application/json": {
-                        "error_message": "이메일 발송을 실패했습니다."
+                        "error_code": "EMAIL_NOT_CERTIFIED",
+                        "error_message": "이메일 인증번호 발송에 실패했습니다."
                     }
                 }
             )
@@ -131,14 +130,13 @@ class CheckVerificationCodeAPIView(BaseAPIView):
         operation_description="이메일로 발송된 인증번호를 확인합니다.",
         request_body=CheckVerificationCodeSerializer,
         responses={
-            200: openapi.Response(
-                description="인증번호 확인 성공"
-            ),
+            200: openapi.Response(description="인증번호 확인 성공"),
             400: openapi.Response(
                 description="인증번호 확인 실패",
                 examples={
                     "application/json": {
-                        "error_message": "이메일 인증번호가 일치하지 않습니다."
+                        "error_code": "EMAIL_CERTIFICATION_FAIL",
+                        "error_message": "이메일 인증번호가 일치하지 않거나 만료되었습니다."
                     }
                 }
             )
@@ -181,7 +179,8 @@ class LoginAPIView(BaseAPIView):
                 description="로그인 실패",
                 examples={
                     "application/json": {
-                        "non_field_errors": ["이메일 또는 비밀번호가 올바르지 않습니다."]
+                        "error_code": "INVALID_CREDENTIALS",
+                        "error_message": "이메일 또는 비밀번호가 올바르지 않습니다."
                     }
                 }
             )
@@ -228,7 +227,24 @@ class LogoutAPIView(APIView):
         ),
         responses={
             200: openapi.Response(description="로그아웃 성공"),
-            400: openapi.Response(description="잘못된 요청 또는 토큰 오류")
+            400: openapi.Response(
+                description="잘못된 요청 또는 토큰 오류",
+                examples={
+                    "application/json": {
+                        "error_code": "INVALID_REFRESH_TOKEN",
+                        "error_message": "유효하지 않은 리프레시 토큰입니다."
+                    }
+                }
+            ),
+            500: openapi.Response(
+                description="서버 오류",
+                examples={
+                    "application/json": {
+                        "error_code": "LOGOUT_FAIL",
+                        "error_message": "로그아웃 처리 중 오류가 발생했습니다."
+                    }
+                }
+            )
         },
         tags=['인증']
     )
@@ -271,7 +287,15 @@ class CustomTokenRefreshView(TokenRefreshView):
                     }
                 }
             ),
-            401: openapi.Response(description="유효하지 않은 리프레시 토큰")
+            401: openapi.Response(
+                description="유효하지 않은 리프레시 토큰",
+                examples={
+                    "application/json": {
+                        "error_code": "INVALID_REFRESH_TOKEN",
+                        "error_message": "유효하지 않은 리프레시 토큰입니다."
+                    }
+                }
+            )
         },
         tags=['인증']
     )
