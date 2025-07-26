@@ -13,7 +13,6 @@ class ErrorCode(Enum):
     INVALID_REFRESH_TOKEN = ("INVALID_REFRESH_TOKEN", "유효하지 않은 리프레시 토큰입니다.")
     LOGOUT_FAIL = ("LOGOUT_FAIL", "로그아웃 처리 중 오류가 발생했습니다.")
     USER_NOT_FOUND = ("USER_NOT_FOUND", "사용자를 찾을 수 없습니다")
-    ACCOUNT_INACTIVE = ("ACCOUNT_INACTIVE", "비활성화된 계정입니다.")
     MISSING_CREDENTIALS = ("MISSING_CREDENTIALS", "이메일과 비밀번호를 모두 입력해주세요.")
     
     def __init__(self, code, message):

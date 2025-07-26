@@ -31,7 +31,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         try:
             validate_password(value)
         except DjangoValidationError as e:
-            raise ArithmeticError(ErrorCode.INVALID_PASSWORD)
+            raise RequestError(ErrorCode.INVALID_PASSWORD)
         return value
 
     def create(self, validated_data):
@@ -89,30 +89,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    
+    email = serializers.EmailField(required=False)
+    password = serializers.CharField(write_only=True, required=False)
+
     def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
-        
-        if email and password:
-            user = authenticate(
-                request=self.context.get('request'),
-                username=email,
-                password=password
-            )
-            
-            if not user:
-                raise AuthenticationError(ErrorCode.INVALID_USER_INFO)
-            
-            if not user.is_active:
-                raise UserError(ErrorCode.ACCOUNT_INACTIVE)
-            
-            attrs['user'] = user
-            return attrs
-        else:
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        if not email or not password:
             raise RequestError(ErrorCode.MISSING_CREDENTIALS)
+
+        user = authenticate(
+            request=self.context.get('request'),
+            username=email,
+            password=password
+        )
+
+        if not user:
+            raise AuthenticationError(ErrorCode.INVALID_USER_INFO)
+
+        attrs['user'] = user
+        return attrs
+
 
 
 class ChangePasswordSerializer(serializers.Serializer):
