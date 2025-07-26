@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 from users.models import CustomUser
 from unittest.mock import patch
@@ -120,3 +121,88 @@ class CheckVerificationCodeTest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("code", response.data)
+
+
+class AuthTokenTest(APITestCase):
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            email="test@example.com",
+            password="TestPass123!",
+            nickname="tester"
+        )
+        self.login_url = reverse("login-user")
+        self.logout_url = reverse("logout-user")
+        self.token_refresh_url = reverse("reissue-token")
+        self.change_pw_url = reverse("change-pwd")
+
+    def test_login_success(self):
+        """로그인 성공"""
+        data = {
+            "email": "test@example.com",
+            "password": "TestPass123!"
+        }
+        response = self.client.post(self.login_url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access_token", response.data)
+        self.assertIn("refresh_token", response.data)
+
+    def test_login_fail_wrong_password(self):
+        """로그인 실패 - 비밀번호 오류"""
+        data = {
+            "email": "test@example.com",
+            "password": "WrongPass"
+        }
+        response = self.client.post(self.login_url, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["error_code"], ErrorCode.INVALID_USER_INFO.code)
+
+    def test_logout_success(self):
+        """로그아웃 성공"""
+        refresh = RefreshToken.for_user(self.user)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.logout_url, {"refresh_token": str(refresh)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_logout_fail_invalid_token(self):
+        """로그아웃 실패 - 잘못된 리프레시 토큰"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.logout_url, {"refresh_token": "invalid.token"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["error_code"], ErrorCode.INVALID_REFRESH_TOKEN.code)
+
+    def test_token_refresh_success(self):
+        """토큰 갱신 성공"""
+        refresh = RefreshToken.for_user(self.user)
+        # 'refresh' 필드로 보내야 함
+        response = self.client.post(self.token_refresh_url, {"refresh": str(refresh)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access_token", response.data)
+
+    def test_token_refresh_fail(self):
+        """토큰 갱신 실패 - 잘못된 토큰"""
+        response = self.client.post(self.token_refresh_url, {"refresh": "invalid"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("error_code", response.data)
+        self.assertEqual(response.data["error_code"], ErrorCode.INVALID_REFRESH_TOKEN.code)
+
+    def test_change_password_success(self):
+        """비밀번호 변경 성공"""
+        self.client.force_authenticate(user=self.user)
+        data = {
+            "current_password": "TestPass123!",
+            "new_password": "NewPass456!"
+        }
+        response = self.client.post(self.change_pw_url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_change_password_fail_wrong_current(self):
+        """비밀번호 변경 실패 - 현재 비밀번호 불일치"""
+        self.client.force_authenticate(user=self.user)
+        data = {
+            "current_password": "WrongPass123!",
+            "new_password": "NewPass456!"
+        }
+        response = self.client.post(self.change_pw_url, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["error_code"], ErrorCode.MISSMATCHED_PASSWORD.code)
