@@ -1,8 +1,32 @@
 from django.test import TestCase
-from users.serializers.serializers import ChangePasswordSerializer
+from users.serializers.account import (
+    FindAccountSerializer,
+    ChangePasswordSerializer,
+)
 from users.models import CustomUser
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import RequestError
+
+
+class FindAccountSerializerTest(TestCase):
+
+    def test_valid_phone_number(self):
+        data = {'phone_number': '01012345678'}
+        serializer = FindAccountSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['phone_number'], '01012345678')
+
+    def test_blank_phone_number(self):
+        data = {'phone_number': ''}
+        serializer = FindAccountSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('phone_number', serializer.errors)
+
+    def test_missing_phone_number(self):
+        data = {}
+        serializer = FindAccountSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('phone_number', serializer.errors)
 
 
 class ChangePasswordSerializerTest(TestCase):
