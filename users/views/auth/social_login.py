@@ -29,7 +29,7 @@ class SocialLoginAPIView(APIView):
         4. 사용자가 존재하지 않으면 새로 생성합니다
         5. JWT 토큰을 발급하여 반환합니다
         """,
-        tags=["Authentication"],
+        tags=["인증"],
         manual_parameters=[
             openapi.Parameter(
                 name="provider",
@@ -155,6 +155,7 @@ class SocialLoginAPIView(APIView):
         serializer = SocialLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.validated_data["code"]
+        phone_number = serializer.validated_data["phone_number"]
 
         provider = get_provider(provider_name)
         access_token = provider.get_token(code)
@@ -162,6 +163,7 @@ class SocialLoginAPIView(APIView):
 
         email = user_info.get("email")
         name = user_info.get("name")
+        login_type = user_info.get("login_type")
         nickname = (
             name
             or user_info.get("nickname")
@@ -170,9 +172,11 @@ class SocialLoginAPIView(APIView):
 
         user, created = CustomUser.objects.get_or_create(
             email=email,
+            phone_number=phone_number,
             defaults={
                 "nickname": nickname,
                 "is_social": True,
+                "login_type": login_type
             }
         )
 

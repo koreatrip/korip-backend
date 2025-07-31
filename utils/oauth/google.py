@@ -1,6 +1,7 @@
 import requests
 from decouple import config
 from utils.oauth.base import OAuthProvider
+from users.models import LoginType
 import urllib.parse
 import logging
 logger = logging.getLogger(__name__)
@@ -30,4 +31,6 @@ class GoogleOAuth(OAuthProvider):
             "https://www.googleapis.com/oauth2/v3/userinfo",
             headers={"Authorization": f"Bearer {access_token}"}
         )
-        return res.json()
+        user_info = res.json()
+        user_info['login_type'] = LoginType.GOOGLE
+        return user_info
