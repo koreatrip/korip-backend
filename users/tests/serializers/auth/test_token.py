@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 from rest_framework.exceptions import AuthenticationFailed
-from users.serializers.serializers import CustomTokenObtainPairSerializer
+from users.serializers.auth.token import CustomTokenObtainPairSerializer
 from users.models import CustomUser
 
 

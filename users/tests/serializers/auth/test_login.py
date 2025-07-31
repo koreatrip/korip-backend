@@ -1,5 +1,5 @@
 from django.test import TestCase
-from users.serializers.serializers import LoginSerializer
+from users.serializers.auth.login import LoginSerializer
 from users.models import CustomUser
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import (

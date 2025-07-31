@@ -1,5 +1,5 @@
 from django.test import TestCase
-from users.serializers.serializers import (
+from users.serializers.email_verification import (
     SendVerificationCodeSerializer,
     CheckVerificationCodeSerializer
 )
