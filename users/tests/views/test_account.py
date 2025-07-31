@@ -1,9 +1,9 @@
 from rest_framework.test import APITestCase
 from django.urls import reverse
-from users.models import CustomUser
+from unittest.mock import patch
 from rest_framework import status
 from exceptions.error_code import ErrorCode
-from users.models import LoginType
+from users.models import CustomUser, LoginType
 
 
 class FindAccountTest(APITestCase):
@@ -117,6 +117,51 @@ class FindAccountTest(APITestCase):
         view = FindAccountAPIView()
         result = view._mask_email("invalidemail")
         self.assertEqual(result, "invalidemail")
+
+
+class FindPasswordAPITestCase(APITestCase):
+    def setUp(self):
+        self.url = reverse('find-pwd')
+        self.test_email = "test@example.com"
+        self.user = CustomUser.objects.create_user(
+            email=self.test_email,
+            password="original_password",
+            nickname="tester",
+            phone_number="010-1234-5678"
+        )
+
+    def tearDown(self):
+        CustomUser.objects.all().delete()
+
+    def test_invalid_email_format(self):
+        """유효하지 않은 이메일 형식일 때 400 반환"""
+        response = self.client.post(self.url, data={"email": "invalid-email"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_not_found(self):
+        """존재하지 않는 이메일일 때 404 반환"""
+        response = self.client.post(self.url, data={"email": "notfound@example.com"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_code"], ErrorCode.USER_NOT_FOUND.code)
+        self.assertEqual(response.data["error_message"], ErrorCode.USER_NOT_FOUND.message)
+
+    @patch("helper.email_helper.EmailHelper.send_temporary_password", return_value="TempPassword123!")
+    def test_successful_temporary_password_send(self, mock_send):
+        """정상적으로 임시 비밀번호 전송"""
+        response = self.client.post(self.url, data={"email": self.test_email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # 비밀번호가 변경되었는지 확인
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("TempPassword123!"))
+
+    @patch("helper.email_helper.EmailHelper.send_temporary_password", return_value=None)
+    def test_email_send_fail_raises_error(self, mock_send):
+        """이메일 전송 실패 시 예외 처리 확인"""
+        response = self.client.post(self.url, data={"email": self.test_email})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error_code"], ErrorCode.EMAIL_SEND_FAILED.code)
+        self.assertEqual(response.data["error_message"], ErrorCode.EMAIL_SEND_FAILED.message)
 
 
 class ChangePasswordTest(APITestCase):

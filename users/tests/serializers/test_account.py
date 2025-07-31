@@ -1,6 +1,7 @@
 from django.test import TestCase
 from users.serializers.account import (
     FindAccountSerializer,
+    FindPasswordSerializer,
     ChangePasswordSerializer,
 )
 from users.models import CustomUser
@@ -27,6 +28,33 @@ class FindAccountSerializerTest(TestCase):
         serializer = FindAccountSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('phone_number', serializer.errors)
+
+
+class FindPasswordSerializerTest(TestCase):
+    
+    def test_valid_email(self):
+        data = {'email': 'test@example.com'}
+        serializer = FindPasswordSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['email'], data['email'])
+
+    def test_invalid_email_format(self):
+        data = {'email': 'invalid-email'}
+        serializer = FindPasswordSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('email', serializer.errors)
+
+    def test_missing_email(self):
+        data = {}
+        serializer = FindPasswordSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('email', serializer.errors)
+
+    def test_blank_email(self):
+        data = {'email': ''}
+        serializer = FindPasswordSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('email', serializer.errors)
 
 
 class ChangePasswordSerializerTest(TestCase):
