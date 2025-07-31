@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from users.serializers.serializers import SignUpSerializer
+from users.serializers.signup import SignUpSerializer
 
 class SignUpAPIView(APIView):
     """회원가입"""

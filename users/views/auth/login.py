@@ -5,7 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from users.serializers.serializers import LoginSerializer
+from users.serializers.auth.login import LoginSerializer
 
 class LoginAPIView(APIView):
     """일반 로그인"""

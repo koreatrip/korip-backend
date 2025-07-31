@@ -4,7 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from users.serializers.serializers import ChangePasswordSerializer
+from users.serializers.account import (
+    ChangePasswordSerializer,
+    FindAccountSerializer
+)
+from users.models import CustomUser
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import AuthenticationError
 

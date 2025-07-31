@@ -6,7 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from helper.email_helper import EmailHelper
 from helper.redis_helper import RedisHelper
-from users.serializers.serializers import (
+from users.serializers.email_verification import (
     SendVerificationCodeSerializer,
     CheckVerificationCodeSerializer
 )
