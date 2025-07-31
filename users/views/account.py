@@ -116,6 +116,48 @@ class FindPasswordAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = FindPasswordSerializer
 
+
+    @swagger_auto_schema(
+        operation_summary="비밀번호 찾기",
+        operation_description="등록된 이메일을 통해 임시 비밀번호를 발송합니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'email': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    format=openapi.FORMAT_EMAIL,
+                    description='등록된 이메일 주소',
+                    example='user@example.com'
+                )
+            },
+            required=['email']
+        ),
+        responses={
+            200: openapi.Response(
+                description="임시 비밀번호 발송 성공",
+                examples={}
+            ),
+            404: openapi.Response(
+                description="존재하지 않는 사용자",
+                examples={
+                    "application/json": {
+                        "error_code": "USER_NOT_FOUND",
+                        "error_message": "해당 이메일로 등록된 사용자가 없습니다."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="유효하지 않은 요청",
+                examples={
+                    "application/json": {
+                        "email": ["유효한 이메일 주소를 입력해주세요."]
+                    }
+                }
+            )
+        },
+        tags=['사용자 계정']
+    )
+
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
 
