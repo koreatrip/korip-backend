@@ -6,13 +6,17 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from users.serializers.account import (
     ChangePasswordSerializer,
-    FindAccountSerializer
+    FindAccountSerializer,
+    FindPasswordSerializer
 )
 from users.models import CustomUser
+from helper.email_helper import EmailHelper
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import (
     AuthenticationError,
-    RequestError
+    RequestError,
+    UserError,
+    EmailError
 )
 
 
@@ -105,6 +109,34 @@ class FindAccountAPIView(APIView):
         else:
             mask_length = min(8, len(local) - 2)
             return local[:2] + "*" * mask_length + "@" + domain
+
+
+class FindPasswordAPIView(APIView):
+    """비밀번호 찾기"""
+    permission_classes = [AllowAny]
+    serializer_class = FindPasswordSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        email = serializer.validated_data.get('email')
+        user = CustomUser.objects.filter(email=email).first()
+        
+        if not user:
+            raise UserError(ErrorCode.USER_NOT_FOUND, status_code=status.HTTP_404_NOT_FOUND)
+
+        temporary_password = EmailHelper.send_temporary_password(email)
+
+        if not temporary_password:
+            raise EmailError(ErrorCode.EMAIL_SEND_FAILED)
+
+        user.set_password(temporary_password)
+        user.save()
+        
+        return Response(status=status.HTTP_200_OK)
 
 
 class ChangePasswordAPIView(APIView):

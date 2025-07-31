@@ -2,12 +2,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from exceptions.error_code import ErrorCode
-from exceptions.custom_exception_handler import RequestError
+from exceptions.custom_exception_handler import (
+    RequestError,
+)
 
 
 class FindAccountSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
 
+class FindPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(required=True)

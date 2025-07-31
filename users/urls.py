@@ -10,6 +10,7 @@ from users.views.auth.token import CustomTokenRefreshView
 from users.views.account import (
     ChangePasswordAPIView,
     FindAccountAPIView,
+    FindPasswordAPIView
 )
 
 
@@ -23,4 +24,5 @@ urlpatterns = [
     path("reissue-token", CustomTokenRefreshView.as_view(), name="reissue-token"),
     path("change-pwd", ChangePasswordAPIView.as_view(), name="change-pwd"),
     path("find-account", FindAccountAPIView.as_view(), name="find-account"),
+    path("find-pwd", FindPasswordAPIView.as_view(), name="find-pwd"),
 ]
