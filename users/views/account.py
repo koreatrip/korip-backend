@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -10,7 +10,101 @@ from users.serializers.account import (
 )
 from users.models import CustomUser
 from exceptions.error_code import ErrorCode
-from exceptions.custom_exception_handler import AuthenticationError
+from exceptions.custom_exception_handler import (
+    AuthenticationError,
+    RequestError
+)
+
+
+class FindAccountAPIView(APIView):
+    """가입한 계정 찾기"""
+    permission_classes = [AllowAny]
+    serializer_class = FindAccountSerializer
+
+    @swagger_auto_schema(
+        operation_summary="가입한 계정 찾기",
+        operation_description="전화번호로 가입된 계정들을 찾습니다. 이메일은 보안을 위해 마스킹되어 반환됩니다.",
+        request_body=FindAccountSerializer,
+        responses={
+            200: openapi.Response(
+                description="계정 찾기 성공",
+                examples={
+                    "application/json": {
+                        "accounts": [
+                            {
+                                "id": 1,
+                                "email": "jo**@example.com",
+                                "login_type": "email"
+                            },
+                            {
+                                "id": 2,
+                                "email": "jo**@gmail.com", 
+                                "login_type": "google"
+                            }
+                        ]
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="유효성 검사 실패",
+                examples={
+                    "application/json": {
+                        "phone_number": ["전화번호는 필수 항목입니다."]
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="계정을 찾을 수 없음",
+                examples={
+                    "application/json": {
+                        "error_code": "ACCOUNT_NOT_FOUND",
+                        "message": "해당 전화번호로 가입된 계정이 없습니다."
+                    }
+                }
+            )
+        },
+        tags=["사용자 계정"]
+    )
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        rq_phone_number = serializer.validated_data['phone_number']
+        
+        users = CustomUser.objects.filter(phone_number=rq_phone_number)
+
+        if not users.exists():
+            raise RequestError(ErrorCode.ACCOUNT_NOT_FOUND, status_code=status.HTTP_404_NOT_FOUND)
+
+        response_data = {
+            "accounts": [
+                {
+                    "id": user.id,
+                    "email": self._mask_email(user.email),
+                    "login_type": user.login_type
+                }
+                for user in users
+            ]
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    def _mask_email(self, email):
+        if '@' not in email:
+            return email
+        local, domain = email.split("@")
+        if len(local) <= 1:
+            return email
+        elif len(local) == 2:
+            return local[0] + "*" + "@" + domain
+        elif len(local) == 3:
+            return local[:2] + "*" + "@" + domain
+        else:
+            mask_length = min(8, len(local) - 2)
+            return local[:2] + "*" * mask_length + "@" + domain
 
 
 class ChangePasswordAPIView(APIView):

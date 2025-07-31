@@ -5,6 +5,10 @@ from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import RequestError
 
 
+class FindAccountSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)

@@ -15,6 +15,7 @@ class ErrorCode(Enum):
     USER_NOT_FOUND = ("USER_NOT_FOUND", "사용자를 찾을 수 없습니다")
     MISSING_CREDENTIALS = ("MISSING_CREDENTIALS", "이메일과 비밀번호를 모두 입력해주세요.")
     UNSUPPORTED_PROVIDER = ("UNSUPPORTED_PROVIDER", "지원하지 않는 provider입니다.")
+    ACCOUNT_NOT_FOUND = ("ACCOUNT_NOT_FOUND", "해당 전화번호로 가입된 계정이 없습니다.")
 
     def __init__(self, code, message):
         self.code = code
