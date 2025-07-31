@@ -13,6 +13,7 @@ from users.serializers.serializers import (
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import EmailError
 
+
 class BaseAPIView(APIView):
     redis_helper = RedisHelper()
 
