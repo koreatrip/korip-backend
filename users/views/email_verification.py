@@ -18,7 +18,7 @@ class BaseAPIView(APIView):
     redis_helper = RedisHelper()
 
 
-class SendVerificationCodeAPIVIew(BaseAPIView):
+class SendVerificationCodeAPIView(BaseAPIView):
     """이메일 발송 (인증번호)"""
     permission_classes = [AllowAny]
     serializer_class = SendVerificationCodeSerializer
