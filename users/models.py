@@ -4,7 +4,6 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
-from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager):
@@ -25,12 +24,24 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("슈퍼유저는 is_superuser=True 이어야 합니다.")
         return self.create_user(email, password, **extra_fields)
+    
+
+class LoginType(models.TextChoices):
+    EMAIL = 'email'
+    GOOGLE = 'google'
+    KAKAO = 'kakao'
+    NAVER = 'naver'
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=False)
     nickname = models.CharField(max_length=30, blank=False)
     phone_number = models.CharField(max_length=30, null=False)
+    login_type = models.CharField(
+        max_length=20,
+        choices=LoginType.choices,
+        default=LoginType.EMAIL
+    )
     is_social = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
