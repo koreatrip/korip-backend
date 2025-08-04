@@ -4,8 +4,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from helper.email_helper import EmailHelper
-from helper.redis_helper import RedisHelper
+from utils.helper.email_helper import EmailHelper
+from utils.helper.redis_helper import RedisHelper
 from users.serializers.email_verification import (
     SendVerificationCodeSerializer,
     CheckVerificationCodeSerializer

@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from users.models import CustomUser
-from helper.email_helper import EmailHelper
+from utils.helper.email_helper import EmailHelper
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import (
     EmailError,

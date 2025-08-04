@@ -10,7 +10,7 @@ from users.serializers.account import (
     FindPasswordSerializer
 )
 from users.models import CustomUser
-from helper.email_helper import EmailHelper
+from utils.helper.email_helper import EmailHelper
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import (
     AuthenticationError,

@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
-from helper.redis_helper import RedisHelper
+from utils.helper.redis_helper import RedisHelper
 
 import secrets
 import string
