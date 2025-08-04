@@ -1,6 +1,6 @@
 from django.urls import path
 from users.views.email_verification import (
-    SendVerificationCodeAPIVIew, CheckVerificationCodeAPIView
+    SendVerificationCodeAPIView, CheckVerificationCodeAPIView
 )
 from users.views.signup import SignUpAPIView
 from users.views.auth.login import LoginAPIView
@@ -15,7 +15,7 @@ from users.views.account import (
 
 
 urlpatterns = [
-    path("send-code", SendVerificationCodeAPIVIew.as_view(), name="verification-email"),
+    path("send-code", SendVerificationCodeAPIView.as_view(), name="verification-email"),
     path("verify-code", CheckVerificationCodeAPIView.as_view(), name="verify-code"),
     path("sign-up", SignUpAPIView.as_view(), name="sign-up-user"),
     path("login", LoginAPIView.as_view(), name="login-user"),
