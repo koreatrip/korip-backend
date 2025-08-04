@@ -18,7 +18,7 @@ class BaseAPIView(APIView):
     redis_helper = RedisHelper()
 
 
-class SendVerificationCodeAPIVIew(BaseAPIView):
+class SendVerificationCodeAPIView(BaseAPIView):
     """이메일 발송 (인증번호)"""
     permission_classes = [AllowAny]
     serializer_class = SendVerificationCodeSerializer
@@ -51,7 +51,7 @@ class SendVerificationCodeAPIVIew(BaseAPIView):
 
             if verification_code is None:
                 raise EmailError(ErrorCode.EMAIL_NOT_CERTIFIED)
-            self.redis_helper.set_with_expiry(f"email_verification:{email}", verification_code, 600)
+            self.redis_helper.set_with_expiry(f"email_verification:{email}", verification_code, 60)
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
