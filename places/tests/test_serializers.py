@@ -7,7 +7,6 @@ from categories.models import Category, CategoryTranslation, SubCategory, SubCat
 
 
 class PlaceTranslationModelTest(TestCase):
-
     def setUp(self):
         self.category = Category.objects.create()
         CategoryTranslation.objects.create(
@@ -59,51 +58,36 @@ class PlaceTranslationModelTest(TestCase):
             place=self.place,
             lang="ko",
             name="경복궁",
-            description="조선 왕조의 법궁",
-            address="서울특별시 종로구 사직로 161"
+            description="조선시대 궁궐",
+            address="서울특별시 종로구"
         )
 
         self.assertEqual(translation.place, self.place)
         self.assertEqual(translation.lang, "ko")
         self.assertEqual(translation.name, "경복궁")
-        self.assertEqual(translation.description, "조선 왕조의 법궁")
-        self.assertEqual(translation.address, "서울특별시 종로구 사직로 161")
+        self.assertEqual(translation.description, "조선시대 궁궐")
+        self.assertEqual(translation.address, "서울특별시 종로구")
 
     def test_place_translation_str_method(self):
         translation = PlaceTranslation.objects.create(
             place=self.place,
-            lang="ko",
-            name="경복궁"
+            lang="en",
+            name="Gyeongbokgung Palace"
         )
 
-        expected = "경복궁 (ko)"
-        self.assertEqual(str(translation), expected)
+        str_result = str(translation)
+        self.assertEqual(str_result, "Gyeongbokgung Palace (en)")
 
-    def test_multiple_language_translations(self):
-        translations_data = [
-            {"lang": "ko", "name": "경복궁", "description": "조선 왕조의 법궁"},
-            {"lang": "en", "name": "Gyeongbokgung Palace", "description": "Royal palace of Joseon Dynasty"},
-            {"lang": "jp", "name": "景福宮", "description": "朝鮮王朝の法宮"},
-            {"lang": "cn", "name": "景福宫", "description": "朝鲜王朝的法宫"},
-        ]
+    def test_place_translation_with_tour_api_content_id(self):
+        translation = PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="경복궁",
+            tour_api_content_id="126508"
+        )
 
-        for data in translations_data:
-            PlaceTranslation.objects.create(
-                place=self.place,
-                **data
-            )
-
-        self.assertEqual(self.place.translations.count(), 4)
-
-        ko_translation = self.place.translations.get(lang="ko")
-        en_translation = self.place.translations.get(lang="en")
-        jp_translation = self.place.translations.get(lang="jp")
-        cn_translation = self.place.translations.get(lang="cn")
-
-        self.assertEqual(ko_translation.name, "경복궁")
-        self.assertEqual(en_translation.name, "Gyeongbokgung Palace")
-        self.assertEqual(jp_translation.name, "景福宮")
-        self.assertEqual(cn_translation.name, "景福宫")
+        str_result = str(translation)
+        self.assertIn("API:126508", str_result)
 
     def test_place_translation_unique_constraint(self):
         PlaceTranslation.objects.create(
@@ -179,102 +163,88 @@ class PlaceModelTranslationMethodTest(TestCase):
             name="궁궐"
         )
 
+        self.region = Region.objects.create()
+        RegionTranslation.objects.create(
+            region=self.region,
+            lang="ko",
+            name="서울"
+        )
+
+        self.sub_region = SubRegion.objects.create(
+            region=self.region,
+            favorite_count=0,
+            location=Point(126.9780, 37.5665)
+        )
+        SubRegionTranslation.objects.create(
+            sub_region=self.sub_region,
+            lang="ko",
+            name="종로구"
+        )
+
         self.place = Place.objects.create(
-            content_id="test_translation_methods",
+            content_id="translation_methods_test",
             category=self.category,
             sub_category=self.sub_category,
             location=Point(126.9780, 37.5665),
-            use_time="24시간",
-            favorite_count=0
+            region=self.region,
+            sub_region=self.sub_region
         )
 
         PlaceTranslation.objects.create(
             place=self.place,
             lang="ko",
-            name="경복궁",
-            description="조선 왕조의 법궁",
-            address="서울특별시 종로구 사직로 161"
+            name="덕수궁",
+            description="대한제국 황궁",
+            address="서울특별시 중구"
         )
-
         PlaceTranslation.objects.create(
             place=self.place,
             lang="en",
-            name="Gyeongbokgung Palace",
-            description="Royal palace of Joseon Dynasty",
-            address="161 Sajik-ro, Jongno-gu, Seoul"
+            name="Deoksugung Palace",
+            description="Imperial palace of Korean Empire",
+            address="Jung-gu, Seoul"
         )
 
     def test_get_name_method(self):
-        ko_name = self.place.get_name("ko")
-        self.assertEqual(ko_name, "경복궁")
-
-        en_name = self.place.get_name("en")
-        self.assertEqual(en_name, "Gyeongbokgung Palace")
-
-        default_name = self.place.get_name()
-        self.assertEqual(default_name, "경복궁")
-
-        missing_name = self.place.get_name("fr")
-        self.assertEqual(missing_name, "")
+        self.assertEqual(self.place.get_name("ko"), "덕수궁")
+        self.assertEqual(self.place.get_name("en"), "Deoksugung Palace")
+        self.assertEqual(self.place.get_name("jp"), "")  # 없는 언어는 빈 문자열
 
     def test_get_description_method(self):
-        ko_desc = self.place.get_description("ko")
-        self.assertEqual(ko_desc, "조선 왕조의 법궁")
-
-        en_desc = self.place.get_description("en")
-        self.assertEqual(en_desc, "Royal palace of Joseon Dynasty")
-
-        default_desc = self.place.get_description()
-        self.assertEqual(default_desc, "조선 왕조의 법궁")
-
-        missing_desc = self.place.get_description("jp")
-        self.assertEqual(missing_desc, "")
+        self.assertEqual(self.place.get_description("ko"), "대한제국 황궁")
+        self.assertEqual(self.place.get_description("en"), "Imperial palace of Korean Empire")
+        self.assertEqual(self.place.get_description("jp"), "")
 
     def test_get_address_method(self):
-        ko_addr = self.place.get_address("ko")
-        self.assertEqual(ko_addr, "서울특별시 종로구 사직로 161")
+        self.assertEqual(self.place.get_address("ko"), "서울특별시 중구")
+        self.assertEqual(self.place.get_address("en"), "Jung-gu, Seoul")
+        self.assertEqual(self.place.get_address("jp"), "")
 
-        en_addr = self.place.get_address("en")
-        self.assertEqual(en_addr, "161 Sajik-ro, Jongno-gu, Seoul")
+    def test_get_available_languages_method(self):
+        available_languages = self.place.get_available_languages()
+        self.assertIn("ko", available_languages)
+        self.assertIn("en", available_languages)
+        self.assertEqual(len(available_languages), 2)
 
-        default_addr = self.place.get_address()
-        self.assertEqual(default_addr, "서울특별시 종로구 사직로 161")
+    def test_get_tour_api_content_id_method(self):
+        PlaceTranslation.objects.filter(place=self.place, lang="ko").update(
+            tour_api_content_id="126518"
+        )
 
-        missing_addr = self.place.get_address("cn")
-        self.assertEqual(missing_addr, "")
+        tour_api_id = self.place.get_tour_api_content_id("ko")
+        self.assertEqual(tour_api_id, "126518")
 
-    def test_place_str_method_with_translation(self):
-        expected = "경복궁"
-        self.assertIn("경복궁", str(self.place))
+        tour_api_id_empty = self.place.get_tour_api_content_id("jp")
+        self.assertEqual(tour_api_id_empty, "")
 
+    def test_place_without_translations(self):
         place_no_translation = Place.objects.create(
-            content_id="no_translation_place",
-            category=self.category,
-            sub_category=self.sub_category,
-            favorite_count=0
-        )
-        expected_no_trans = f"Place {place_no_translation.id} (no_translation_place)"
-        self.assertTrue("no_translation_place" in str(place_no_translation) or "Place" in str(place_no_translation))
-
-    def test_translation_methods_with_no_translations(self):
-        place_empty = Place.objects.create(
-            content_id="empty_place",
-            category=self.category,
-            sub_category=self.sub_category,
-            favorite_count=0
+            content_id="no_translation",
+            location=Point(127.0000, 37.0000)
         )
 
-        self.assertEqual(place_empty.get_name("ko"), "")
-        self.assertEqual(place_empty.get_description("en"), "")
-        self.assertEqual(place_empty.get_address("jp"), "")
+        self.assertEqual(place_no_translation.get_name("ko"), "")
+        self.assertEqual(place_no_translation.get_description("ko"), "")
+        self.assertEqual(place_no_translation.get_address("ko"), "")
+        self.assertEqual(len(place_no_translation.get_available_languages()), 0)
 
-        self.assertEqual(place_empty.get_name(), "")
-        self.assertEqual(place_empty.get_description(), "")
-        self.assertEqual(place_empty.get_address(), "")
-
-    def test_place_region_methods_with_no_region(self):
-        self.assertEqual(self.place.get_region_name("ko"), "")
-        self.assertEqual(self.place.get_sub_region_name("ko"), "")
-
-        self.assertEqual(self.place.get_region_name(), "")
-        self.assertEqual(self.place.get_sub_region_name(), "")

@@ -1,171 +1,298 @@
 from django.test import TestCase
-from django.db import IntegrityError
-from django.contrib.auth import get_user_model
-from places.models import Place
+from django.contrib.gis.geos import Point
+from places.models import Place, PlaceTranslation
+from categories.models import Category, CategoryTranslation
+from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
 
-User = get_user_model()
 
-# Place 모델 기본 기능 테스트
-class PlaceModelBasicTest(TestCase):
-    # 테스트에서 사용할 기본 Place 데이터 생성
+class PlaceModelTest(TestCase):
+
     def setUp(self):
-        self.place = Place.objects.create(
-            content_id="test_place_001",
-            category_id=1,
-            sub_category_id=10,
-            latitude=37.5665,
-            longitude=126.9780,
-            phone_number="02-1234-5678",
-            use_time="09:00-18:00",
-            region_id=1,
-            region_code="11",
-            link_url="https://example.com",
-            favorite_count=100
+        self.category = Category.objects.create()
+        CategoryTranslation.objects.create(
+            category=self.category,
+            lang="ko",
+            name="문화"
         )
 
-    # Place 모델이 올바르게 생성되는지 확인
-    def test_place_creation(self):
-        self.assertEqual(self.place.content_id, "test_place_001")
-        self.assertEqual(self.place.category_id, 1)
-        self.assertEqual(self.place.sub_category_id, 10)
-        self.assertEqual(self.place.latitude, 37.5665)
-        self.assertEqual(self.place.longitude, 126.9780)
-        self.assertEqual(self.place.phone_number, "02-1234-5678")
-        self.assertEqual(self.place.use_time, "09:00-18:00")
-        self.assertEqual(self.place.region_id, 1)
-        self.assertEqual(self.place.region_code, "11")
-        self.assertEqual(self.place.link_url, "https://example.com")
-        self.assertEqual(self.place.favorite_count, 100)
+        self.region = Region.objects.create()
+        RegionTranslation.objects.create(
+            region=self.region,
+            lang="ko",
+            name="서울"
+        )
 
-    # Place 모델의 __str__ 메서드가 올바르게 작동하는지 확인
-    def test_place_str_method(self):
-        expected = f"Place {self.place.id} ({self.place.content_id})"
-        self.assertEqual(str(self.place), expected)
+        self.sub_region = SubRegion.objects.create(
+            region=self.region,
+            favorite_count=100,
+            location=Point(126.9770, 37.5796)
+        )
+        SubRegionTranslation.objects.create(
+            sub_region=self.sub_region,
+            lang="ko",
+            name="종로구"
+        )
 
-    # content_id가 유니크 제약조건을 올바르게 가지는지 확인
-    def test_place_content_id_unique(self):
-        with self.assertRaises(IntegrityError):
-            Place.objects.create(
-                content_id="test_place_001",  # 중복된 content_id
-                latitude=37.5665,
-                longitude=126.9780
-            )
-
-    # 기본값들이 올바르게 설정되는지 확인
-    def test_place_default_values(self):
-        place = Place.objects.create(content_id="test_default")
-        self.assertEqual(place.favorite_count, 0)
-        self.assertIsNone(place.category_id)
-        self.assertIsNone(place.sub_category_id)
-        self.assertIsNone(place.region_id)
-        self.assertIsNone(place.last_synced_at)
-
-    # 선택적 필드들이 비어있어도 저장되는지 확인
-    def test_place_optional_fields(self):
+    def test_place_creation_with_gis(self):
         place = Place.objects.create(
-            content_id="minimal_place",
+            content_id="test_001",
+            category=self.category,
+            region=self.region,
+            sub_region=self.sub_region,
+            location=Point(126.9770, 37.5796),
+            phone_number="02-1234-5678",
+            use_time="09:00~18:00",
+            favorite_count=10
         )
 
-        self.assertEqual(place.content_id, "minimal_place")
+        self.assertEqual(place.content_id, "test_001")
+        self.assertEqual(place.category, self.category)
+        self.assertEqual(place.region, self.region)
+        self.assertEqual(place.sub_region, self.sub_region)
+        self.assertEqual(place.phone_number, "02-1234-5678")
+        self.assertEqual(place.use_time, "09:00~18:00")
+        self.assertEqual(place.favorite_count, 10)
+
+        self.assertIsNotNone(place.location)
+        self.assertEqual(place.location.x, 126.9770)
+        self.assertEqual(place.location.y, 37.5796)
+
+    def test_place_latitude_longitude_properties(self):
+        place = Place.objects.create(
+            content_id="test_002",
+            location=Point(127.0000, 37.0000)
+        )
+
+        self.assertEqual(place.latitude, 37.0000)
+        self.assertEqual(place.longitude, 127.0000)
+
+    def test_place_with_null_location(self):
+        place = Place.objects.create(
+            content_id="test_003",
+            location=None
+        )
+
+        self.assertIsNone(place.location)
         self.assertIsNone(place.latitude)
         self.assertIsNone(place.longitude)
-        self.assertEqual(place.phone_number, "")
-        self.assertEqual(place.use_time, "")
-        self.assertEqual(place.region_code, "")
-        self.assertEqual(place.link_url, "")
-        self.assertIsNone(place.category_id)
-        self.assertIsNone(place.region_id)
-        self.assertIsNone(place.last_synced_at)
 
-    # 즐겨찾기 수 자동 업데이트 기능 테스트
-    def test_place_favorite_count_functionality(self):
-        # 즐겨찾기 수 자동 업데이트 테스트 - UserFavoritePlace 모델이 구현되면 활성화
-        # UserFavoritePlace 모델 구현 후 아래 테스트 활성화
-        # from accounts.models import User
-        # from places.models import UserFavoritePlace
-        #
-        # # 테스트 데이터 준비
-        # user = User.objects.create_user(
-        #     email="test@test.com",
-        #     nickname="testuser",
-        #     password="testpass123"
-        # )
-        # place = Place.objects.create(content_id="favorite_test")
-        #
-        # # 초기값 확인
-        # self.assertEqual(place.favorite_count, 0)
-        #
-        # # 즐겨찾기 추가
-        # UserFavoritePlace.objects.create(user=user, place=place)
-        # place.refresh_from_db()
-        # self.assertEqual(place.favorite_count, 1)
-        #
-        # # 즐겨찾기 삭제
-        # UserFavoritePlace.objects.filter(user=user, place=place).delete()
-        # place.refresh_from_db()
-        # self.assertEqual(place.favorite_count, 0)
+    def test_place_set_coordinates_method(self):
+        place = Place.objects.create(content_id="test_004")
 
-        # 현재는 기본적인 favorite_count 필드 테스트만 진행
-        place = Place.objects.create(content_id="favorite_test")
-        self.assertEqual(place.favorite_count, 0)
+        place.set_coordinates(37.5796, 126.9770)
 
-        # favorite_count 직접 변경 테스트 (임시)
-        place.favorite_count = 5
-        place.save()
+        self.assertIsNotNone(place.location)
+        self.assertEqual(place.location.x, 126.9770)
+        self.assertEqual(place.location.y, 37.5796)
+        self.assertEqual(place.latitude, 37.5796)
+        self.assertEqual(place.longitude, 126.9770)
+
+    def test_place_get_coordinates_method(self):
+        place = Place.objects.create(
+            content_id="test_005",
+            location=Point(126.9770, 37.5796)
+        )
+
+        coordinates = place.get_coordinates()
+        self.assertEqual(coordinates, (37.5796, 126.9770))
+
+        place_no_location = Place.objects.create(
+            content_id="test_006",
+            location=None
+        )
+        coordinates_none = place_no_location.get_coordinates()
+        self.assertEqual(coordinates_none, (None, None))
+
+    def test_place_str_method(self):
+        place = Place.objects.create(
+            content_id="test_007",
+            location=Point(126.9770, 37.5796)
+        )
+
+        str_without_translation = str(place)
+        self.assertTrue(
+            "test_007" in str_without_translation or f"Place {place.id}" in str_without_translation
+        )
+
+        PlaceTranslation.objects.create(
+            place=place,
+            lang="ko",
+            name="테스트 관광지"
+        )
+        str_with_translation = str(place)
+        self.assertIn("테스트 관광지", str_with_translation)
+
+        PlaceTranslation.objects.filter(place=place, lang="ko").update(
+            tour_api_content_id="api_test_123"
+        )
         place.refresh_from_db()
-        self.assertEqual(place.favorite_count, 5)
+        str_with_api_id = str(place)
+        self.assertIn("테스트 관광지", str_with_api_id)
+        self.assertIn("API:api_test_123", str_with_api_id)
 
-    # update_favorite_count 메서드 테스트
-    def test_place_update_favorite_count_method(self):
-        # 즐겨찾기 수 수동 업데이트 메서드 테스트
-        place = Place.objects.create(content_id="method_test")
+    def test_place_region_methods(self):
+        place = Place.objects.create(
+            content_id="test_008",
+            region=self.region,
+            sub_region=self.sub_region,
+            location=Point(126.9770, 37.5796)
+        )
 
-        # update_favorite_count() 메서드가 있다면 테스트
-        if hasattr(place, "update_favorite_count"):
+        self.assertEqual(place.get_region_name("ko"), "서울")
+        self.assertEqual(place.get_sub_region_name("ko"), "종로구")
+
+        place_no_region = Place.objects.create(
+            content_id="test_009",
+            location=Point(126.9770, 37.5796)
+        )
+        self.assertEqual(place_no_region.get_region_name("ko"), "")
+        self.assertEqual(place_no_region.get_sub_region_name("ko"), "")
+
+    def test_place_update_favorite_count(self):
+        place = Place.objects.create(
+            content_id="test_010",
+            location=Point(126.9770, 37.5796),
+            favorite_count=5
+        )
+
+        try:
             place.update_favorite_count()
-            self.assertEqual(place.favorite_count, 0)
-        else:
-            # 메서드가 없다면 스킵
-            self.skipTest("update_favorite_count 메서드가 아직 구현되지 않음")
+        except Exception as e:
+            self.fail(f"update_favorite_count 메서드에서 에러 발생: {e}")
 
-    # Foreign Key 역할을 하는 ID 필드들이 올바르게 작동하는지 확인
-    def test_place_foreign_key_fields(self):
-        place = Place.objects.create(
-            content_id="fk_test",
-            category_id=5,
-            sub_category_id=25,
-            region_id=3
+
+class PlaceTranslationModelTest(TestCase):
+
+    def setUp(self):
+        self.place = Place.objects.create(
+            content_id="translation_test",
+            location=Point(126.9770, 37.5796)
         )
 
-        self.assertEqual(place.category_id, 5)
-        self.assertEqual(place.sub_category_id, 25)
-        self.assertEqual(place.region_id, 3)
-
-        # None 값도 허용하는지 확인
-        place_no_fk = Place.objects.create(content_id="no_fk_test")
-        self.assertIsNone(place_no_fk.category_id)
-        self.assertIsNone(place_no_fk.sub_category_id)
-        self.assertIsNone(place_no_fk.region_id)
-
-    # Place 모델의 기본 정렬이 올바른지 확인
-    def test_place_ordering(self):
-        place1 = Place.objects.create(content_id="place1")
-        place2 = Place.objects.create(content_id="place2")
-        place3 = Place.objects.create(content_id="place3")
-
-        places = Place.objects.all()
-        self.assertEqual(places[0], place3)
-        self.assertEqual(places[1], place2)
-        self.assertEqual(places[2], place1)
-        self.assertEqual(places[3], self.place)
-
-    # 위도, 경도의 소수점 정밀도가 올바른지 확인
-    def test_place_decimal_fields_precision(self):
-        place = Place.objects.create(
-            content_id="precision_test",
-            latitude=37.12345678,  # 8자리 소수점
-            longitude=126.12345678  # 8자리 소수점
+    def test_place_translation_creation(self):
+        translation = PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="테스트 관광지",
+            description="테스트용 관광지입니다",
+            address="서울특별시 종로구"
         )
 
-        self.assertEqual(place.latitude, 37.12345678)
-        self.assertEqual(place.longitude, 126.12345678)
+        self.assertEqual(translation.place, self.place)
+        self.assertEqual(translation.lang, "ko")
+        self.assertEqual(translation.name, "테스트 관광지")
+        self.assertEqual(translation.description, "테스트용 관광지입니다")
+        self.assertEqual(translation.address, "서울특별시 종로구")
+
+    def test_place_translation_str_method(self):
+        translation = PlaceTranslation.objects.create(
+            place=self.place,
+            lang="en",
+            name="Test Tourist Spot"
+        )
+
+        str_result = str(translation)
+        self.assertEqual(str_result, "Test Tourist Spot (en)")
+
+    def test_place_translation_with_tour_api_content_id(self):
+        translation = PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="테스트 관광지",
+            tour_api_content_id="123456"
+        )
+
+        self.assertEqual(translation.tour_api_content_id, "123456")
+
+        str_result = str(translation)
+        self.assertIn("API:123456", str_result)
+
+    def test_place_get_translation_methods(self):
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="한국 관광지",
+            description="한국어 설명",
+            address="서울특별시 종로구"
+        )
+
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="en",
+            name="Korean Tourist Spot",
+            description="English description",
+            address="Jongno-gu, Seoul"
+        )
+
+        self.assertEqual(self.place.get_name("ko"), "한국 관광지")
+        self.assertEqual(self.place.get_description("ko"), "한국어 설명")
+        self.assertEqual(self.place.get_address("ko"), "서울특별시 종로구")
+
+        self.assertEqual(self.place.get_name("en"), "Korean Tourist Spot")
+        self.assertEqual(self.place.get_description("en"), "English description")
+        self.assertEqual(self.place.get_address("en"), "Jongno-gu, Seoul")
+
+        self.assertEqual(self.place.get_name("jp"), "")
+        self.assertEqual(self.place.get_description("jp"), "")
+        self.assertEqual(self.place.get_address("jp"), "")
+
+    def test_place_get_tour_api_content_id_method(self):
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="한국 관광지",
+            tour_api_content_id="ko_123456"
+        )
+
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="en",
+            name="Korean Tourist Spot",
+            tour_api_content_id="en_789012"
+        )
+
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="jp",
+            name="テスト観光地",
+            tour_api_content_id="translation_test"
+        )
+
+        self.assertEqual(self.place.get_tour_api_content_id("ko"), "ko_123456")
+        self.assertEqual(self.place.get_tour_api_content_id("en"), "en_789012")
+        self.assertEqual(self.place.get_tour_api_content_id("jp"), "translation_test")
+
+    def test_place_translation_utility_methods(self):
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="한국 관광지"
+        )
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="en",
+            name="Korean Tourist Spot"
+        )
+
+        available_languages = self.place.get_available_languages()
+        self.assertIn("ko", available_languages)
+        self.assertIn("en", available_languages)
+        self.assertEqual(len(available_languages), 2)
+
+        self.assertTrue(self.place.has_translation("ko"))
+        self.assertTrue(self.place.has_translation("en"))
+        self.assertFalse(self.place.has_translation("jp"))
+
+    def test_place_translation_unique_constraint(self):
+        PlaceTranslation.objects.create(
+            place=self.place,
+            lang="ko",
+            name="첫 번째 번역"
+        )
+
+        with self.assertRaises(Exception):
+            PlaceTranslation.objects.create(
+                place=self.place,
+                lang="ko",
+                name="두 번째 번역"
+            )

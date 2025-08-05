@@ -1,4 +1,3 @@
-# categories/views.py - 완전한 버전 (SubCategoriesAPIView 포함)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
