@@ -145,7 +145,7 @@ class FindPasswordAPITestCase(APITestCase):
         self.assertEqual(response.data["error_code"], ErrorCode.USER_NOT_FOUND.code)
         self.assertEqual(response.data["error_message"], ErrorCode.USER_NOT_FOUND.message)
 
-    @patch("helper.email_helper.EmailHelper.send_temporary_password", return_value="TempPassword123!")
+    @patch("utils.helper.email_helper.EmailHelper.send_temporary_password", return_value="TempPassword123!")
     def test_successful_temporary_password_send(self, mock_send):
         """정상적으로 임시 비밀번호 전송"""
         response = self.client.post(self.url, data={"email": self.test_email})
@@ -155,7 +155,7 @@ class FindPasswordAPITestCase(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("TempPassword123!"))
 
-    @patch("helper.email_helper.EmailHelper.send_temporary_password", return_value=None)
+    @patch("utils.helper.email_helper.EmailHelper.send_temporary_password", return_value=None)
     def test_email_send_fail_raises_error(self, mock_send):
         """이메일 전송 실패 시 예외 처리 확인"""
         response = self.client.post(self.url, data={"email": self.test_email})

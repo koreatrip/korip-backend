@@ -8,7 +8,7 @@ from exceptions.error_code import ErrorCode
 
 class SendVerificationCodeTest(APITestCase):
 
-    @patch("helper.email_helper.EmailHelper.send_verification_email", return_value="123456")
+    @patch("utils.helper.email_helper.EmailHelper.send_verification_email", return_value="123456")
     def test_send_verification_email_success(self, mock_send):
         """이메일 발송 성공"""
         url = reverse("verification-email")
@@ -34,7 +34,7 @@ class SendVerificationCodeTest(APITestCase):
         self.assertEqual(response.data["error_code"], ErrorCode.EMAIL_ALREADY_REGISTERED.code)
         self.assertEqual(response.data["error_message"], ErrorCode.EMAIL_ALREADY_REGISTERED.message)
 
-    @patch("helper.email_helper.EmailHelper.send_verification_email", return_value=None)
+    @patch("utils.helper.email_helper.EmailHelper.send_verification_email", return_value=None)
     def test_send_verification_email_fail(self, mock_send):
         """이메일 발송 실패 (실패 예외)"""
         url = reverse("verification-email")
@@ -47,7 +47,7 @@ class SendVerificationCodeTest(APITestCase):
 
 class CheckVerificationCodeTest(APITestCase):
 
-    @patch("helper.email_helper.EmailHelper.check_verification_code", return_value=True)
+    @patch("utils.helper.email_helper.EmailHelper.check_verification_code", return_value=True)
     def test_check_verification_code_success(self, mock_check):
         """이메일 인증 성공"""
         url = reverse("verify-code")
@@ -55,7 +55,7 @@ class CheckVerificationCodeTest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    @patch("helper.email_helper.EmailHelper.check_verification_code", return_value=False)
+    @patch("utils.helper.email_helper.EmailHelper.check_verification_code", return_value=False)
     def test_check_verification_code_fail(self, mock_check):
         """이메일 인증 실패 (불일치 또는 만료)"""
         url = reverse("verify-code")

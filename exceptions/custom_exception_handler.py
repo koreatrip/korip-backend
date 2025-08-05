@@ -50,3 +50,13 @@ class RequestError(APIException):
             "error_message": errorcode.message
         }
         self.status_code = status_code
+
+class ServerError(APIException):
+    default_code = "SERVER_ERROR"
+
+    def __init__(self, errorcode, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR):
+        self.detail = {
+            "error_code": errorcode.code,
+            "error_message": errorcode.message
+        }
+        self.status_code = status_code

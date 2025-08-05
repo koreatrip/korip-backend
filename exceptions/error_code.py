@@ -17,6 +17,9 @@ class ErrorCode(Enum):
     UNSUPPORTED_PROVIDER = ("UNSUPPORTED_PROVIDER", "지원하지 않는 provider입니다.")
     ACCOUNT_NOT_FOUND = ("ACCOUNT_NOT_FOUND", "해당 전화번호로 가입된 계정이 없습니다.")
 
+    INVALID_DATA = ("INVALID_DATA", "데이터가 올바르지 않습니다.")
+    SERVER_ERROR = ("SERVER_ERROR", "예기치 않은 에러가 발생했습니다.")
+
     def __init__(self, code, message):
         self.code = code
         self.message = message
