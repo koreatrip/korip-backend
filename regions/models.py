@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.gis.db import models as gis_models  # 🔥 GIS 모델 import 추가!
 
 LANGUAGE_CHOICES = [
     ("ko", "한국어"),
@@ -75,7 +76,7 @@ class RegionTranslation(models.Model):
         return f"{self.region.id} - {self.lang}: {self.name}"
 
 
-# 지역구 모델 (즐겨찾기 수, 날씨 연동용 위치 정보 포함)
+# 🔥 지역구 모델 GIS 전환 (즐겨찾기 수, 날씨 연동용 위치 정보 포함)
 class SubRegion(models.Model):
     region = models.ForeignKey(
         Region,
@@ -91,22 +92,12 @@ class SubRegion(models.Model):
         help_text="이 지역구가 즐겨찾기된 횟수"
     )
 
-    # 날씨 API 연동용 위도/경도
-    latitude = models.DecimalField(
-        max_digits=10,
-        decimal_places=8,
+    # 🔥 GIS 위치 정보 (날씨 API 연동용)
+    location = gis_models.PointField(
         null=True,
         blank=True,
-        verbose_name="위도",
-        help_text="날씨 API 연동용 대표 위도"
-    )
-    longitude = models.DecimalField(
-        max_digits=11,
-        decimal_places=8,
-        null=True,
-        blank=True,
-        verbose_name="경도",
-        help_text="날씨 API 연동용 대표 경도"
+        verbose_name="위치",
+        help_text="날씨 API 연동용 대표 위치 (경도, 위도)"
     )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
@@ -125,6 +116,18 @@ class SubRegion(models.Model):
         if korean_name:
             return f"{region_name} {korean_name}"
         return f"SubRegion {self.id}"
+
+    # 🔥 호환성 프로퍼티 - 기존 latitude 코드 호환
+    @property
+    def latitude(self):
+        """기존 코드 호환용 위도 프로퍼티"""
+        return self.location.y if self.location else None
+
+    # 🔥 호환성 프로퍼티 - 기존 longitude 코드 호환
+    @property
+    def longitude(self):
+        """기존 코드 호환용 경도 프로퍼티"""
+        return self.location.x if self.location else None
 
     # 지정한 언어의 지역구 이름 가져오기
     def get_name(self, lang="ko"):

@@ -42,4 +42,5 @@ urlpatterns = [
     path("api/categories/", include("categories.urls")),
     path("api/users/", include("users.urls")),
     path("api/regions/", include("regions.urls")),
+    path("api/places/", include("places.urls")),
 ]

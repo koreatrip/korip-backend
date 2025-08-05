@@ -1,6 +1,6 @@
-from django.db import models
+from django.contrib.gis.db import models
+from django.contrib.gis.geos import Point
 
-# 언어 선택지 정의
 LANGUAGE_CHOICES = [
     ("ko", "한국어"),
     ("en", "English"),
@@ -10,36 +10,53 @@ LANGUAGE_CHOICES = [
 
 
 class Place(models.Model):
+
     content_id = models.CharField(
         max_length=50,
         unique=True,
+        null=True,
+        blank=True,
         verbose_name="컨텐트 ID"
     )
 
-    category_id = models.BigIntegerField(
+    category = models.ForeignKey(
+        "categories.Category",
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name="카테고리 ID"
-    )
-    sub_category_id = models.BigIntegerField(
-        null=True,
-        blank=True,
-        verbose_name="서브 카테고리 ID"
+        verbose_name="카테고리"
     )
 
-    latitude = models.DecimalField(
-        max_digits=10,
-        decimal_places=8,
+    sub_category = models.ForeignKey(
+        "categories.SubCategory",
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name="위도"
+        verbose_name="서브 카테고리"
     )
-    longitude = models.DecimalField(
-        max_digits=11,
-        decimal_places=8,
+
+    region = models.ForeignKey(
+        "regions.Region",
+        on_delete=models.CASCADE,
+        related_name="places",
         null=True,
         blank=True,
-        verbose_name="경도"
+        verbose_name="지역"
+    )
+
+    sub_region = models.ForeignKey(
+        "regions.SubRegion",
+        on_delete=models.CASCADE,
+        related_name="places",
+        null=True,
+        blank=True,
+        verbose_name="지역구"
+    )
+
+    location = models.PointField(
+        null=True,
+        blank=True,
+        verbose_name="위치 좌표"
     )
 
     phone_number = models.CharField(
@@ -59,18 +76,6 @@ class Place(models.Model):
         verbose_name="공식 사이트 URL"
     )
 
-    region_id = models.BigIntegerField(
-        null=True,
-        blank=True,
-        verbose_name="지역 ID"
-    )
-
-    region_code = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name="지역 코드"
-    )
-
     favorite_count = models.IntegerField(
         default=0,
         verbose_name="즐겨찾기 수"
@@ -86,6 +91,7 @@ class Place(models.Model):
         auto_now_add=True,
         verbose_name="생성일시"
     )
+
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name="수정일시"
@@ -98,20 +104,45 @@ class Place(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        # 한국어 이름이 있으면 한국어, 없으면 기존 방식
         korean_name = self.get_name("ko")
         if korean_name:
+            tour_id = self.get_tour_api_content_id("ko")
+            if tour_id:
+                return f"{korean_name} API:{tour_id}"
             return korean_name
-        return f"Place {self.id} ({self.content_id})"
+        return self.content_id if self.content_id else f"Place {self.id}"
 
-# 즐겨찾기 수를 실제 UserFavoritePlace 개수로 업데이트
+    @property
+    def latitude(self):
+        return self.location.y if self.location else None
+
+    @property
+    def longitude(self):
+        return self.location.x if self.location else None
+
+    def set_coordinates(self, latitude, longitude):
+        if latitude and longitude:
+            self.location = Point(float(longitude), float(latitude))
+
+    def get_coordinates(self):
+        if self.location:
+            return (self.location.y, self.location.x)
+        return (None, None)
+
+    def get_region_name(self, lang="ko"):
+        if self.region:
+            return self.region.get_name(lang)
+        return ""
+
+    def get_sub_region_name(self, lang="ko"):
+        if self.sub_region:
+            return self.sub_region.get_name(lang)
+        return ""
+
     def update_favorite_count(self):
-        # self.favorite_count = self.userfavoriteplace_set.count()
-        # self.save(update_fields=["favorite_count"])
-        pass  # 일단 pass로 두고 나중에 UserFavoritePlace 만들면 구현
+        # TODO: UserFavoritePlace 모델 구현 후 활성화
+        pass
 
-
-    # 다국어 지원 메서드들 추가
     def get_name(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
@@ -133,6 +164,22 @@ class Place(models.Model):
         except PlaceTranslation.DoesNotExist:
             return ""
 
+    def get_tour_api_content_id(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.tour_api_content_id or ""
+        except PlaceTranslation.DoesNotExist:
+            return ""
+
+    def get_available_languages(self):
+        available_langs = list(
+            self.translations.values_list('lang', flat=True).distinct()
+        )
+        return sorted(available_langs)
+
+    def has_translation(self, lang="ko"):
+        return self.translations.filter(lang=lang).exists()
+
 
 class PlaceTranslation(models.Model):
     place = models.ForeignKey(
@@ -141,29 +188,40 @@ class PlaceTranslation(models.Model):
         related_name="translations",
         verbose_name="관광지"
     )
+
     lang = models.CharField(
         max_length=5,
         choices=LANGUAGE_CHOICES,
         verbose_name="언어 코드"
     )
+
     name = models.CharField(
         max_length=200,
         verbose_name="관광지명"
     )
+
     description = models.TextField(
         blank=True,
         verbose_name="설명"
     )
+
     address = models.CharField(
         max_length=500,
         blank=True,
         verbose_name="주소"
     )
 
+    tour_api_content_id = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="투어API 컨텐츠 ID"
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="생성일시"
     )
+
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name="수정일시"
@@ -173,9 +231,10 @@ class PlaceTranslation(models.Model):
         db_table = "place_translation"
         verbose_name = "관광지 번역"
         verbose_name_plural = "관광지 번역들"
-        # 같은 Place에 같은 언어의 번역이 중복되지 않게
         unique_together = ["place", "lang"]
         ordering = ["place_id", "lang"]
 
     def __str__(self):
+        if self.tour_api_content_id:
+            return f"{self.name} ({self.lang}) API:{self.tour_api_content_id}"
         return f"{self.name} ({self.lang})"

@@ -1,11 +1,12 @@
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework import status
+from django.contrib.gis.geos import Point  # 🔥 GIS Point import 추가!
 from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
 
 
 class RegionsAPITDDTest(APITestCase):
-    #테스트용 데이터 생성
+    # 테스트용 데이터 생성
     def setUp(self):
         self.seoul = Region.objects.create()
         RegionTranslation.objects.create(
@@ -29,11 +30,11 @@ class RegionsAPITDDTest(APITestCase):
             description="바다와 산이 어우러진 항구도시"
         )
 
+        # 🔥 강남구 생성 - GIS 버전으로 변경
         self.gangnam = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=150,
-            latitude=37.5665,
-            longitude=126.9780
+            location=Point(126.9780, 37.5665)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.gangnam,
@@ -43,11 +44,11 @@ class RegionsAPITDDTest(APITestCase):
             features="트렌디한 쇼핑몰과 고급 레스토랑"
         )
 
+        # 🔥 강북구 생성 - GIS 버전으로 변경
         self.gangbuk = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=0,
-            latitude=37.6396,
-            longitude=127.0253
+            location=Point(127.0253, 37.6396)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.gangbuk,
@@ -57,11 +58,11 @@ class RegionsAPITDDTest(APITestCase):
             features="전통시장과 주택가"
         )
 
+        # 🔥 마포구 생성 - GIS 버전으로 변경
         self.mapo = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=80,
-            latitude=37.5663,
-            longitude=126.9019
+            location=Point(126.9019, 37.5663)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.mapo,

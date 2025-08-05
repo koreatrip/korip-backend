@@ -1,19 +1,56 @@
+# places/tests/test_admin.py
+
 from django.test import TestCase
 from django.contrib.admin.sites import AdminSite
 from django.contrib import admin
+from django.contrib.gis.geos import Point
 from places.models import Place, PlaceTranslation
 from places.admin import PlaceAdmin, PlaceTranslationAdmin, PlaceTranslationInline
+from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
+from categories.models import Category, CategoryTranslation, SubCategory, SubCategoryTranslation
 
 
-# 테스트용 Place 데이터 생성
-class PlaceAdminBasicTest(TestCase):
+class PlaceAdminTest(TestCase):
     def setUp(self):
+        self.category = Category.objects.create()
+        CategoryTranslation.objects.create(
+            category=self.category,
+            lang="ko",
+            name="문화"
+        )
+
+        self.sub_category = SubCategory.objects.create(category=self.category)
+        SubCategoryTranslation.objects.create(
+            sub_category=self.sub_category,
+            lang="ko",
+            name="궁궐"
+        )
+
+        self.region = Region.objects.create()
+        RegionTranslation.objects.create(
+            region=self.region,
+            lang="ko",
+            name="서울"
+        )
+
+        self.sub_region = SubRegion.objects.create(
+            region=self.region,
+            favorite_count=0,
+            location=Point(126.9780, 37.5665)
+        )
+        SubRegionTranslation.objects.create(
+            sub_region=self.sub_region,
+            lang="ko",
+            name="강남구"
+        )
+
         self.place = Place.objects.create(
             content_id="admin_test_001",
-            category_id=1,
-            sub_category_id=10,
-            region_id=1,
-            region_code="11",
+            category=self.category,
+            sub_category=self.sub_category,
+            location=Point(126.9780, 37.5665),
+            region=self.region,
+            sub_region=self.sub_region,
             link_url="https://example.com",
             favorite_count=50
         )
@@ -21,137 +58,141 @@ class PlaceAdminBasicTest(TestCase):
         self.site = AdminSite()
         self.admin = PlaceAdmin(Place, self.site)
 
-# list_display에 설정된 필드들이 올바른지 확인
-    def test_place_admin_list_display(self):
+    def test_list_display(self):
         expected_fields = [
             "id",
             "content_id",
             "get_korean_name",
-            "category_id",
-            "sub_category_id",
-            "region_id",
+            "category",      # category_id → category
+            "sub_category",  # sub_category_id → sub_category
+            "region",
+            "sub_region",
             "favorite_count",
-            "region_code",
+            "get_coordinates",
             "created_at"
         ]
         self.assertEqual(self.admin.list_display, expected_fields)
 
-# list_filter에 설정된 필드들이 올바른지 확인
-    def test_place_admin_list_filter(self):
-        expected_filters = [
-            "category_id",
-            "sub_category_id",
-            "region_id",
-            "region_code",
-            "created_at"
-        ]
+    def test_list_filter(self):
+        expected_filters = ["region", "sub_region", "category", "created_at"]  # category_id → category
         self.assertEqual(self.admin.list_filter, expected_filters)
 
-# search_fields에 설정된 필드들이 올바른지 확인
-    def test_place_admin_search_fields(self):
-        expected_search = [
-            "content_id",
-            "region_code",
-            "translations__name",
-        ]
+    def test_search_fields(self):
+        expected_search = ["content_id", "translations__name"]
         self.assertEqual(self.admin.search_fields, expected_search)
 
-# readonly_fields가 올바르게 설정되었는지 확인
-    def test_place_admin_readonly_fields(self):
-        expected_readonly = [
-            "id",
-            "created_at",
-            "updated_at",
-            "last_synced_at"
-        ]
+    def test_readonly_fields(self):
+        expected_readonly = ["created_at", "updated_at", "get_coordinates_display"]  # get_coordinates_display 추가
         self.assertEqual(self.admin.readonly_fields, expected_readonly)
 
-# fieldsets 구조가 올바른지 확인
-    def test_place_admin_fieldsets_structure(self):
+    def test_fieldsets_structure(self):
         fieldsets = self.admin.fieldsets
-
-        self.assertEqual(len(fieldsets), 4)
+        self.assertEqual(len(fieldsets), 7)  # 6 → 7 (위치 설정 섹션 추가)
 
         fieldset_titles = [fieldset[0] for fieldset in fieldsets]
-        expected_titles = ["기본 정보", "카테고리 및 지역", "통계", "시스템"]
+        expected_titles = ["기본 정보", "위치 설정", "카테고리", "지역", "연락처/링크", "통계", "날짜"]  # 위치 설정 추가
         self.assertEqual(fieldset_titles, expected_titles)
 
-        basic_info_fields = fieldsets[0][1]["fields"]
-        self.assertEqual(basic_info_fields[0], "content_id")
-        self.assertIn("use_time", basic_info_fields)
-        self.assertIn("link_url", basic_info_fields)
+        # 인덱스가 아닌 제목으로 찾는 방식으로 변경 (더 안전함)
+        fieldset_dict = {fieldset[0]: fieldset[1]["fields"] for fieldset in fieldsets}
 
-        # 카테고리 및 지역 그룹 확인
-        category_fields = fieldsets[1][1]["fields"]
-        self.assertIn("region_code", category_fields)
+        # 기본 정보
+        self.assertEqual(fieldset_dict["기본 정보"], ("content_id",))  # location 제거됨
 
-        # 통계 그룹 확인
-        stats_fields = fieldsets[2][1]["fields"]
-        self.assertIn("favorite_count", stats_fields)
+        # 위치 설정 (새로 추가된 섹션)
+        self.assertEqual(fieldset_dict["위치 설정"], ("location", "get_coordinates_display"))
 
-        system_fieldset = fieldsets[3][1]["fields"]
-        self.assertIn("last_synced_at", system_fieldset)
+        # 카테고리
+        self.assertEqual(fieldset_dict["카테고리"], ("category", "sub_category"))  # category_id → category
 
-    def test_place_admin_has_inlines(self):
+        # 지역
+        self.assertEqual(fieldset_dict["지역"], ("region", "sub_region"))
+
+        # 연락처/링크
+        self.assertEqual(fieldset_dict["연락처/링크"], ("phone_number", "use_time", "link_url"))
+
+        # 통계
+        self.assertEqual(fieldset_dict["통계"], ("favorite_count", "last_synced_at"))
+
+        # 날짜
+        self.assertEqual(fieldset_dict["날짜"], ("created_at", "updated_at"))
+
+    def test_has_inlines(self):
         self.assertEqual(len(self.admin.inlines), 1)
         self.assertIn(PlaceTranslationInline, self.admin.inlines)
 
-    def test_admin_site_registration(self):
-        from django.contrib import admin
-
+    def test_admin_registration(self):
         self.assertIn(Place, admin.site._registry)
         self.assertIsInstance(admin.site._registry[Place], PlaceAdmin)
 
-    def test_place_admin_display_all_fields(self):
+    def test_all_fields_in_fieldsets(self):
         all_fields_in_fieldsets = []
         for fieldset in self.admin.fieldsets:
             all_fields_in_fieldsets.extend(fieldset[1]["fields"])
 
         expected_fields = [
-            "content_id", "latitude", "longitude", "phone_number",
-            "use_time", "link_url",
-            "category_id", "sub_category_id", "region_id", "region_code",
-            "favorite_count",
-            "created_at", "updated_at", "last_synced_at"
+            "content_id", "location", "get_coordinates_display", "phone_number", "use_time", "link_url",
+            "category", "sub_category", "region", "sub_region",  # category_id → category
+            "favorite_count", "last_synced_at", "created_at", "updated_at"
         ]
 
         for field in expected_fields:
             self.assertIn(field, all_fields_in_fieldsets)
 
-    def test_place_admin_filtering(self):
-        Place.objects.create(
-            content_id="filter_test_place",
-            category_id=2,
-            sub_category_id=20,
-            region_id=2,
-            region_code="21"
+    def test_filtering(self):
+        region2 = Region.objects.create()
+        sub_region2 = SubRegion.objects.create(
+            region=region2,
+            favorite_count=0,
+            location=Point(129.0756, 35.1796)
         )
 
-        self.assertIn("category_id", self.admin.list_filter)
-        self.assertIn("sub_category_id", self.admin.list_filter)
-        self.assertIn("region_id", self.admin.list_filter)
-        self.assertIn("region_code", self.admin.list_filter)
+        Place.objects.create(
+            content_id="filter_test_place",
+            category=self.category,
+            sub_category=self.sub_category,
+            location=Point(129.0756, 35.1796),
+            region=region2,
+            sub_region=sub_region2
+        )
 
-    def test_place_admin_category_foreign_key_display(self):
-        self.assertIn("category_id", self.admin.list_display)
-        self.assertIn("sub_category_id", self.admin.list_display)
-        self.assertIn("region_id", self.admin.list_display)
+        self.assertIn("category", self.admin.list_filter)  # category_id → category
+        self.assertIn("region", self.admin.list_filter)
+        self.assertIn("sub_region", self.admin.list_filter)
 
-    def test_place_admin_view_count_display(self):
+    def test_category_foreign_key_display(self):
+        self.assertIn("category", self.admin.list_display)      # category_id → category
+        self.assertIn("sub_category", self.admin.list_display)  # sub_category_id → sub_category
+        self.assertIn("region", self.admin.list_display)
+        self.assertIn("sub_region", self.admin.list_display)
+
+    def test_favorite_count_display(self):
         self.assertIn("favorite_count", self.admin.list_display)
 
-        statistics_fieldset = self.admin.fieldsets[2]
+        # 인덱스 대신 제목으로 찾기 (더 안전함)
+        statistics_fieldset = None
+        for fieldset in self.admin.fieldsets:
+            if fieldset[0] == "통계":
+                statistics_fieldset = fieldset
+                break
+
+        self.assertIsNotNone(statistics_fieldset)
         self.assertEqual(statistics_fieldset[0], "통계")
         self.assertIn("favorite_count", statistics_fieldset[1]["fields"])
 
-    def test_place_admin_sync_time_management(self):
-        self.assertIn("last_synced_at", self.admin.readonly_fields)
+    def test_sync_time_management(self):
+        # 인덱스 대신 제목으로 찾기
+        statistics_fieldset = None
+        for fieldset in self.admin.fieldsets:
+            if fieldset[0] == "통계":
+                statistics_fieldset = fieldset
+                break
 
-        system_fields = self.admin.fieldsets[3][1]["fields"]
+        self.assertIsNotNone(statistics_fieldset)
+        system_fields = statistics_fieldset[1]["fields"]
         self.assertIn("last_synced_at", system_fields)
 
-    def test_place_admin_get_korean_name_method(self):
-
+    def test_get_korean_name_method(self):
         PlaceTranslation.objects.create(
             place=self.place,
             lang="ko",
@@ -163,21 +204,46 @@ class PlaceAdminBasicTest(TestCase):
 
         place_no_korean = Place.objects.create(content_id="no_korean_place")
         korean_name_empty = self.admin.get_korean_name(place_no_korean)
-        self.assertEqual(korean_name_empty, "(번역 없음)")
+        self.assertEqual(korean_name_empty, "-")
 
-    def test_place_translation_inline_configuration(self):
+    def test_get_coordinates_display_method(self):
+        """새로 추가된 get_coordinates_display 메서드 테스트"""
+        coordinates_display = self.admin.get_coordinates_display(self.place)
+        expected = f"위도: {self.place.location.y:.6f}, 경도: {self.place.location.x:.6f}"
+        self.assertEqual(coordinates_display, expected)
+
+        # 좌표가 없는 경우
+        place_no_coords = Place.objects.create(content_id="no_coords_place")
+        coordinates_display_empty = self.admin.get_coordinates_display(place_no_coords)
+        self.assertEqual(coordinates_display_empty, "좌표 없음")
+
+    def test_translation_inline_configuration(self):
         inline = PlaceTranslationInline(Place, admin_site=self.site)
-        self.assertEqual(inline.extra, 4)
-        expected_fields = ["lang", "name", "description", "address"]
+        self.assertEqual(inline.extra, 1)
+        expected_fields = ("lang", "name", "description", "address")
         self.assertEqual(inline.fields, expected_fields)
 
 
 class PlaceTranslationAdminTest(TestCase):
     def setUp(self):
+        self.category = Category.objects.create()
+        CategoryTranslation.objects.create(
+            category=self.category,
+            lang="ko",
+            name="문화"
+        )
+
+        self.sub_category = SubCategory.objects.create(category=self.category)
+        SubCategoryTranslation.objects.create(
+            sub_category=self.sub_category,
+            lang="ko",
+            name="궁궐"
+        )
+
         self.place = Place.objects.create(
             content_id="translation_admin_test",
-            category_id=1,
-            sub_category_id=10,
+            category=self.category,
+            sub_category=self.sub_category,
             use_time="24시간",
             favorite_count=0
         )
@@ -193,24 +259,24 @@ class PlaceTranslationAdminTest(TestCase):
         self.site = AdminSite()
         self.admin = PlaceTranslationAdmin(PlaceTranslation, self.site)
 
-    def test_place_translation_admin_list_display(self):
-        expected_fields = ["place", "lang", "name", "get_short_description", "created_at"]
+    def test_list_display(self):
+        expected_fields = ["place", "lang", "name", "tour_api_content_id", "get_short_description", "created_at"]
         self.assertEqual(self.admin.list_display, expected_fields)
 
-    def test_place_translation_admin_list_filter(self):
+    def test_list_filter(self):
         expected_filters = ["lang", "created_at"]
         self.assertEqual(self.admin.list_filter, expected_filters)
 
-    def test_place_translation_admin_search_fields(self):
-        expected_search = ["name", "description", "place__content_id"]
+    def test_search_fields(self):
+        expected_search = ["name", "description", "place__content_id", "tour_api_content_id"]
         self.assertEqual(self.admin.search_fields, expected_search)
 
-    def test_place_translation_admin_readonly_fields(self):
+    def test_readonly_fields(self):
         expected_readonly = ["created_at", "updated_at"]
         self.assertEqual(self.admin.readonly_fields, expected_readonly)
 
     def test_get_short_description_method(self):
-        # 50자를 넘는 긴 설명 (실제 확인된 85자 문자열)
+        # 50자를 넘는 긴 설명 테스트
         long_description = "조선 왕조의 법궁으로 1395년 태조 이성계에 의해 창건된 조선왕조 제일의 법궁입니다. 경복궁은 동궐이나 서궐에 비해 위치상 북궐이라 불리기도 했습니다."
         self.translation.description = long_description
 
@@ -218,9 +284,9 @@ class PlaceTranslationAdminTest(TestCase):
 
         self.assertGreater(len(long_description), 50)
         self.assertTrue(result.endswith("..."))
-        self.assertEqual(len(result), 53)
+        self.assertEqual(len(result), 53)  # 50자 + "..."
 
-
+        # 정확히 50자인 경우
         exactly_50_chars = "A" * 50
         self.translation.description = exactly_50_chars
 
@@ -228,25 +294,25 @@ class PlaceTranslationAdminTest(TestCase):
         self.assertEqual(result, exactly_50_chars)
         self.assertFalse(result.endswith("..."))
 
+        # 50자 미만인 경우
         short_description = "짧은 설명"
         self.translation.description = short_description
 
         result = self.admin.get_short_description(self.translation)
         self.assertEqual(result, short_description)
 
+        # 빈 문자열인 경우
         self.translation.description = ""
 
         result = self.admin.get_short_description(self.translation)
         self.assertEqual(result, "-")
 
+        # None인 경우
         self.translation.description = None
 
         result = self.admin.get_short_description(self.translation)
         self.assertEqual(result, "-")
 
-# PlaceTranslation Admin 등록 확인
-    def test_place_translation_admin_registration(self):
-        from django.contrib import admin
-
+    def test_admin_registration(self):
         self.assertIn(PlaceTranslation, admin.site._registry)
         self.assertIsInstance(admin.site._registry[PlaceTranslation], PlaceTranslationAdmin)

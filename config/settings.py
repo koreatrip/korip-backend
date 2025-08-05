@@ -24,6 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
+TOUR_API_SERVICE_KEY = os.getenv("TOUR_API_SERVICE_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
@@ -43,12 +44,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.gis",
 
     "rest_framework",
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     "corsheaders",
-    'drf_yasg',
+    "drf_yasg",
+    #"django_crontab",
+
 
     "users",
     "places",
@@ -95,7 +99,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": config("DB_NAME"),
         "USER": config("DB_USER"),
         "PASSWORD": config("DB_PASSWORD"),
@@ -310,3 +314,19 @@ CACHES = {
         }
     }
 }
+
+#  GIS 관련 설정 추가
+GDAL_LIBRARY_PATH = None  # 자동 감지
+GEOS_LIBRARY_PATH = None  # 자동 감지
+
+# GIS Admin 맵 설정
+GEOIP_PATH = None
+
+# 맵 타일 서비스 설정 (선택사항)
+OSM_MAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+# cron 작업 설정
+# CRONJOBS = [
+#     # 매일 새벽 1시에 1000개 관광지 데이터 수집
+#     ("0 1 * * *", "django.core.management.call_command", ["sync_tour_api", "--limit=1000"]),
+# ]

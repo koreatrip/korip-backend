@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase
 from django.db import IntegrityError
+from django.contrib.gis.geos import Point  # 🔥 GIS Point import 추가!
 from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
 
 
@@ -12,12 +13,11 @@ class SubRegionModelTest(TestCase):
         self.seoul = Region.objects.create()
         RegionTranslation.objects.create(region=self.seoul, lang="ko", name="서울")
 
-        # 강남구 생성
+        # 🔥 강남구 생성 - GIS 버전으로 변경
         self.gangnam = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=100,
-            latitude=Decimal("37.51730500"),
-            longitude=Decimal("127.04750200")
+            location=Point(127.04750200, 37.51730500)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.gangnam,
@@ -37,8 +37,9 @@ class SubRegionModelTest(TestCase):
         self.assertTrue(isinstance(self.gangnam, SubRegion))
         self.assertEqual(self.gangnam.region, self.seoul)
         self.assertEqual(self.gangnam.favorite_count, 100)
-        self.assertEqual(self.gangnam.latitude, Decimal("37.51730500"))
-        self.assertEqual(self.gangnam.longitude, Decimal("127.04750200"))
+        # 🔥 호환성 프로퍼티로 확인
+        self.assertEqual(self.gangnam.latitude, 37.51730500)
+        self.assertEqual(self.gangnam.longitude, 127.04750200)
         self.assertIsNotNone(self.gangnam.created_at)
         self.assertIsNotNone(self.gangnam.updated_at)
 
@@ -47,6 +48,7 @@ class SubRegionModelTest(TestCase):
         subregion = SubRegion.objects.create(region=self.seoul)
 
         self.assertEqual(subregion.favorite_count, 0)
+        # 🔥 location이 None일 때 호환성 프로퍼티도 None 반환
         self.assertIsNone(subregion.latitude)
         self.assertIsNone(subregion.longitude)
 
@@ -135,7 +137,7 @@ class SubRegionOrderingTest(TestCase):
         self.seoul = Region.objects.create()
         RegionTranslation.objects.create(region=self.seoul, lang="ko", name="서울")
 
-        # 즐겨찾기 수가 다른 지역구들 생성
+        # 🔥 즐겨찾기 수가 다른 지역구들 생성 - GIS 버전
         self.gangnam = SubRegion.objects.create(
             region=self.seoul, favorite_count=100
         )
@@ -361,11 +363,11 @@ class KoripServiceSubRegionTest(TestCase):
         self.seoul = Region.objects.create()
         RegionTranslation.objects.create(region=self.seoul, lang="ko", name="서울")
 
+        # 🔥 실제 서비스용 지역구들 - GIS 버전으로 변경
         self.gangnam = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=120,
-            latitude=Decimal("37.5172"),
-            longitude=Decimal("127.0473")
+            location=Point(127.0473, 37.5172)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.gangnam,
@@ -378,8 +380,7 @@ class KoripServiceSubRegionTest(TestCase):
         self.jongno = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=95,
-            latitude=Decimal("37.5735"),
-            longitude=Decimal("126.9788")
+            location=Point(126.9788, 37.5735)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.jongno,
@@ -392,8 +393,7 @@ class KoripServiceSubRegionTest(TestCase):
         self.mapo = SubRegion.objects.create(
             region=self.seoul,
             favorite_count=80,
-            latitude=Decimal("37.5663"),
-            longitude=Decimal("126.9019")
+            location=Point(126.9019, 37.5663)  # Point(경도, 위도)
         )
         SubRegionTranslation.objects.create(
             sub_region=self.mapo,
@@ -437,7 +437,7 @@ class KoripServiceSubRegionTest(TestCase):
         self.assertIn("젊은", mapo_features)
         self.assertIn("예술적", mapo_features)
 
-    # 날씨 API 연동을 위한 서울 좌표 데이터 테스트
+    # 🔥 날씨 API 연동을 위한 서울 좌표 데이터 테스트 - 호환성 프로퍼티 사용
     def test_weather_api_coordinates_in_seoul(self):
         self.assertIsNotNone(self.gangnam.latitude)
         self.assertIsNotNone(self.gangnam.longitude)

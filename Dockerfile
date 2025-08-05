@@ -1,6 +1,19 @@
 # Python 3.11 베이스 이미지
 FROM python:3.11-slim
 
+# 🗺️ GIS 라이브러리 설치를 위한 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    gdal-bin \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🗺️ GDAL 환경변수 설정
+ENV GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
+ENV GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
+
 # 작업 디렉토리 설정
 WORKDIR /app
 
