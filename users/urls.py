@@ -12,6 +12,7 @@ from users.views.account import (
     FindAccountAPIView,
     FindPasswordAPIView
 )
+from users.views.create_preferences import CreatePreferenceAPIView
 
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path("change-pwd", ChangePasswordAPIView.as_view(), name="change-pwd"),
     path("find-account", FindAccountAPIView.as_view(), name="find-account"),
     path("find-pwd", FindPasswordAPIView.as_view(), name="find-pwd"),
+    path("<int:user_id>/preferences", CreatePreferenceAPIView.as_view(), name="create-preferences"),
 ]
