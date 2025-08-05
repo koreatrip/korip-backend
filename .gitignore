@@ -186,3 +186,5 @@ cython_debug/
 *.sql
 *.dumpdocker-compose.override.yml
 .env.local
+
+docker-compose.override.yml

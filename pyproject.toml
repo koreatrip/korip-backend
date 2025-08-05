@@ -15,7 +15,8 @@ requests = "^2.32.4"
 psycopg2-binary = "^2.9.10"
 django-redis = "^6.0.0"
 drf-yasg = "^1.21.10"
-geopy = "^2.4.1"
+djangorestframework-simplejwt = "^5.5.1"
+coverage = "^7.10.0"
 
 
 [build-system]

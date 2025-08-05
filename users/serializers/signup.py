@@ -3,6 +3,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from users.models import CustomUser
 from helper.email_helper import EmailHelper
+from exceptions.error_code import ErrorCode
+from exceptions.custom_exception_handler import (
+    EmailError,
+    RequestError
+)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -15,35 +20,16 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if not EmailHelper.check_verification_email(value):
-            raise serializers.ValidationError("인증되지 않은 이메일 입니다.")
+            raise EmailError(ErrorCode.EMAIL_NOT_CERTIFIED)
         return value
     
     def validate_password(self, value):
         try:
             validate_password(value)
         except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+            raise RequestError(ErrorCode.INVALID_PASSWORD)
         return value
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(**validated_data)
         return user
-
-
-class SendVerificationCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-
-    def validate_email(self, value):
-        if CustomUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError("이미 가입된 이메일입니다.")
-        return value
-
-
-class CheckVerificationCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True)
-
-    def validate_email(self, value):
-        if CustomUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError("이미 가입된 이메일입니다.")
-        return value
