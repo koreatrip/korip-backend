@@ -20,6 +20,7 @@ from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from places.views import UserFavoritePlacesAPI
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -43,4 +44,5 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/regions/", include("regions.urls")),
     path("api/places/", include("places.urls")),
+    path("api/users/<int:user_id>/places/", UserFavoritePlacesAPI.as_view(), name="user_favorite_places"),
 ]

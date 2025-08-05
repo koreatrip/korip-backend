@@ -1,133 +1,110 @@
 from rest_framework import serializers
-from regions.models import Region, SubRegion
-
-
-class SubRegionSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    description = serializers.SerializerMethodField()
-    features = serializers.SerializerMethodField()
-    place_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SubRegion
-        fields = [
-            "id",
-            "name",
-            "description",
-            "features",
-            "favorite_count",
-            "place_count",
-            "latitude",
-            "longitude"
-        ]
-
-    def get_name(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_name(lang) or f"SubRegion {obj.id}"
-
-    def get_description(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_description(lang)
-
-    def get_features(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_features(lang)
-
-    def get_place_count(self, obj):
-        # Place 모델 연결 후 실제 카운트 구현
-        return 0
-
-
-class SubRegionListSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    features = serializers.SerializerMethodField()
-    place_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SubRegion
-        fields = [
-            "id",
-            "name",
-            "features",
-            "favorite_count",
-            "place_count"
-        ]
-
-    def get_name(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_name(lang) or f"SubRegion {obj.id}"
-
-    def get_features(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_features(lang)
-
-    def get_place_count(self, obj):
-        return 0
+from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
 
 
 class RegionSerializer(serializers.ModelSerializer):
+    """지역 기본 정보 직렬화"""
+
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    subregion_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Region
+        fields = ["id", "name", "description"]
+
+    def get_name(self, obj):
+        """언어별 지역 이름 반환"""
+        language = self.context.get("language", "ko")
+
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.name if translation else ""
+        except:
+            return ""
+
+    def get_description(self, obj):
+        """언어별 지역 설명 반환"""
+        language = self.context.get("language", "ko")
+
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.description if translation else ""
+        except:
+            return ""
+
+
+class SubRegionSerializer(serializers.ModelSerializer):
+    """서브지역 정보 직렬화"""
+
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    feature = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubRegion
         fields = [
-            "id",
-            "name",
-            "description",
-            "subregion_count"
+            "id", "name", "description", "feature",
+            "favorite_count", "latitude", "longitude"
         ]
 
     def get_name(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_name(lang) or f"Region {obj.id}"
+        """언어별 서브지역 이름 반환"""
+        language = self.context.get("language", "ko")
+
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.name if translation else ""
+        except:
+            return ""
 
     def get_description(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_description(lang)
+        """언어별 서브지역 설명 반환"""
+        language = self.context.get("language", "ko")
 
-    def get_subregion_count(self, obj):
-        return obj.subregions.count()
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.description if translation else ""
+        except:
+            return ""
+
+    def get_feature(self, obj):
+        """언어별 서브지역 특징 반환"""
+        language = self.context.get("language", "ko")
+
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.feature if translation else ""
+        except:
+            return ""
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
+    """지역 상세 정보 직렬화 (서브지역 포함)"""
+
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    subregions = serializers.SerializerMethodField()
+    subregions = SubRegionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Region
-        fields = [
-            "id",
-            "name",
-            "description",
-            "subregions"
-        ]
+        fields = ["id", "name", "description", "subregions"]
 
     def get_name(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_name(lang) or f"Region {obj.id}"
+        """언어별 지역 이름 반환"""
+        language = self.context.get("language", "ko")
+
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.name if translation else ""
+        except:
+            return ""
 
     def get_description(self, obj):
-        lang = self.context.get("lang", "ko")
-        return obj.get_description(lang)
+        """언어별 지역 설명 반환"""
+        language = self.context.get("language", "ko")
 
-    def get_subregions(self, obj):
-        subregions = obj.subregions.select_related().prefetch_related(
-            'translations'
-        ).all()
-
-        def sort_key(subregion):
-            korean_name = subregion.get_name("ko") or f"SubRegion {subregion.id}"
-            return (-subregion.favorite_count, korean_name)
-
-        sorted_subregions = sorted(subregions, key=sort_key)
-
-        lang = self.context.get("lang", "ko")
-        serializer = SubRegionListSerializer(
-            sorted_subregions,
-            many=True,
-            context={"lang": lang}
-        )
-        return serializer.data
+        try:
+            translation = obj.translations.filter(lang=language).first()
+            return translation.description if translation else ""
+        except:
+            return ""
