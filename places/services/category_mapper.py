@@ -1,7 +1,4 @@
 # 투어 API 신분류 코드와 지역 코드를 우리 카테고리/지역으로 매핑하는 로직
-# 투어 API 신분류 코드와 지역 코드를 우리 카테고리/지역으로 매핑하는 로직
-
-# places/services/category_mapper.py
 
 from typing import Dict, Optional, Tuple
 from categories.models import Category, SubCategory
@@ -66,40 +63,40 @@ class CategoryMapper:
             "VE02": "문화",
             "VE03": "문화",
             "VE04": "문화",
-            "VE05": "문화",  # 🔥 추가! 복합관광시설
-            "VE06": "문화",  # 🔥 추가! 공연시설
-            "VE07": "문화",  # 🔥 추가! 전시시설
-            "VE08": "문화",  # 🔥 추가! 행사시설
-            "VE09": "문화",  # 🔥 추가! 교육시설
-            "VE10": "문화",  # 🔥 추가! 레저스포츠시설
+            "VE05": "문화",
+            "VE06": "문화",
+            "VE07": "문화",
+            "VE08": "문화",
+            "VE09": "문화",
+            "VE10": "문화",
             "VE010100": "문화",
             "VE010200": "문화",
             "VE010300": "문화",
             "VE010400": "문화",
             "VE030500": "문화",
             "VE040100": "문화",
-            "VE050100": "문화",  # 🔥 추가! 관광단지
-            "VE050200": "문화",  # 🔥 추가! 리조트
-            "VE060100": "문화",  # 🔥 추가! 공연장
-            "VE060200": "문화",  # 🔥 추가! 영화관
+            "VE050100": "문화",
+            "VE050200": "문화",
+            "VE060100": "문화",
+            "VE060200": "문화",
             "VE070100": "문화",
             "VE070200": "문화",
             "VE070300": "문화",
-            "VE070400": "문화",  # 🔥 추가! 컨벤션센터
+            "VE070400": "문화",
             "VE070500": "문화",
             "VE070600": "문화",
-            "VE080600": "문화",  # 🔥 추가! 연회장
-            "VE090100": "문화",  # 🔥 추가! 한국문화원
-            "VE090200": "문화",  # 🔥 추가! 외국문화원
-            "VE090300": "문화",  # 🔥 추가! 도서관
-            "VE090400": "문화",  # 🔥 추가! 문화전수시설
-            "VE090500": "문화",  # 🔥 추가! 어학당
-            "VE090600": "문화",  # 🔥 추가! 학교
-            "VE100100": "문화",  # 🔥 추가! 스포츠경기장
-            "VE100200": "문화",  # 🔥 추가! 스포츠관련시설
-            "EV": "문화",  # 🔥 추가! 축제/공연/행사
-            "EV01": "문화",  # 🔥 추가! 축제
-            "EV02": "문화",  # 🔥 추가! 공연
+            "VE080600": "문화",
+            "VE090100": "문화",
+            "VE090200": "문화",
+            "VE090300": "문화",
+            "VE090400": "문화",
+            "VE090500": "문화",
+            "VE090600": "문화",
+            "VE100100": "문화",
+            "VE100200": "문화",
+            "EV": "문화",
+            "EV01": "문화",
+            "EV02": "문화",
             "HS": "문화",
             "HS02": "문화",
             "HS020100": "문화",
@@ -155,11 +152,11 @@ class CategoryMapper:
             "VE070600": ("문화", "미술관"),
             "VE01": ("문화", "역사"),
             "VE02": ("문화", "전통문화"),
-            "VE05": ("문화", "복합관광시설"),  # 🔥 추가!
-            "VE06": ("문화", "공연시설"),  # 🔥 추가!
-            "VE07": ("문화", "박물관"),  # 🔥 추가! 전시시설 → 박물관으로 매핑
-            "EV01": ("문화", "축제"),  # 🔥 추가!
-            "EV02": ("문화", "공연"),  # 🔥 추가!
+            "VE05": ("문화", "복합관광시설"),
+            "VE06": ("문화", "공연시설"),
+            "VE07": ("문화", "박물관"),
+            "EV01": ("문화", "축제"),
+            "EV02": ("문화", "공연"),
 
             # 음식 서브카테고리
             "FD01": ("음식", "한식"),
@@ -204,7 +201,7 @@ class CategoryMapper:
 
         self.region_mapping = {
             "1": {
-                "region_name": "서울",
+                "region_name": "서울특별시",
                 "subregions": {
                     "1": "강남구",
                     "2": "강동구",
@@ -234,22 +231,7 @@ class CategoryMapper:
                 }
             },
             "2": {
-                "region_name": "인천",
-                "subregions": {
-                    "1": "강화군",
-                    "2": "계양구",
-                    "3": "미추홀구",
-                    "4": "남동구",
-                    "5": "동구",
-                    "6": "부평구",
-                    "7": "서구",
-                    "8": "연수구",
-                    "9": "옹진군",
-                    "10": "중구",
-                }
-            },
-            "6": {
-                "region_name": "부산",
+                "region_name": "부산광역시",
                 "subregions": {
                     "1": "강서구",
                     "2": "금정구",
@@ -269,44 +251,70 @@ class CategoryMapper:
                     "16": "해운대구",
                 }
             },
-            "31": {
-                "region_name": "경기",
+            "3": {
+                "region_name": "인천광역시",
                 "subregions": {
-                    "1": "가평군",
-                    "2": "고양시",
-                    "3": "과천시",
-                    "4": "광명시",
-                    "5": "광주시",
-                    "6": "구리시",
-                    "7": "군포시",
-                    "8": "김포시",
-                    "9": "남양주시",
-                    "10": "동두천시",
-                    "11": "부천시",
-                    "12": "성남시",
-                    "13": "수원시",
-                    "14": "시흥시",
-                    "15": "안산시",
-                    "16": "안성시",
-                    "17": "안양시",
-                    "18": "양주시",
-                    "19": "양평군",
-                    "20": "여주시",
-                    "21": "연천군",
-                    "22": "오산시",
-                    "23": "용인시",
-                    "24": "의왕시",
-                    "25": "의정부시",
-                    "26": "이천시",
-                    "27": "파주시",
-                    "28": "평택시",
-                    "29": "포천시",
-                    "30": "하남시",
-                    "31": "화성시",
+                    "1": "계양구",
+                    "2": "미추홀구",
+                    "3": "남동구",
+                    "4": "동구",
+                    "5": "부평구",
+                    "6": "서구",
+                    "7": "연수구",
+                    "8": "중구",
+                    "9": "강화군",
+                    "10": "옹진군",
                 }
             },
-            "39": {
-                "region_name": "제주",
+            "4": {
+                "region_name": "경기도",
+                "subregions": {
+                    "1": "수원시 장안구",
+                    "2": "수원시 권선구",
+                    "3": "수원시 팔달구",
+                    "4": "수원시 영통구",
+                    "5": "성남시 수정구",
+                    "6": "성남시 중원구",
+                    "7": "성남시 분당구",
+                    "8": "의정부시",
+                    "9": "안양시 만안구",
+                    "10": "안양시 동안구",
+                    "11": "부천시",
+                    "12": "광명시",
+                    "13": "평택시",
+                    "14": "동두천시",
+                    "15": "안산시 상록구",
+                    "16": "안산시 단원구",
+                    "17": "고양시 덕양구",
+                    "18": "고양시 일산동구",
+                    "19": "고양시 일산서구",
+                    "20": "과천시",
+                    "21": "구리시",
+                    "22": "남양주시",
+                    "23": "오산시",
+                    "24": "시흥시",
+                    "25": "군포시",
+                    "26": "의왕시",
+                    "27": "하남시",
+                    "28": "용인시 처인구",
+                    "29": "용인시 기흥구",
+                    "30": "용인시 수지구",
+                    "31": "파주시",
+                    "32": "이천시",
+                    "33": "안성시",
+                    "34": "김포시",
+                    "35": "화성시",
+                    "36": "광주시",
+                    "37": "양주시",
+                    "38": "포천시",
+                    "39": "여주시",
+                    "40": "연천군",
+                    "41": "가평군",
+                    "42": "양평군",
+                }
+            },
+            "5": {
+                "region_name": "제주특별자치도",
                 "subregions": {
                     "1": "제주시",
                     "2": "서귀포시",
@@ -314,21 +322,19 @@ class CategoryMapper:
             }
         }
 
-        self.supported_area_codes = ["1", "2", "6", "31", "39"]
+
+        self.supported_area_codes = ["1", "2", "3", "4", "5"]
         self.enable_region_filter = True
 
     def enable_all_regions(self):
-        """모든 지역 허용 (필터링 비활성화)"""
         self.enable_region_filter = False
 
     def is_supported_region(self, area_code: str) -> bool:
-        """지역 코드가 지원되는지 확인"""
         if not self.enable_region_filter:
             return True
         return area_code in self.supported_area_codes
 
     def map_region(self, area_code: str, sigungu_code: str = None) -> Tuple[Optional[str], Optional[str]]:
-        """지역 코드를 지역명으로 매핑"""
         region_name = None
         subregion_name = None
 
@@ -342,7 +348,6 @@ class CategoryMapper:
         return (region_name, subregion_name)
 
     def get_region_ids(self, region_name: str, subregion_name: str = None) -> Tuple[Optional[int], Optional[int]]:
-        """지역명을 데이터베이스 ID로 변환"""
         region_id = None
         subregion_id = None
 
@@ -372,7 +377,6 @@ class CategoryMapper:
         return (region_id, subregion_id)
 
     def map_category(self, lclssystm1: str, lclssystm2: str = None, lclssystm3: str = None) -> Optional[str]:
-        """신분류 코드를 카테고리명으로 매핑 (우선순위: lclssystm3 > lclssystm2 > lclssystm1)"""
         if lclssystm3 and lclssystm3 in self.category_mapping:
             return self.category_mapping[lclssystm3]
         elif lclssystm2 and lclssystm2 in self.category_mapping:
@@ -383,7 +387,6 @@ class CategoryMapper:
 
     def map_subcategory(self, lclssystm1: str, lclssystm2: str = None, lclssystm3: str = None) -> Optional[
         Tuple[str, str]]:
-        """신분류 코드를 서브카테고리로 매핑"""
         if lclssystm3 and lclssystm3 in self.subcategory_mapping:
             return self.subcategory_mapping[lclssystm3]
         elif lclssystm2 and lclssystm2 in self.subcategory_mapping:
@@ -391,7 +394,6 @@ class CategoryMapper:
         elif lclssystm1 and lclssystm1 in self.subcategory_mapping:
             return self.subcategory_mapping[lclssystm1]
 
-        # 서브카테고리가 없으면 메인 카테고리만 반환
         main_category = self.map_category(lclssystm1, lclssystm2, lclssystm3)
         if main_category:
             return (main_category, None)
@@ -399,7 +401,6 @@ class CategoryMapper:
         return None
 
     def get_category_ids(self, category_name: str, subcategory_name: str = None) -> Tuple[Optional[int], Optional[int]]:
-        """카테고리명을 데이터베이스 ID로 변환"""
         category_id = None
         subcategory_id = None
 
@@ -429,27 +430,20 @@ class CategoryMapper:
         return (category_id, subcategory_id)
 
     def process_tour_api_place(self, place_data: Dict) -> Dict:
-        """투어 API 데이터를 우리 시스템 데이터로 변환"""
         content_id = place_data.get("contentid", "")
 
-        # 신분류 코드 추출
         lclssystm1 = place_data.get("lclsSystm1", "")
         lclssystm2 = place_data.get("lclsSystm2", "")
         lclssystm3 = place_data.get("lclsSystm3", "")
 
-        # 카테고리 매핑
         category_name = self.map_category(lclssystm1, lclssystm2, lclssystm3)
         subcategory_name = None
 
-        # 서브카테고리 매핑
         category_result = self.map_subcategory(lclssystm1, lclssystm2, lclssystm3)
         if category_result:
             category_name, subcategory_name = category_result
 
-        # 카테고리 ID 조회
         category_id, subcategory_id = self.get_category_ids(category_name, subcategory_name)
-
-        # 지역 매핑
         area_code = place_data.get("areacode", "")
         sigungu_code = place_data.get("sigungucode", "")
 
@@ -460,7 +454,6 @@ class CategoryMapper:
             region_name, subregion_name = self.map_region(area_code, sigungu_code)
             region_id, subregion_id = self.get_region_ids(region_name, subregion_name)
 
-        # 결과 데이터 구성
         processed_data = {
             "content_id": content_id,
             "title": place_data.get("title", ""),
@@ -480,7 +473,6 @@ class CategoryMapper:
         return processed_data
 
     def _convert_to_decimal(self, coord_str: str) -> Optional[float]:
-        """좌표 문자열을 float으로 변환"""
         try:
             if coord_str and coord_str.strip():
                 return float(coord_str)
@@ -489,7 +481,6 @@ class CategoryMapper:
         return None
 
     def get_mapping_statistics(self) -> Dict:
-        """매핑 통계 정보 반환"""
         return {
             "total_mappings": len(self.category_mapping),
             "main_categories": list(set(self.category_mapping.values())),
@@ -503,6 +494,6 @@ class CategoryMapper:
                 "음식": len([k for k, v in self.category_mapping.items() if v == "음식"]),
             },
             "supported_regions": [info["region_name"] for info in self.region_mapping.values()],
-            "successful_mappings": 0,  # 실제 사용 시 업데이트
-            "failed_mappings": 0,  # 실제 사용 시 업데이트
+            "successful_mappings": 0,
+            "failed_mappings": 0,
         }

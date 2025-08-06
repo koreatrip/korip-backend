@@ -3,62 +3,125 @@ from regions.models import Region, RegionTranslation, SubRegion, SubRegionTransl
 
 
 class Command(BaseCommand):
-    help = "전체 지역 데이터를 로드합니다."
+    help = "전국 17개 시도와 모든 구/군 데이터를 로드합니다."
 
     def handle(self, *args, **options):
-        self.stdout.write("🌍 전체 지역 데이터 로딩 시작...")
+        self.stdout.write("🇰🇷 전국 지역 데이터 로딩 시작...")
 
-        # 지역 데이터 정의 (기존 구조 유지)
+        # 전국 17개 시도 지역 데이터 정의
         regions_data = [
-            {
-                "id": 1,
-                "translations": {
-                    "ko": {"name": "서울특별시", "description": "대한민국의 수도"},
-                    "en": {"name": "Seoul", "description": "Capital of South Korea"},
-                    "jp": {"name": "ソウル特別市", "description": "韓国の首都"},
-                    "cn": {"name": "首尔特别市", "description": "韩国首都"}
-                }
-            },
-            {
-                "id": 2,
-                "translations": {
-                    "ko": {"name": "부산광역시", "description": "대한민국 제2의 도시"},
-                    "en": {"name": "Busan", "description": "Second largest city in South Korea"},
-                    "jp": {"name": "釜山広域市", "description": "韓国第二の都市"},
-                    "cn": {"name": "釜山广域市", "description": "韩国第二大城市"}
-                }
-            },
-            {
-                "id": 3,
-                "translations": {
-                    "ko": {"name": "인천광역시", "description": "서울과 인접한 항구도시"},
-                    "en": {"name": "Incheon", "description": "Port city near Seoul"},
-                    "jp": {"name": "仁川広域市", "description": "ソウル近郊の港湾都市"},
-                    "cn": {"name": "仁川广域市", "description": "首尔附近的港口城市"}
-                }
-            },
-            {
-                "id": 4,
-                "translations": {
-                    "ko": {"name": "경기도", "description": "서울을 둘러싼 지역"},
-                    "en": {"name": "Gyeonggi Province", "description": "Province surrounding Seoul"},
-                    "jp": {"name": "京畿道", "description": "ソウルを囲む地域"},
-                    "cn": {"name": "京畿道", "description": "环绕首尔的地区"}
-                }
-            },
-            {
-                "id": 5,
-                "translations": {
-                    "ko": {"name": "제주특별자치도", "description": "아름다운 섬 지역"},
-                    "en": {"name": "Jeju Special Self-Governing Province", "description": "Beautiful island region"},
-                    "jp": {"name": "済州特別自治道", "description": "美しい島地域"},
-                    "cn": {"name": "济州特别自治道", "description": "美丽的岛屿地区"}
-                }
-            }
+            # 특별시/광역시 (8개)
+            {"id": 1, "tour_api_code": "1", "translations": {
+                "ko": {"name": "서울특별시", "description": "대한민국의 수도"},
+                "en": {"name": "Seoul", "description": "Capital of South Korea"},
+                "jp": {"name": "ソウル特別市", "description": "韓国の首都"},
+                "cn": {"name": "首尔特别市", "description": "韩国首都"}
+            }},
+            {"id": 2, "tour_api_code": "2", "translations": {
+                "ko": {"name": "인천광역시", "description": "서울과 인접한 항구도시"},
+                "en": {"name": "Incheon", "description": "Port city near Seoul"},
+                "jp": {"name": "仁川広域市", "description": "ソウル近郊の港湾都市"},
+                "cn": {"name": "仁川广域市", "description": "首尔附近的港口城市"}
+            }},
+            {"id": 3, "tour_api_code": "3", "translations": {
+                "ko": {"name": "대전광역시", "description": "중부권의 과학기술 중심도시"},
+                "en": {"name": "Daejeon", "description": "Science and technology hub in central Korea"},
+                "jp": {"name": "大田広域市", "description": "中部圏の科学技術中心都市"},
+                "cn": {"name": "大田广域市", "description": "中部地区的科技中心城市"}
+            }},
+            {"id": 4, "tour_api_code": "4", "translations": {
+                "ko": {"name": "대구광역시", "description": "영남권의 중심도시"},
+                "en": {"name": "Daegu", "description": "Central city of Yeongnam region"},
+                "jp": {"name": "大邱広域市", "description": "嶺南圏の中心都市"},
+                "cn": {"name": "大邱广域市", "description": "岭南地区中心城市"}
+            }},
+            {"id": 5, "tour_api_code": "5", "translations": {
+                "ko": {"name": "광주광역시", "description": "호남권의 중심도시"},
+                "en": {"name": "Gwangju", "description": "Central city of Honam region"},
+                "jp": {"name": "光州広域市", "description": "湖南圏の中心都市"},
+                "cn": {"name": "光州广域市", "description": "湖南地区中心城市"}
+            }},
+            {"id": 6, "tour_api_code": "6", "translations": {
+                "ko": {"name": "부산광역시", "description": "대한민국 제2의 도시"},
+                "en": {"name": "Busan", "description": "Second largest city in South Korea"},
+                "jp": {"name": "釜山広域市", "description": "韓国第二の都市"},
+                "cn": {"name": "釜山广域市", "description": "韩国第二大城市"}
+            }},
+            {"id": 7, "tour_api_code": "7", "translations": {
+                "ko": {"name": "울산광역시", "description": "산업과 바다가 어우러진 도시"},
+                "en": {"name": "Ulsan", "description": "Industrial city by the sea"},
+                "jp": {"name": "蔚山広域市", "description": "産業と海が調和した都市"},
+                "cn": {"name": "蔚山广域市", "description": "工业与海洋和谐的城市"}
+            }},
+            {"id": 8, "tour_api_code": "8", "translations": {
+                "ko": {"name": "세종특별자치시", "description": "행정중심복합도시"},
+                "en": {"name": "Sejong Special Self-Governing City", "description": "Administrative capital city"},
+                "jp": {"name": "世宗特別自治市", "description": "行政中心複合都市"},
+                "cn": {"name": "世宗特别自治市", "description": "行政中心复合城市"}
+            }},
+
+            # 도 지역 (9개)
+            {"id": 9, "tour_api_code": "31", "translations": {
+                "ko": {"name": "경기도", "description": "서울을 둘러싼 수도권"},
+                "en": {"name": "Gyeonggi Province", "description": "Capital region surrounding Seoul"},
+                "jp": {"name": "京畿道", "description": "ソウルを囲む首都圏"},
+                "cn": {"name": "京畿道", "description": "环绕首尔的首都圈"}
+            }},
+            {"id": 10, "tour_api_code": "32", "translations": {
+                "ko": {"name": "강원특별자치도", "description": "산과 바다의 자연 휴양지"},
+                "en": {"name": "Gangwon Special Self-Governing Province",
+                       "description": "Natural resort with mountains and sea"},
+                "jp": {"name": "江原特別自治道", "description": "山と海の自然休養地"},
+                "cn": {"name": "江原特别自治道", "description": "山海自然休养地"}
+            }},
+            {"id": 11, "tour_api_code": "33", "translations": {
+                "ko": {"name": "충청북도", "description": "내륙의 중심지"},
+                "en": {"name": "Chungcheongbuk-do", "description": "Central inland region"},
+                "jp": {"name": "忠清北道", "description": "内陸の中心地"},
+                "cn": {"name": "忠清北道", "description": "内陆中心地区"}
+            }},
+            {"id": 12, "tour_api_code": "34", "translations": {
+                "ko": {"name": "충청남도", "description": "서해안의 풍부한 자연"},
+                "en": {"name": "Chungcheongnam-do", "description": "Rich nature of the west coast"},
+                "jp": {"name": "忠清南道", "description": "西海岸の豊かな自然"},
+                "cn": {"name": "忠清南道", "description": "西海岸丰富的自然"}
+            }},
+            {"id": 13, "tour_api_code": "35", "translations": {
+                "ko": {"name": "경상북도", "description": "신라 천년의 고도"},
+                "en": {"name": "Gyeongsangbuk-do", "description": "Ancient capital of millennium Silla"},
+                "jp": {"name": "慶尚北道", "description": "新羅千年の古都"},
+                "cn": {"name": "庆尚北道", "description": "新罗千年古都"}
+            }},
+            {"id": 14, "tour_api_code": "36", "translations": {
+                "ko": {"name": "경상남도", "description": "가야문화와 남해의 보물"},
+                "en": {"name": "Gyeongsangnam-do", "description": "Gaya culture and treasures of South Sea"},
+                "jp": {"name": "慶尚南道", "description": "伽倻文化と南海の宝物"},
+                "cn": {"name": "庆尚南道", "description": "伽倻文化和南海宝藏"}
+            }},
+            {"id": 15, "tour_api_code": "37", "translations": {
+                "ko": {"name": "전북특별자치도", "description": "한국 전통문화의 본고장"},
+                "en": {"name": "Jeonbuk Special Self-Governing Province",
+                       "description": "Home of Korean traditional culture"},
+                "jp": {"name": "全北特別自治道", "description": "韓国伝統文化の本場"},
+                "cn": {"name": "全北特别自治道", "description": "韩国传统文化故乡"}
+            }},
+            {"id": 16, "tour_api_code": "38", "translations": {
+                "ko": {"name": "전라남도", "description": "다도해의 아름다운 섬들"},
+                "en": {"name": "Jeollanam-do", "description": "Beautiful islands of the archipelago"},
+                "jp": {"name": "全羅南道", "description": "多島海の美しい島々"},
+                "cn": {"name": "全罗南道", "description": "多岛海的美丽岛屿"}
+            }},
+            {"id": 17, "tour_api_code": "39", "translations": {
+                "ko": {"name": "제주특별자치도", "description": "아름다운 화산섬"},
+                "en": {"name": "Jeju Special Self-Governing Province", "description": "Beautiful volcanic island"},
+                "jp": {"name": "済州特別自治道", "description": "美しい火山島"},
+                "cn": {"name": "济州特别自治道", "description": "美丽的火山岛"}
+            }},
         ]
 
         # 서브지역 데이터 (전체 구/군, 번역 포함)
         subregions_data = [
+
             # ======= 서울특별시 (25개 구) =======
             {
                 "region_id": 1,
@@ -473,6 +536,227 @@ class Command(BaseCommand):
                 "favorite_count": 8, "latitude": 35.2448, "longitude": 129.2224
             },
 
+            {"region_id": 7, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "남구", "description": "울산의 중심 상업지역", "feature": "신정시장과 삼산동"},
+                "en": {"name": "Nam-gu", "description": "Central commercial area of Ulsan",
+                       "feature": "Sinjeong Market and Samsan-dong"},
+                "jp": {"name": "南区", "description": "蔚山の中心商業地域", "feature": "新井市場と三山洞"},
+                "cn": {"name": "南区", "description": "蔚山中心商业区", "feature": "新井市场和三山洞"}
+            }, "favorite_count": 5, "latitude": 35.5467, "longitude": 129.3293},
+
+            {"region_id": 7, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "동구", "description": "울산의 원도심과 현대중공업", "feature": "현대중공업과 일산해수욕장"},
+                "en": {"name": "Dong-gu", "description": "Original downtown of Ulsan and Hyundai Heavy Industries",
+                       "feature": "Hyundai Heavy Industries and Ilsan Beach"},
+                "jp": {"name": "東区", "description": "蔚山の元都心と現代重工業",
+                       "feature": "現代重工業と一山海水浴場"},
+                "cn": {"name": "东区", "description": "蔚山原市中心和现代重工业", "feature": "现代重工业和日山海水浴场"}
+            }, "favorite_count": 4, "latitude": 35.5049, "longitude": 129.4164},
+
+            {"region_id": 7, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "북구", "description": "울산대학교와 정자해수욕장이 있는 북부", "feature": "울산대학교와 정자해수욕장"},
+                "en": {"name": "Buk-gu", "description": "Northern area with University of Ulsan and Jeongja Beach",
+                       "feature": "University of Ulsan and Jeongja Beach"},
+                "jp": {"name": "北区", "description": "蔚山大学校と亭子海水浴場がある北部",
+                       "feature": "蔚山大学校と亭子海水浴場"},
+                "cn": {"name": "北区", "description": "蔚山大学和亭子海水浴场所在的北部",
+                       "feature": "蔚山大学和亭子海水浴场"}
+            }, "favorite_count": 6, "latitude": 35.5825, "longitude": 129.3615},
+
+            {"region_id": 7, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "중구", "description": "울산시청이 있는 행정중심지", "feature": "태화강과 울산시청"},
+                "en": {"name": "Jung-gu", "description": "Administrative center with Ulsan City Hall",
+                       "feature": "Taehwa River and Ulsan City Hall"},
+                "jp": {"name": "中区", "description": "蔚山市庁がある行政中心地", "feature": "太和江と蔚山市庁"},
+                "cn": {"name": "中区", "description": "蔚山市政府所在的行政中心", "feature": "太和江和蔚山市政府"}
+            }, "favorite_count": 5, "latitude": 35.5665, "longitude": 129.3328},
+
+            {"region_id": 7, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "울주군", "description": "간절곶과 영남알프스가 있는 외곽", "feature": "간절곶과 신불산"},
+                "en": {"name": "Ulju-gun", "description": "Outskirts with Ganjeolgot and Yeongnam Alps",
+                       "feature": "Ganjeolgot Cape and Sinbulsan Mountain"},
+                "jp": {"name": "蔚州郡", "description": "艮絶岬と嶺南アルプスがある郊外", "feature": "艮絶岬と神仏山"},
+                "cn": {"name": "蔚州郡", "description": "艮绝岬和岭南阿尔卑斯所在的郊外", "feature": "艮绝岬和神佛山"}
+            }, "favorite_count": 8, "latitude": 35.5219, "longitude": 129.2427},
+
+            # ===== 세종특별자치시 (1개 시) =====
+            {"region_id": 8, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "세종시", "description": "대한민국의 행정수도", "feature": "정부세종청사와 호수공원"},
+                "en": {"name": "Sejong City", "description": "Administrative capital of South Korea",
+                       "feature": "Government Sejong Complex and Lake Park"},
+                "jp": {"name": "世宗市", "description": "大韓民国の行政首都", "feature": "政府世宗庁舎と湖水公園"},
+                "cn": {"name": "世宗市", "description": "大韩民国行政首都", "feature": "政府世宗办公楼和湖水公园"}
+            }, "favorite_count": 10, "latitude": 36.4875, "longitude": 127.2831},
+
+            # ===== 강원특별자치도 (18개 시/군) =====
+            {"region_id": 10, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "강릉시", "description": "동해안 최대의 관광도시", "feature": "경포대와 정동진"},
+                "en": {"name": "Gangneung-si", "description": "Largest tourism city on the east coast",
+                       "feature": "Gyeongpodae and Jeongdongjin"},
+                "jp": {"name": "江陵市", "description": "東海岸最大の観光都市", "feature": "鏡浦台と正東津"},
+                "cn": {"name": "江陵市", "description": "东海岸最大的旅游城市", "feature": "镜浦台和正东津"}
+            }, "favorite_count": 20, "latitude": 37.7519, "longitude": 128.8761},
+
+            {"region_id": 10, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "고성군", "description": "DMZ박물관과 화진포가 있는 최북단", "feature": "DMZ박물관과 화진포"},
+                "en": {"name": "Goseong-gun", "description": "Northernmost area with DMZ Museum and Hwajinpo",
+                       "feature": "DMZ Museum and Hwajinpo Lake"},
+                "jp": {"name": "高城郡", "description": "DMZ博物館と花津浦がある最北端",
+                       "feature": "DMZ博物館と花津浦"},
+                "cn": {"name": "高城郡", "description": "DMZ博物馆和花津浦所在的最北端", "feature": "DMZ博物馆和花津浦"}
+            }, "favorite_count": 8, "latitude": 38.3802, "longitude": 128.4677},
+
+            {"region_id": 10, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "동해시", "description": "무릉계곡과 망상해수욕장이 있는 동해안도시", "feature": "무릉계곡과 망상해수욕장"},
+                "en": {"name": "Donghae-si", "description": "East coast city with Mureung Valley and Mangsang Beach",
+                       "feature": "Mureung Valley and Mangsang Beach"},
+                "jp": {"name": "東海市", "description": "武陵渓谷と望祥海水浴場がある東海岸都市",
+                       "feature": "武陵渓谷と望祥海水浴場"},
+                "cn": {"name": "东海市", "description": "武陵溪谷和望祥海水浴场所在的东海岸城市",
+                       "feature": "武陵溪谷和望祥海水浴场"}
+            }, "favorite_count": 10, "latitude": 37.5245, "longitude": 129.1144},
+
+            {"region_id": 10, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "삼척시", "description": "환선굴과 죽서루가 있는 석회암지대", "feature": "환선굴과 죽서루"},
+                "en": {"name": "Samcheok-si", "description": "Limestone area with Hwanseon Cave and Jukseo-ru",
+                       "feature": "Hwanseon Cave and Jukseo-ru Pavilion"},
+                "jp": {"name": "三陟市", "description": "幻仙窟と竹西楼がある石灰岩地帯", "feature": "幻仙窟と竹西楼"},
+                "cn": {"name": "三陟市", "description": "幻仙窟和竹西楼所在的石灰岩地区", "feature": "幻仙窟和竹西楼"}
+            }, "favorite_count": 12, "latitude": 37.4497, "longitude": 129.1653},
+
+            {"region_id": 10, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "속초시", "description": "설악산 관문도시", "feature": "설악산과 속초해수욕장"},
+                "en": {"name": "Sokcho-si", "description": "Gateway city to Seoraksan",
+                       "feature": "Seoraksan Mountain and Sokcho Beach"},
+                "jp": {"name": "束草市", "description": "雪嶽山の玄関都市", "feature": "雪嶽山と束草海水浴場"},
+                "cn": {"name": "束草市", "description": "雪岳山门户城市", "feature": "雪岳山和束草海水浴场"}
+            }, "favorite_count": 18, "latitude": 38.2070, "longitude": 128.5918},
+
+            {"region_id": 10, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "양구군", "description": "두타연과 을지전망대가 있는 DMZ인근", "feature": "두타연과 을지전망대"},
+                "en": {"name": "Yanggu-gun", "description": "Near DMZ with Dutayeon and Eulji Observatory",
+                       "feature": "Dutayeon Falls and Eulji Observatory"},
+                "jp": {"name": "楊口郡", "description": "豆陀淵と乙支展望台があるDMZ近隣",
+                       "feature": "豆陀淵と乙支展望台"},
+                "cn": {"name": "杨口郡", "description": "豆陀渊和乙支展望台所在的DMZ附近",
+                       "feature": "豆陀渊和乙支展望台"}
+            }, "favorite_count": 6, "latitude": 38.1068, "longitude": 127.9926},
+
+            {"region_id": 10, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "양양군", "description": "낙산사와 서피비치가 있는 해안군", "feature": "낙산사와 양양서피비치"},
+                "en": {"name": "Yangyang-gun", "description": "Coastal county with Naksansa Temple and Surf Beach",
+                       "feature": "Naksansa Temple and Yangyang Surf Beach"},
+                "jp": {"name": "襄陽郡", "description": "洛山寺とサーフビーチがある海岸郡",
+                       "feature": "洛山寺と襄陽サーフビーチ"},
+                "cn": {"name": "襄阳郡", "description": "洛山寺和冲浪海滩所在的海岸郡",
+                       "feature": "洛山寺和襄阳冲浪海滩"}
+            }, "favorite_count": 12, "latitude": 38.0756, "longitude": 128.6190},
+
+            {"region_id": 10, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "영월군", "description": "선돌과 청령포가 있는 역사군", "feature": "청령포와 선돌"},
+                "en": {"name": "Yeongwol-gun", "description": "Historic county with Standing Stone and Cheongryeongpo",
+                       "feature": "Cheongryeongpo and Standing Stone"},
+                "jp": {"name": "寧越郡", "description": "立石と清泠浦がある歴史郡", "feature": "清泠浦と立石"},
+                "cn": {"name": "宁越郡", "description": "立石和清泠浦所在的历史郡", "feature": "清泠浦和立石"}
+            }, "favorite_count": 9, "latitude": 37.1836, "longitude": 128.4611},
+
+            {"region_id": 10, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "원주시", "description": "치악산과 소금산출렁다리가 있는 중부도시", "feature": "치악산과 소금산출렁다리"},
+                "en": {"name": "Wonju-si", "description": "Central city with Chiaksan and Sogeumsan Suspension Bridge",
+                       "feature": "Chiaksan Mountain and Sogeumsan Suspension Bridge"},
+                "jp": {"name": "原州市", "description": "雉岳山と塩山吊り橋がある中部都市",
+                       "feature": "雉岳山と塩山吊り橋"},
+                "cn": {"name": "原州市", "description": "雉岳山和盐山悬索桥所在的中部城市",
+                       "feature": "雉岳山和盐山悬索桥"}
+            }, "favorite_count": 8, "latitude": 37.3422, "longitude": 127.9202},
+
+            {"region_id": 10, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "인제군", "description": "내린천과 원대리자작나무숲이 있는 내륙산간", "feature": "내린천과 원대리자작나무숲"},
+                "en": {"name": "Inje-gun",
+                       "description": "Inland mountain area with Naerin Stream and Wondaeri Birch Forest",
+                       "feature": "Naerin Stream and Wondaeri Birch Forest"},
+                "jp": {"name": "麟蹄郡", "description": "内麟川と院垈里白樺の森がある内陸山間",
+                       "feature": "内麟川と院垈里白樺の森"},
+                "cn": {"name": "麟蹄郡", "description": "内麟川和院垈里白桦林所在的内陆山区",
+                       "feature": "内麟川和院垈里白桦林"}
+            }, "favorite_count": 11, "latitude": 38.0693, "longitude": 128.1708},
+
+            {"region_id": 10, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "정선군", "description": "정선아리랑과 화암동굴이 있는 탄광지역", "feature": "정선아리랑과 화암동굴"},
+                "en": {"name": "Jeongseon-gun", "description": "Coal mining area with Jeongseon Arirang and Hwaam Cave",
+                       "feature": "Jeongseon Arirang and Hwaam Cave"},
+                "jp": {"name": "旌善郡", "description": "旌善アリランと花岩洞窟がある炭鉱地域",
+                       "feature": "旌善アリランと花岩洞窟"},
+                "cn": {"name": "旌善郡", "description": "旌善阿里郎和花岩洞窟所在的煤矿地区",
+                       "feature": "旌善阿里郎和花岩洞窟"}
+            }, "favorite_count": 10, "latitude": 37.3806, "longitude": 128.6606},
+
+            {"region_id": 10, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "철원군", "description": "철원평야와 한탄강이 있는 DMZ인근", "feature": "한탄강과 고석정"},
+                "en": {"name": "Cheorwon-gun", "description": "Near DMZ with Cheorwon Plain and Hantan River",
+                       "feature": "Hantan River and Goseokjeong Pavilion"},
+                "jp": {"name": "鉄原郡", "description": "鉄原平野と漢灘江があるDMZ近隣", "feature": "漢灘江と孤石亭"},
+                "cn": {"name": "铁原郡", "description": "铁原平野和汉滩江所在的DMZ附近", "feature": "汉滩江和孤石亭"}
+            }, "favorite_count": 7, "latitude": 38.1467, "longitude": 127.3138},
+
+            {"region_id": 10, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "춘천시", "description": "강원도의 도청소재지", "feature": "남이섬과 소양강"},
+                "en": {"name": "Chuncheon-si", "description": "Provincial capital of Gangwon-do",
+                       "feature": "Nami Island and Soyang River"},
+                "jp": {"name": "春川市", "description": "江原道の道庁所在地", "feature": "南怡島と昭陽江"},
+                "cn": {"name": "春川市", "description": "江原道道政府所在地", "feature": "南怡岛和昭阳江"}
+            }, "favorite_count": 15, "latitude": 37.8813, "longitude": 127.7298},
+
+            {"region_id": 10, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "태백시", "description": "태백산과 석탄박물관이 있는 고원도시", "feature": "태백산과 석탄박물관"},
+                "en": {"name": "Taebaek-si", "description": "Highland city with Taebaeksan and Coal Museum",
+                       "feature": "Taebaeksan Mountain and Coal Museum"},
+                "jp": {"name": "太白市", "description": "太白山と石炭博物館がある高原都市",
+                       "feature": "太白山と石炭博物館"},
+                "cn": {"name": "太白市", "description": "太白山和煤炭博物馆所在的高原城市",
+                       "feature": "太白山和煤炭博物馆"}
+            }, "favorite_count": 8, "latitude": 37.1640, "longitude": 128.9856},
+
+            {"region_id": 10, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "평창군", "description": "2018 동계올림픽 개최지", "feature": "알펜시아와 용평리조트"},
+                "en": {"name": "Pyeongchang-gun", "description": "Host of 2018 Winter Olympics",
+                       "feature": "Alpensia and Yongpyong Resort"},
+                "jp": {"name": "平昌郡", "description": "2018冬季オリンピック開催地",
+                       "feature": "アルペンシアと龍平リゾート"},
+                "cn": {"name": "平昌郡", "description": "2018年冬奥会举办地", "feature": "阿尔卑西亚和龙平度假村"}
+            }, "favorite_count": 12, "latitude": 37.3704, "longitude": 128.3900},
+
+            {"region_id": 10, "tour_api_subcode": "16", "translations": {
+                "ko": {"name": "홍천군", "description": "홍천강과 비발디파크가 있는 내륙군", "feature": "비발디파크와 홍천강"},
+                "en": {"name": "Hongcheon-gun", "description": "Inland county with Hongcheon River and Vivaldi Park",
+                       "feature": "Vivaldi Park and Hongcheon River"},
+                "jp": {"name": "洪川郡", "description": "洪川江とビバルディパークがある内陸郡",
+                       "feature": "ビバルディパークと洪川江"},
+                "cn": {"name": "洪川郡", "description": "洪川江和维瓦尔第公园所在的内陆郡",
+                       "feature": "维瓦尔第公园和洪川江"}
+            }, "favorite_count": 9, "latitude": 37.6969, "longitude": 127.8889},
+
+            {"region_id": 10, "tour_api_subcode": "17", "translations": {
+                "ko": {"name": "화천군", "description": "산천어축제와 파로호가 있는 북부군", "feature": "산천어축제와 파로호"},
+                "en": {"name": "Hwacheon-gun",
+                       "description": "Northern county with Mountain Trout Festival and Paro Lake",
+                       "feature": "Mountain Trout Festival and Paro Lake"},
+                "jp": {"name": "華川郡", "description": "山川魚祭りと破虜湖がある北部郡",
+                       "feature": "山川魚祭りと破虜湖"},
+                "cn": {"name": "华川郡", "description": "山鳟鱼节和破虏湖所在的北部郡", "feature": "山鳟鱼节和破虏湖"}
+            }, "favorite_count": 8, "latitude": 38.1063, "longitude": 127.7083},
+
+            {"region_id": 10, "tour_api_subcode": "18", "translations": {
+                "ko": {"name": "횡성군", "description": "횡성한우와 웰리힐리파크가 있는 내륙군", "feature": "횡성한우와 웰리힐리파크"},
+                "en": {"name": "Hoengseong-gun",
+                       "description": "Inland county with Hoengseong Hanwoo and Welli Hilli Park",
+                       "feature": "Hoengseong Hanwoo and Welli Hilli Park"},
+                "jp": {"name": "横城郡", "description": "横城韓牛とウェリヒリパークがある内陸郡",
+                       "feature": "横城韓牛とウェリヒリパーク"},
+                "cn": {"name": "横城郡", "description": "横城韩牛和威利希利公园所在的内陆郡",
+                       "feature": "横城韩牛和威利希利公园"}
+            }, "favorite_count": 6, "latitude": 37.4910, "longitude": 127.9855},
+
             # ======= 인천광역시 (10개 구/군) =======
             {
                 "region_id": 3,
@@ -575,260 +859,1424 @@ class Command(BaseCommand):
                 "favorite_count": 2, "latitude": 37.4463, "longitude": 126.6374
             },
 
-            # ======= 경기도 (주요 시/군만 선별) =======
-            # 수원시 (4개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "수원시 장안구", "description": "수원 북부의 장안문 일대", "feature": "장안문과 화성행궁"},
-                    "en": {"name": "Suwon Jangan-gu", "description": "Northern Suwon with Janganmun Gate", "feature": "Janganmun Gate and Hwaseong Haenggung"},
-                    "jp": {"name": "水原市長安区", "description": "水原北部の長安門一帯", "feature": "長安門と華城行宮"},
-                    "cn": {"name": "水原市长安区", "description": "水原北部长安门一带", "feature": "长安门和华城行宫"}
-                },
-                "favorite_count": 5, "latitude": 37.3006, "longitude": 127.0106
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "수원시 권선구", "description": "수원 서남부의 권선동 일대", "feature": "수원월드컵경기장과 인계동"},
-                    "en": {"name": "Suwon Gwonseon-gu", "description": "Southwestern Suwon with Gwonseon district", "feature": "Suwon World Cup Stadium and Ingye-dong"},
-                    "jp": {"name": "水原市勧善区", "description": "水原西南部の勧善洞一帯", "feature": "水原ワールドカップ競技場と仁溪洞"},
-                    "cn": {"name": "水原市劝善区", "description": "水原西南部劝善洞一带", "feature": "水原世界杯体育场和仁溪洞"}
-                },
-                "favorite_count": 4, "latitude": 37.2618, "longitude": 126.9732
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "수원시 팔달구", "description": "수원화성의 중심 구역", "feature": "화성행궁과 팔달문"},
-                    "en": {"name": "Suwon Paldal-gu", "description": "Central district of Hwaseong Fortress", "feature": "Hwaseong Haenggung and Paldalmun"},
-                    "jp": {"name": "水原市八達区", "description": "水原華城の中心区域", "feature": "華城行宮と八達門"},
-                    "cn": {"name": "水原市八达区", "description": "水原华城的中心区域", "feature": "华城行宫和八达门"}
-                },
-                "favorite_count": 8, "latitude": 37.2794, "longitude": 127.0136
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "수원시 영통구", "description": "영통과 광교신도시가 있는 동남부", "feature": "광교신도시와 삼성전자"},
-                    "en": {"name": "Suwon Yeongtong-gu", "description": "Southeastern area with Yeongtong and Gwanggyo", "feature": "Gwanggyo New City and Samsung Electronics"},
-                    "jp": {"name": "水原市霊通区", "description": "霊通と光教新都市がある東南部", "feature": "光教新都市とサムスン電子"},
-                    "cn": {"name": "水原市灵通区", "description": "灵通和光教新城所在的东南部", "feature": "光教新城和三星电子"}
-                },
-                "favorite_count": 9, "latitude": 37.2434, "longitude": 127.0469
-            },
+            # ===== 경기도 (31개 시/군) =====
+            {"region_id": 9, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "가평군", "description": "북한강과 자라섬이 있는 휴양지", "feature": "자라섬과 아침고요수목원"},
+                "en": {"name": "Gapyeong-gun", "description": "Resort area with Bukhan River and Jara Island",
+                       "feature": "Jara Island and Garden of Morning Calm"},
+                "jp": {"name": "加平郡", "description": "北漢江と自羅島がある休養地",
+                       "feature": "自羅島と朝の静けさ樹木園"},
+                "cn": {"name": "加平郡", "description": "北汉江和自拉岛所在的休养地", "feature": "自拉岛和晨静树木园"}
+            }, "favorite_count": 9, "latitude": 37.8315, "longitude": 127.5109},
 
-            # 성남시 (3개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "성남시 수정구", "description": "성남의 원도심 수정동 일대", "feature": "성남시청과 탄천"},
-                    "en": {"name": "Seongnam Sujeong-gu", "description": "Original downtown of Seongnam", "feature": "Seongnam City Hall and Tancheon"},
-                    "jp": {"name": "城南市寿井区", "description": "城南の元都心寿井洞一帯", "feature": "城南市庁と炭川"},
-                    "cn": {"name": "城南市寿井区", "description": "城南原市中心寿井洞一带", "feature": "城南市政府和炭川"}
-                },
-                "favorite_count": 4, "latitude": 37.4500, "longitude": 127.1464
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "성남시 중원구", "description": "성남 중심부의 상업지역", "feature": "성남중앙시장과 신흥역"},
-                    "en": {"name": "Seongnam Jungwon-gu", "description": "Central commercial area of Seongnam", "feature": "Seongnam Central Market and Sinheung Station"},
-                    "jp": {"name": "城南市中院区", "description": "城南中心部の商業地域", "feature": "城南中央市場と新興駅"},
-                    "cn": {"name": "城南市中院区", "description": "城南中心部商业区", "feature": "城南中央市场和新兴站"}
-                },
-                "favorite_count": 5, "latitude": 37.4278, "longitude": 127.1378
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "성남시 분당구", "description": "IT와 첨단산업의 중심", "feature": "판교테크노밸리와 분당신도시"},
-                    "en": {"name": "Seongnam Bundang-gu", "description": "IT and high-tech industry hub", "feature": "Pangyo Techno Valley and Bundang New City"},
-                    "jp": {"name": "城南市盆唐区", "description": "ITと先端産業の中心", "feature": "板橋テクノバレーと盆唐ニュータウン"},
-                    "cn": {"name": "城南市盆唐区", "description": "IT和高科技产业中心", "feature": "板桥科技谷和盆唐新城"}
-                },
-                "favorite_count": 12, "latitude": 37.3826, "longitude": 127.1197
-            },
+            {"region_id": 9, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "고양시", "description": "킨텍스와 호수공원이 있는 일산신도시", "feature": "킨텍스와 일산호수공원"},
+                "en": {"name": "Goyang-si", "description": "Ilsan New City with KINTEX and Lake Park",
+                       "feature": "KINTEX and Ilsan Lake Park"},
+                "jp": {"name": "高陽市", "description": "キンテックスと湖水公園がある一山新都市",
+                       "feature": "キンテックスと一山湖水公園"},
+                "cn": {"name": "高阳市", "description": "金泰克斯和湖水公园所在的一山新城",
+                       "feature": "金泰克斯和一山湖水公园"}
+            }, "favorite_count": 12, "latitude": 37.6584, "longitude": 126.8320},
 
-            # 고양시 (3개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "고양시 덕양구", "description": "고양의 서부지역과 원도심", "feature": "화정역과 대화동 주거단지"},
-                    "en": {"name": "Goyang Deogyang-gu", "description": "Western area and original downtown of Goyang", "feature": "Hwajeong Station and Daehwa residential complex"},
-                    "jp": {"name": "高陽市徳陽区", "description": "高陽の西部地域と元都心", "feature": "花井駅と大化洞住宅団地"},
-                    "cn": {"name": "高阳市德阳区", "description": "高阳西部地区和原市中心", "feature": "花井站和大化洞住宅区"}
-                },
-                "favorite_count": 4, "latitude": 37.6364, "longitude": 126.8327
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "고양시 일산동구", "description": "일산신도시 동쪽 지역", "feature": "정발산역과 장항습지"},
-                    "en": {"name": "Goyang Ilsandong-gu", "description": "Eastern area of Ilsan New City", "feature": "Jeongbalsan Station and Janghang Wetland"},
-                    "jp": {"name": "高陽市一山東区", "description": "一山新都市東側地域", "feature": "井足山駅と長項湿地"},
-                    "cn": {"name": "高阳市一山东区", "description": "一山新城东部地区", "feature": "井足山站和长项湿地"}
-                },
-                "favorite_count": 8, "latitude": 37.6583, "longitude": 126.7711
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "고양시 일산서구", "description": "일산신도시 서쪽 지역", "feature": "킨텍스와 호수공원"},
-                    "en": {"name": "Goyang Ilsanseo-gu", "description": "Western area of Ilsan New City", "feature": "KINTEX and Lake Park"},
-                    "jp": {"name": "高陽市一山西区", "description": "一山新都市西側地域", "feature": "キンテックスと湖水公園"},
-                    "cn": {"name": "高阳市一山西区", "description": "一山新城西部地区", "feature": "韩国国际展览中心和湖水公园"}
-                },
-                "favorite_count": 9, "latitude": 37.6694, "longitude": 126.7607
-            },
+            {"region_id": 9, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "과천시", "description": "서울대공원과 경마장이 있는 도시", "feature": "서울대공원과 과천경마공원"},
+                "en": {"name": "Gwacheon-si", "description": "City with Seoul Grand Park and racecourse",
+                       "feature": "Seoul Grand Park and Gwacheon Racecourse"},
+                "jp": {"name": "果川市", "description": "ソウル大公園と競馬場がある都市",
+                       "feature": "ソウル大公園と果川競馬公園"},
+                "cn": {"name": "果川市", "description": "首尔大公园和赛马场所在的城市",
+                       "feature": "首尔大公园和果川赛马公园"}
+            }, "favorite_count": 8, "latitude": 37.4292, "longitude": 126.9878},
 
-            # 용인시 (3개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "용인시 처인구", "description": "용인의 원도심과 에버랜드", "feature": "에버랜드와 한국민속촌"},
-                    "en": {"name": "Yongin Cheoin-gu", "description": "Original downtown of Yongin with Everland", "feature": "Everland and Korean Folk Village"},
-                    "jp": {"name": "龍仁市処仁区", "description": "龍仁の元都心とエバーランド", "feature": "エバーランドと韓国民俗村"},
-                    "cn": {"name": "龙仁市处仁区", "description": "龙仁原市中心和爱宝乐园", "feature": "爱宝乐园和韩国民俗村"}
-                },
-                "favorite_count": 12, "latitude": 37.2348, "longitude": 127.2020
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "용인시 기흥구", "description": "기흥신도시와 보정동 일대", "feature": "신갈오거리와 영덕숲"},
-                    "en": {"name": "Yongin Giheung-gu", "description": "Giheung New City and Bojeong area", "feature": "Singal Intersection and Yeongdeok Forest"},
-                    "jp": {"name": "龍仁市器興区", "description": "器興新都市と保正洞一帯", "feature": "新葛五差路と永徳の森"},
-                    "cn": {"name": "龙仁市器兴区", "description": "器兴新城和保正洞一带", "feature": "新葛五岔路和永德森林"}
-                },
-                "favorite_count": 7, "latitude": 37.2759, "longitude": 127.1157
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "용인시 수지구", "description": "분당과 인접한 고급 주거지역", "feature": "수지구청과 성복동"},
-                    "en": {"name": "Yongin Suji-gu", "description": "Upscale residential area near Bundang", "feature": "Suji District Office and Seongbok-dong"},
-                    "jp": {"name": "龍仁市水枝区", "description": "盆唐と隣接した高級住宅地域", "feature": "水枝区庁と聖福洞"},
-                    "cn": {"name": "龙仁市水枝区", "description": "与盆唐相邻的高档住宅区", "feature": "水枝区厅和圣福洞"}
-                },
-                "favorite_count": 8, "latitude": 37.3244, "longitude": 127.0979
-            },
+            {"region_id": 9, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "광명시", "description": "KTX광명역이 있는 교통중심지", "feature": "광명역과 광명동굴"},
+                "en": {"name": "Gwangmyeong-si", "description": "Transportation hub with KTX Gwangmyeong Station",
+                       "feature": "Gwangmyeong Station and Gwangmyeong Cave"},
+                "jp": {"name": "光明市", "description": "KTX光明駅がある交通の中心地", "feature": "光明駅と光明洞窟"},
+                "cn": {"name": "光明市", "description": "KTX光明站所在的交通枢纽", "feature": "光明站和光明洞窟"}
+            }, "favorite_count": 6, "latitude": 37.4781, "longitude": 126.8642},
 
-            # 안산시 (2개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "안산시 상록구", "description": "안산 동쪽의 신도시 지역", "feature": "중앙역과 안산식물원"},
-                    "en": {"name": "Ansan Sangnok-gu", "description": "Eastern new city area of Ansan", "feature": "Jungang Station and Ansan Botanical Garden"},
-                    "jp": {"name": "安山市常緑区", "description": "安山東側の新都市地域", "feature": "中央駅と安山植物園"},
-                    "cn": {"name": "安山市常绿区", "description": "安山东部新城区", "feature": "中央站和安山植物园"}
-                },
-                "favorite_count": 4, "latitude": 37.2969, "longitude": 126.8307
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "안산시 단원구", "description": "안산 서쪽의 원도심과 공단", "feature": "안산역과 시화호"},
-                    "en": {"name": "Ansan Danwon-gu", "description": "Western original downtown and industrial complex", "feature": "Ansan Station and Sihwa Lake"},
-                    "jp": {"name": "安山市檀園区", "description": "安山西側の元都心と工団", "feature": "安山駅と始華湖"},
-                    "cn": {"name": "安山市檀园区", "description": "安山西部原市中心和工业园区", "feature": "安山站和始华湖"}
-                },
-                "favorite_count": 3, "latitude": 37.3136, "longitude": 126.8016
-            },
+            {"region_id": 9, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "광주시", "description": "남한산성과 곤지암도자공원이 있는 도시", "feature": "남한산성과 곤지암도자공원"},
+                "en": {"name": "Gwangju-si", "description": "City with Namhansanseong and Gonjiam Ceramic Park",
+                       "feature": "Namhansanseong Fortress and Gonjiam Ceramic Park"},
+                "jp": {"name": "広州市", "description": "南漢山城と昆池岩陶磁公園がある都市",
+                       "feature": "南漢山城と昆池岩陶磁公園"},
+                "cn": {"name": "广州市", "description": "南汉山城和昆池岩陶瓷公园所在的城市",
+                       "feature": "南汉山城和昆池岩陶瓷公园"}
+            }, "favorite_count": 7, "latitude": 37.4296, "longitude": 127.2552},
 
-            # 안양시 (2개 구)
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "안양시 만안구", "description": "안양의 서쪽 구시가지", "feature": "안양역과 안양천"},
-                    "en": {"name": "Anyang Manan-gu", "description": "Western old town of Anyang", "feature": "Anyang Station and Anyangcheon"},
-                    "jp": {"name": "安養市万安区", "description": "安養の西側旧市街地", "feature": "安養駅と安養川"},
-                    "cn": {"name": "安养市万安区", "description": "安养西部老城区", "feature": "安养站和安养川"}
-                },
-                "favorite_count": 4, "latitude": 37.3897, "longitude": 126.9507
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "안양시 동안구", "description": "안양의 동쪽 신시가지", "feature": "평촌신도시와 인덕원"},
-                    "en": {"name": "Anyang Dongan-gu", "description": "Eastern new town of Anyang", "feature": "Pyeongchon New City and Indeogwon"},
-                    "jp": {"name": "安養市東安区", "description": "安養の東側新市街地", "feature": "坪村新都市と仁徳院"},
-                    "cn": {"name": "安养市东安区", "description": "安养东部新城区", "feature": "坪村新城和仁德院"}
-                },
-                "favorite_count": 6, "latitude": 37.3914, "longitude": 126.9568
-            },
+            {"region_id": 9, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "구리시", "description": "동구릉과 아차산이 있는 역사도시", "feature": "동구릉과 아차산"},
+                "en": {"name": "Guri-si", "description": "Historic city with Donggureung and Achasan",
+                       "feature": "Donggureung Royal Tombs and Achasan Mountain"},
+                "jp": {"name": "九里市", "description": "東九陵と峨嵯山がある歴史都市", "feature": "東九陵と峨嵯山"},
+                "cn": {"name": "九里市", "description": "东九陵和峨嵯山所在的历史城市", "feature": "东九陵和峨嵯山"}
+            }, "favorite_count": 5, "latitude": 37.5943, "longitude": 127.1296},
 
-            # 기타 경기도 주요 도시들
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "부천시", "description": "서울과 인접한 위성도시", "feature": "부천역과 중동신도시"},
-                    "en": {"name": "Bucheon-si", "description": "Satellite city adjacent to Seoul", "feature": "Bucheon Station and Jungdong New City"},
-                    "jp": {"name": "富川市", "description": "ソウルと隣接した衛星都市", "feature": "富川駅と中洞新都市"},
-                    "cn": {"name": "富川市", "description": "与首尔相邻的卫星城市", "feature": "富川站和中洞新城"}
-                },
-                "favorite_count": 6, "latitude": 37.5036, "longitude": 126.7660
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "평택시", "description": "경기 남부의 교통요지", "feature": "평택역과 평택항"},
-                    "en": {"name": "Pyeongtaek-si", "description": "Transportation hub in southern Gyeonggi", "feature": "Pyeongtaek Station and Pyeongtaek Port"},
-                    "jp": {"name": "平沢市", "description": "京畿南部の交通要地", "feature": "平沢駅と平沢港"},
-                    "cn": {"name": "平泽市", "description": "京畿南部交通要地", "feature": "平泽站和平泽港"}
-                },
-                "favorite_count": 4, "latitude": 36.9923, "longitude": 127.1129
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "화성시", "description": "동탄신도시와 남양만", "feature": "동탄신도시와 제부도"},
-                    "en": {"name": "Hwaseong-si", "description": "Dongtan New City and Namyang Bay", "feature": "Dongtan New City and Jebudo Island"},
-                    "jp": {"name": "華城市", "description": "東灘新都市と南陽湾", "feature": "東灘新都市と堤夫島"},
-                    "cn": {"name": "华城市", "description": "东滩新城和南阳湾", "feature": "东滩新城和堤夫岛"}
-                },
-                "favorite_count": 5, "latitude": 37.1996, "longitude": 126.8311
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "시흥시", "description": "시화신도시와 월곶포구", "feature": "배곧신도시와 월곶포구"},
-                    "en": {"name": "Siheung-si", "description": "Sihwa New City and Wolgot Port", "feature": "Baegot New City and Wolgot Port"},
-                    "jp": {"name": "始興市", "description": "始華新都市と月串浦口", "feature": "排串新都市と月串浦口"},
-                    "cn": {"name": "始兴市", "description": "始华新城和月串浦口", "feature": "排串新城和月串浦口"}
-                },
-                "favorite_count": 3, "latitude": 37.3802, "longitude": 126.8031
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "파주시", "description": "DMZ와 임진각이 있는 북부 접경지역", "feature": "임진각과 헤이리마을"},
-                    "en": {"name": "Paju-si", "description": "Northern border area with DMZ and Imjingak", "feature": "Imjingak and Heyri Art Village"},
-                    "jp": {"name": "坡州市", "description": "DMZと臨津閣がある北部接境地域", "feature": "臨津閣とヘイリ芸術村"},
-                    "cn": {"name": "坡州市", "description": "DMZ和临津阁所在的北部边境地区", "feature": "临津阁和海里艺术村"}
-                },
-                "favorite_count": 7, "latitude": 37.7598, "longitude": 126.7800
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "광명시", "description": "KTX 광명역이 있는 서남부", "feature": "KTX광명역과 광명동굴"},
-                    "en": {"name": "Gwangmyeong-si", "description": "Southwestern area with KTX Gwangmyeong Station", "feature": "KTX Gwangmyeong Station and Gwangmyeong Cave"},
-                    "jp": {"name": "光明市", "description": "KTX光明駅がある西南部", "feature": "KTX光明駅と光明洞窟"},
-                    "cn": {"name": "光明市", "description": "KTX光明站所在的西南部", "feature": "KTX光明站和光明洞窟"}
-                },
-                "favorite_count": 3, "latitude": 37.4784, "longitude": 126.8644
-            },
-            {
-                "region_id": 4,
-                "translations": {
-                    "ko": {"name": "김포시", "description": "김포공항과 한강이 있는 서북부", "feature": "김포공항과 애기봉"},
-                    "en": {"name": "Gimpo-si", "description": "Northwestern area with Gimpo Airport and Han River", "feature": "Gimpo Airport and Aegibong Peak"},
-                    "jp": {"name": "金浦市", "description": "金浦空港と漢江がある西北部", "feature": "金浦空港と愛岐峰"},
-                    "cn": {"name": "金浦市", "description": "金浦机场和汉江所在的西北部", "feature": "金浦机场和爱岐峰"}
-                },
-                "favorite_count": 4, "latitude": 37.6150, "longitude": 126.7155
-            },
+            {"region_id": 9, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "군포시", "description": "수리산과 반월호수가 있는 도시", "feature": "수리산과 반월호수"},
+                "en": {"name": "Gunpo-si", "description": "City with Surisan and Banwol Lake",
+                       "feature": "Surisan Mountain and Banwol Lake"},
+                "jp": {"name": "軍浦市", "description": "修理山と半月湖がある都市", "feature": "修理山と半月湖"},
+                "cn": {"name": "军浦市", "description": "修理山和半月湖所在的城市", "feature": "修理山和半月湖"}
+            }, "favorite_count": 4, "latitude": 37.3616, "longitude": 126.9352},
+
+            {"region_id": 9, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "김포시", "description": "한강하구와 김포국제조각공원이 있는 도시", "feature": "김포국제조각공원과 애기봉"},
+                "en": {"name": "Gimpo-si",
+                       "description": "City with Han River estuary and Gimpo International Sculpture Park",
+                       "feature": "Gimpo International Sculpture Park and Aegibong Peak"},
+                "jp": {"name": "金浦市", "description": "漢江河口と金浦国際彫刻公園がある都市",
+                       "feature": "金浦国際彫刻公園と愛妓峰"},
+                "cn": {"name": "金浦市", "description": "汉江河口和金浦国际雕塑公园所在的城市",
+                       "feature": "金浦国际雕塑公园和爱妓峰"}
+            }, "favorite_count": 6, "latitude": 37.6150, "longitude": 126.7156},
+
+            {"region_id": 9, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "남양주시", "description": "정약용유적지와 다산생태공원이 있는 도시", "feature": "정약용유적지와 다산생태공원"},
+                "en": {"name": "Namyangju-si",
+                       "description": "City with Jeong Yak-yong Historic Site and Dasan Ecological Park",
+                       "feature": "Jeong Yak-yong Historic Site and Dasan Ecological Park"},
+                "jp": {"name": "南楊州市", "description": "丁若鏞遺跡地と茶山生態公園がある都市",
+                       "feature": "丁若鏞遺跡地と茶山生態公園"},
+                "cn": {"name": "南杨州市", "description": "丁若镛遗址和茶山生态公园所在的城市",
+                       "feature": "丁若镛遗址和茶山生态公园"}
+            }, "favorite_count": 8, "latitude": 37.6366, "longitude": 127.2164},
+
+            {"region_id": 9, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "동두천시", "description": "소요산과 자유수호평화박물관이 있는 도시", "feature": "소요산과 자유수호평화박물관"},
+                "en": {"name": "Dongducheon-si", "description": "City with Soyosan and Freedom Protection Peace Museum",
+                       "feature": "Soyosan Mountain and Freedom Protection Peace Museum"},
+                "jp": {"name": "東豆川市", "description": "逍遥山と自由守護平和博物館がある都市",
+                       "feature": "逍遥山と自由守護平和博物館"},
+                "cn": {"name": "东豆川市", "description": "逍遥山和自由守护和平博物馆所在的城市",
+                       "feature": "逍遥山和自由守护和平博物馆"}
+            }, "favorite_count": 4, "latitude": 37.9036, "longitude": 127.0606},
+
+            {"region_id": 9, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "부천시", "description": "판타지아와 아인스월드가 있는 문화도시", "feature": "판타지아와 아인스월드"},
+                "en": {"name": "Bucheon-si", "description": "Cultural city with Fantasia and Aiins World",
+                       "feature": "Fantasia and Aiins World"},
+                "jp": {"name": "富川市", "description": "ファンタジアとアインスワールドがある文化都市",
+                       "feature": "ファンタジアとアインスワールド"},
+                "cn": {"name": "富川市", "description": "幻想曲和艾因斯世界所在的文化城市",
+                       "feature": "幻想曲和艾因斯世界"}
+            }, "favorite_count": 8, "latitude": 37.4989, "longitude": 126.7831},
+
+            {"region_id": 9, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "성남시", "description": "판교테크노밸리와 분당신도시가 있는 IT중심지", "feature": "판교테크노밸리와 분당중앙공원"},
+                "en": {"name": "Seongnam-si", "description": "IT hub with Pangyo Techno Valley and Bundang New City",
+                       "feature": "Pangyo Techno Valley and Bundang Central Park"},
+                "jp": {"name": "城南市", "description": "板橋テクノバレーと盆唐新都市があるIT中心地",
+                       "feature": "板橋テクノバレーと盆唐中央公園"},
+                "cn": {"name": "城南市", "description": "板桥科技谷和盆唐新城所在的IT中心",
+                       "feature": "板桥科技谷和盆唐中央公园"}
+            }, "favorite_count": 15, "latitude": 37.4201, "longitude": 127.1262},
+
+            {"region_id": 9, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "수원시", "description": "화성과 삼성전자가 있는 경기남부 중심", "feature": "수원화성과 삼성전자"},
+                "en": {"name": "Suwon-si",
+                       "description": "Southern Gyeonggi center with Hwaseong Fortress and Samsung Electronics",
+                       "feature": "Suwon Hwaseong Fortress and Samsung Electronics"},
+                "jp": {"name": "水原市", "description": "華城とサムスン電子がある京畿南部の中心",
+                       "feature": "水原華城とサムスン電子"},
+                "cn": {"name": "水原市", "description": "华城和三星电子所在的京畿南部中心",
+                       "feature": "水原华城和三星电子"}
+            }, "favorite_count": 15, "latitude": 37.2636, "longitude": 127.0286},
+
+            {"region_id": 9, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "시흥시", "description": "오이도와 연꽃테마파크가 있는 서해안도시", "feature": "오이도와 연꽃테마파크"},
+                "en": {"name": "Siheung-si", "description": "West coast city with Oido and Lotus Theme Park",
+                       "feature": "Oido Island and Lotus Theme Park"},
+                "jp": {"name": "始興市", "description": "烏耳島と蓮花テーマパークがある西海岸都市",
+                       "feature": "烏耳島と蓮花テーマパーク"},
+                "cn": {"name": "始兴市", "description": "乌耳岛和莲花主题公园所在的西海岸城市",
+                       "feature": "乌耳岛和莲花主题公园"}
+            }, "favorite_count": 6, "latitude": 37.3802, "longitude": 126.8031},
+
+            {"region_id": 9, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "안산시", "description": "다문화특구와 대부도가 있는 산업도시", "feature": "다문화특구와 대부도"},
+                "en": {"name": "Ansan-si", "description": "Industrial city with multicultural district and Daebudo",
+                       "feature": "Multicultural district and Daebudo Island"},
+                "jp": {"name": "安山市", "description": "多文化特区と大阜島がある産業都市",
+                       "feature": "多文化特区と大阜島"},
+                "cn": {"name": "安山市", "description": "多元文化特区和大阜岛所在的产业城市",
+                       "feature": "多元文化特区和大阜岛"}
+            }, "favorite_count": 5, "latitude": 37.3236, "longitude": 126.8219},
+
+            {"region_id": 9, "tour_api_subcode": "16", "translations": {
+                "ko": {"name": "안성시", "description": "안성맞춤과 팜랜드가 있는 농업도시", "feature": "안성팜랜드와 안성맞춤랜드"},
+                "en": {"name": "Anseong-si", "description": "Agricultural city with Anseong Machum and Farmland",
+                       "feature": "Anseong Farmland and Anseong Machum Land"},
+                "jp": {"name": "安城市", "description": "安城マッチュムとファームランドがある農業都市",
+                       "feature": "安城ファームランドと安城マッチュムランド"},
+                "cn": {"name": "安城市", "description": "安城量身定制和农场所在的农业城市",
+                       "feature": "安城农场和安城量身定制乐园"}
+            }, "favorite_count": 5, "latitude": 37.0079, "longitude": 127.2698},
+
+            {"region_id": 9, "tour_api_subcode": "17", "translations": {
+                "ko": {"name": "안양시", "description": "안양예술공원과 삼성디지털시티가 있는 도시", "feature": "안양예술공원과 삼성디지털시티"},
+                "en": {"name": "Anyang-si", "description": "City with Anyang Art Park and Samsung Digital City",
+                       "feature": "Anyang Art Park and Samsung Digital City"},
+                "jp": {"name": "安養市", "description": "安養芸術公園とサムスンデジタルシティがある都市",
+                       "feature": "安養芸術公園とサムスンデジタルシティ"},
+                "cn": {"name": "安养市", "description": "安养艺术公园和三星数字城所在的城市",
+                       "feature": "安养艺术公园和三星数字城"}
+            }, "favorite_count": 8, "latitude": 37.3943, "longitude": 126.9568},
+
+            {"region_id": 9, "tour_api_subcode": "18", "translations": {
+                "ko": {"name": "양주시", "description": "장흥관광지와 송암스페이스센터가 있는 도시", "feature": "장흥관광지와 송암스페이스센터"},
+                "en": {"name": "Yangju-si", "description": "City with Jangheung Tourist Site and Songam Space Center",
+                       "feature": "Jangheung Tourist Site and Songam Space Center"},
+                "jp": {"name": "楊州市", "description": "長興観光地と松岩スペースセンターがある都市",
+                       "feature": "長興観光地と松岩スペースセンター"},
+                "cn": {"name": "杨州市", "description": "长兴旅游地和松岩太空中心所在的城市",
+                       "feature": "长兴旅游地和松岩太空中心"}
+            }, "favorite_count": 4, "latitude": 37.7853, "longitude": 127.0458},
+
+            {"region_id": 9, "tour_api_subcode": "19", "translations": {
+                "ko": {"name": "양평군", "description": "용문산과 세미원이 있는 자연휴양지", "feature": "용문산과 세미원"},
+                "en": {"name": "Yangpyeong-gun", "description": "Natural resort with Yongmunsan and Semiwon",
+                       "feature": "Yongmunsan Mountain and Semiwon Garden"},
+                "jp": {"name": "楊平郡", "description": "龍門山とセミウォンがある自然休養地",
+                       "feature": "龍門山とセミウォン"},
+                "cn": {"name": "杨平郡", "description": "龙门山和细美苑所在的自然休养地", "feature": "龙门山和细美苑"}
+            }, "favorite_count": 8, "latitude": 37.4891, "longitude": 127.4947},
+
+            {"region_id": 9, "tour_api_subcode": "20", "translations": {
+                "ko": {"name": "여주시", "description": "세종대왕릉과 여주프리미엄아울렛이 있는 도시", "feature": "세종대왕릉과 여주프리미엄아울렛"},
+                "en": {"name": "Yeoju-si", "description": "City with King Sejong's Tomb and Yeoju Premium Outlets",
+                       "feature": "King Sejong's Tomb and Yeoju Premium Outlets"},
+                "jp": {"name": "驪州市", "description": "世宗大王陵と驪州プレミアムアウトレットがある都市",
+                       "feature": "世宗大王陵と驪州プレミアムアウトレット"},
+                "cn": {"name": "骊州市", "description": "世宗大王陵和骊州奥特莱斯所在的城市",
+                       "feature": "世宗大王陵和骊州奥特莱斯"}
+            }, "favorite_count": 7, "latitude": 37.2982, "longitude": 127.6372},
+
+            {"region_id": 9, "tour_api_subcode": "21", "translations": {
+                "ko": {"name": "오산시", "description": "물향기수목원과 오산시립미술관이 있는 도시", "feature": "물향기수목원과 오산시립미술관"},
+                "en": {"name": "Osan-si", "description": "City with Mulhyanggi Arboretum and Osan City Museum",
+                       "feature": "Mulhyanggi Arboretum and Osan City Museum"},
+                "jp": {"name": "烏山市", "description": "物香気樹木園と烏山市立美術館がある都市",
+                       "feature": "物香気樹木園と烏山市立美術館"},
+                "cn": {"name": "乌山市", "description": "物香气树木园和乌山市立美术馆所在的城市",
+                       "feature": "物香气树木园和乌山市立美术馆"}
+            }, "favorite_count": 4, "latitude": 37.1497, "longitude": 127.0773},
+
+            {"region_id": 9, "tour_api_subcode": "22", "translations": {
+                "ko": {"name": "의왕시", "description": "왕송호수와 철도박물관이 있는 도시", "feature": "왕송호수와 철도박물관"},
+                "en": {"name": "Uiwang-si", "description": "City with Wangsong Lake and Railroad Museum",
+                       "feature": "Wangsong Lake and Railroad Museum"},
+                "jp": {"name": "義王市", "description": "往十湖と鉄道博物館がある都市",
+                       "feature": "往十湖と鉄道博物館"},
+                "cn": {"name": "义王市", "description": "往松湖和铁道博物馆所在的城市", "feature": "往松湖和铁道博物馆"}
+            }, "favorite_count": 5, "latitude": 37.3449, "longitude": 126.9689},
+
+            {"region_id": 9, "tour_api_subcode": "23", "translations": {
+                "ko": {"name": "의정부시", "description": "부대찌개거리와 회룡문화역사공원이 있는 도시", "feature": "부대찌개거리와 회룡문화역사공원"},
+                "en": {"name": "Uijeongbu-si",
+                       "description": "City with Budae-jjigae Street and Hoeryong Cultural History Park",
+                       "feature": "Budae-jjigae Street and Hoeryong Cultural History Park"},
+                "jp": {"name": "議政府市", "description": "部隊チゲ街と回龍文化歴史公園がある都市",
+                       "feature": "部隊チゲ街と回龙文化歴史公園"},
+                "cn": {"name": "议政府市", "description": "部队汤街和回龙文化历史公园所在的城市",
+                       "feature": "部队汤街和回龙文化历史公园"}
+            }, "favorite_count": 6, "latitude": 37.7384, "longitude": 127.0338},
+
+            {"region_id": 9, "tour_api_subcode": "24", "translations": {
+                "ko": {"name": "이천시", "description": "도자기와 쌀로 유명한 전통문화도시", "feature": "이천도자기와 설봉공원"},
+                "en": {"name": "Icheon-si", "description": "Traditional cultural city famous for ceramics and rice",
+                       "feature": "Icheon ceramics and Seolbong Park"},
+                "jp": {"name": "利川市", "description": "陶磁器と米で有名な伝統文化都市",
+                       "feature": "利川陶磁器と雪峰公園"},
+                "cn": {"name": "利川市", "description": "以陶瓷和大米闻名的传统文化城市",
+                       "feature": "利川陶瓷和雪峰公园"}
+            }, "favorite_count": 8, "latitude": 37.2792, "longitude": 127.4419},
+
+            {"region_id": 9, "tour_api_subcode": "25", "translations": {
+                "ko": {"name": "파주시", "description": "DMZ와 출판도시가 있는 북부 접경", "feature": "임진각과 헤이리예술마을"},
+                "en": {"name": "Paju-si", "description": "Northern border area with DMZ and Publishing City",
+                       "feature": "Imjingak and Heyri Art Village"},
+                "jp": {"name": "坡州市", "description": "DMZと出版都市がある北部国境",
+                       "feature": "臨津閣とヘイリ芸術村"},
+                "cn": {"name": "坡州市", "description": "DMZ和出版城所在的北部边境", "feature": "临津阁和坡州艺术村"}
+            }, "favorite_count": 10, "latitude": 37.7598, "longitude": 126.7800},
+
+            {"region_id": 9, "tour_api_subcode": "26", "translations": {
+                "ko": {"name": "평택시", "description": "평택항과 소사벌한우가 있는 교통요지", "feature": "평택항과 소사벌한우"},
+                "en": {"name": "Pyeongtaek-si",
+                       "description": "Transportation hub with Pyeongtaek Port and Sosabelhanwoo",
+                       "feature": "Pyeongtaek Port and Sosabelhanwoo"},
+                "jp": {"name": "平沢市", "description": "平沢港と小砂伐韓牛がある交通要地",
+                       "feature": "平沢港と小砂伐韓牛"},
+                "cn": {"name": "平泽市", "description": "平泽港和小沙伐韩牛所在的交通要地",
+                       "feature": "平泽港和小沙伐韩牛"}
+            }, "favorite_count": 6, "latitude": 36.9921, "longitude": 127.1128},
+
+            {"region_id": 9, "tour_api_subcode": "27", "translations": {
+                "ko": {"name": "포천시", "description": "허브아일랜드와 산정호수가 있는 북부산간", "feature": "허브아일랜드와 산정호수"},
+                "en": {"name": "Pocheon-si", "description": "Northern mountain area with Herb Island and Sanjeong Lake",
+                       "feature": "Herb Island and Sanjeong Lake"},
+                "jp": {"name": "抱川市", "description": "ハーブアイランドと山井湖がある北部山間",
+                       "feature": "ハーブアイランドと山井湖"},
+                "cn": {"name": "抱川市", "description": "草本岛和山井湖所在的北部山区", "feature": "草本岛和山井湖"}
+            }, "favorite_count": 8, "latitude": 37.8951, "longitude": 127.2004},
+
+            {"region_id": 9, "tour_api_subcode": "28", "translations": {
+                "ko": {"name": "하남시", "description": "미사신도시와 스타필드가 있는 동부신도시", "feature": "미사신도시와 스타필드하남"},
+                "en": {"name": "Hanam-si", "description": "Eastern new city with Misa New Town and Starfield",
+                       "feature": "Misa New Town and Starfield Hanam"},
+                "jp": {"name": "河南市", "description": "美沙新都市とスターフィールドがある東部新都市",
+                       "feature": "美沙新都市とスターフィールド河南"},
+                "cn": {"name": "河南市", "description": "美沙新城和星空购物中心所在的东部新城",
+                       "feature": "美沙新城和星空购物中心河南"}
+            }, "favorite_count": 7, "latitude": 37.5394, "longitude": 127.2147},
+
+            {"region_id": 9, "tour_api_subcode": "29", "translations": {
+                "ko": {"name": "화성시", "description": "동탄신도시와 제부도가 있는 서남부도시", "feature": "동탄신도시와 제부도"},
+                "en": {"name": "Hwaseong-si", "description": "Southwest city with Dongtan New Town and Jebudo",
+                       "feature": "Dongtan New Town and Jebudo Island"},
+                "jp": {"name": "華城市", "description": "東灘新都市と済扶島がある西南部都市",
+                       "feature": "東灘新都市と済扶島"},
+                "cn": {"name": "华城市", "description": "东滩新城和济扶岛所在的西南部城市",
+                       "feature": "东滩新城和济扶岛"}
+            }, "favorite_count": 9, "latitude": 37.1996, "longitude": 126.8311},
+
+            {"region_id": 9, "tour_api_subcode": "30", "translations": {
+                "ko": {"name": "연천군", "description": "DMZ와 전곡리유적이 있는 최북단", "feature": "전곡리선사박물관과 허준테마파크"},
+                "en": {"name": "Yeoncheon-gun", "description": "Northernmost area with DMZ and Jeongok-ri site",
+                       "feature": "Jeongok Prehistory Museum and Heo Jun Theme Park"},
+                "jp": {"name": "漣川郡", "description": "DMZと全谷里遺跡がある最北端",
+                       "feature": "全谷里先史博物館と許浚テーマパーク"},
+                "cn": {"name": "涟川郡", "description": "DMZ和全谷里遗址所在的最北端",
+                       "feature": "全谷里史前博物馆和许浚主题公园"}
+            }, "favorite_count": 5, "latitude": 38.0967, "longitude": 127.0746},
+
+            {"region_id": 9, "tour_api_subcode": "31", "translations": {
+                "ko": {"name": "용인시", "description": "에버랜드와 한국민속촌이 있는 관광도시", "feature": "에버랜드와 한국민속촌"},
+                "en": {"name": "Yongin-si", "description": "Tourism city with Everland and Korean Folk Village",
+                       "feature": "Everland and Korean Folk Village"},
+                "jp": {"name": "龍仁市", "description": "エバーランドと韓国民俗村がある観光都市",
+                       "feature": "エバーランドと韓国民俗村"},
+                "cn": {"name": "龙仁市", "description": "爱宝乐园和韩国民俗村所在的旅游城市",
+                       "feature": "爱宝乐园和韩国民俗村"}
+            }, "favorite_count": 18, "latitude": 37.2410, "longitude": 127.1776},
+
+            # ===== 대전광역시 (5개 구) =====
+            {"region_id": 3, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "대덕구", "description": "대덕연구개발특구가 있는 북동부", "feature": "한국과학기술원(KAIST)과 연구단지"},
+                "en": {"name": "Daedeok-gu", "description": "Northeast area with Daedeok R&D Special Zone",
+                       "feature": "KAIST and research complex"},
+                "jp": {"name": "大徳区", "description": "大徳研究開発特区がある北東部",
+                       "feature": "韓国科学技術院(KAIST)と研究団地"},
+                "cn": {"name": "大德区", "description": "大德研发特区所在的东北部",
+                       "feature": "韩国科学技术院(KAIST)和研究园区"}
+            }, "favorite_count": 4, "latitude": 36.3464, "longitude": 127.4151},
+
+            {"region_id": 3, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "동구", "description": "대전의 원도심 지역", "feature": "중앙시장과 대전역"},
+                "en": {"name": "Dong-gu", "description": "Original downtown area of Daejeon",
+                       "feature": "Central Market and Daejeon Station"},
+                "jp": {"name": "東区", "description": "大田の元都心地域", "feature": "中央市場と大田駅"},
+                "cn": {"name": "东区", "description": "大田原市中心区", "feature": "中央市场和大田站"}
+            }, "favorite_count": 3, "latitude": 36.3504, "longitude": 127.4371},
+
+            {"region_id": 3, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "서구", "description": "대전시청이 있는 행정중심지", "feature": "대전시청과 만년동"},
+                "en": {"name": "Seo-gu", "description": "Administrative center with Daejeon City Hall",
+                       "feature": "Daejeon City Hall and Mannyeon-dong"},
+                "jp": {"name": "西区", "description": "大田市庁がある行政中心地", "feature": "大田市庁と万年洞"},
+                "cn": {"name": "西区", "description": "大田市政府所在的行政中心", "feature": "大田市政府和万年洞"}
+            }, "favorite_count": 5, "latitude": 36.3551, "longitude": 127.3839},
+
+            {"region_id": 3, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "유성구", "description": "온천과 대학가가 있는 서북부", "feature": "유성온천과 충남대학교"},
+                "en": {"name": "Yuseong-gu", "description": "Northwest area with hot springs and university district",
+                       "feature": "Yuseong Hot Springs and Chungnam National University"},
+                "jp": {"name": "儒城区", "description": "温泉と大学街がある西北部", "feature": "儒城温泉と忠南大学校"},
+                "cn": {"name": "儒城区", "description": "温泉和大学区所在的西北部", "feature": "儒城温泉和忠南大学"}
+            }, "favorite_count": 7, "latitude": 36.3624, "longitude": 127.3558},
+
+            {"region_id": 3, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "중구", "description": "대전의 중심 상업지역", "feature": "으네성과 중앙로 상권"},
+                "en": {"name": "Jung-gu", "description": "Central commercial area of Daejeon",
+                       "feature": "Eunhaseong and Jungang-ro commercial district"},
+                "jp": {"name": "中区", "description": "大田の中心商業地域", "feature": "銀河城と中央路商圏"},
+                "cn": {"name": "中区", "description": "大田中心商业区", "feature": "银河城和中央路商圈"}
+            }, "favorite_count": 6, "latitude": 36.3255, "longitude": 127.4214},
+
+            # ===== 대구광역시 (8개 구/군) =====
+            {"region_id": 4, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "남구", "description": "앞산과 대명동이 있는 남부", "feature": "앞산공원과 대명공연문화거리"},
+                "en": {"name": "Nam-gu", "description": "Southern area with Apsan and Daemyeong-dong",
+                       "feature": "Apsan Park and Daemyeong Performance Culture Street"},
+                "jp": {"name": "南区", "description": "前山と大明洞がある南部", "feature": "前山公園と大明公演文化街"},
+                "cn": {"name": "南区", "description": "前山和大明洞所在的南部", "feature": "前山公园和大明演出文化街"}
+            }, "favorite_count": 5, "latitude": 35.8464, "longitude": 128.5943},
+
+            {"region_id": 4, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "달서구", "description": "대구의 서남부 신도시", "feature": "월성동과 성서공단"},
+                "en": {"name": "Dalseo-gu", "description": "Southwest new town of Daegu",
+                       "feature": "Wolseong-dong and Seongso Industrial Complex"},
+                "jp": {"name": "達西区", "description": "大邱の西南部新都市", "feature": "月城洞と城西工団"},
+                "cn": {"name": "达西区", "description": "大邱西南部新城", "feature": "月城洞和城西工团"}
+            }, "favorite_count": 4, "latitude": 35.8300, "longitude": 128.5323},
+
+            {"region_id": 4, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "달성군", "description": "대구 외곽의 농촌지역", "feature": "비슬산과 마비정벽화마을"},
+                "en": {"name": "Dalseong-gun", "description": "Rural area on the outskirts of Daegu",
+                       "feature": "Biseulsan Mountain and Mabijeong Mural Village"},
+                "jp": {"name": "達城郡", "description": "大邱郊外の農村地域", "feature": "琵瑟山と馬飛亭壁画村"},
+                "cn": {"name": "达城郡", "description": "大邱郊外农村地区", "feature": "琵瑟山和马飞亭壁画村"}
+            }, "favorite_count": 3, "latitude": 35.7749, "longitude": 128.4314},
+
+            {"region_id": 4, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "동구", "description": "신천과 팔공산이 있는 동부", "feature": "신천둔치와 팔공산"},
+                "en": {"name": "Dong-gu", "description": "Eastern area with Sincheon and Palgongsan",
+                       "feature": "Sincheon Waterside Park and Palgongsan Mountain"},
+                "jp": {"name": "東区", "description": "新川と八公山がある東部", "feature": "新川屯地と八公山"},
+                "cn": {"name": "东区", "description": "新川和八公山所在的东部", "feature": "新川河滩和八公山"}
+            }, "favorite_count": 4, "latitude": 35.8869, "longitude": 128.6357},
+
+            {"region_id": 4, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "북구", "description": "경북대학교가 있는 북부", "feature": "경북대학교와 칠성시장"},
+                "en": {"name": "Buk-gu", "description": "Northern area with Kyungpook National University",
+                       "feature": "Kyungpook National University and Chilseong Market"},
+                "jp": {"name": "北区", "description": "慶北大学校がある北部", "feature": "慶北大学校と七星市場"},
+                "cn": {"name": "北区", "description": "庆北大学所在的北部", "feature": "庆北大学和七星市场"}
+            }, "favorite_count": 6, "latitude": 35.8858, "longitude": 128.5829},
+
+            {"region_id": 4, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "서구", "description": "계명대학교와 서문시장이 있는 서부", "feature": "서문시장과 계명대학교"},
+                "en": {"name": "Seo-gu", "description": "Western area with Keimyung University and Seomun Market",
+                       "feature": "Seomun Market and Keimyung University"},
+                "jp": {"name": "西区", "description": "啓明大学校と西門市場がある西部",
+                       "feature": "西門市場と啓明大学校"},
+                "cn": {"name": "西区", "description": "启明大学和西门市场所在的西部", "feature": "西门市场和启明大学"}
+            }, "favorite_count": 5, "latitude": 35.8717, "longitude": 128.5592},
+
+            {"region_id": 4, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "수성구", "description": "대구의 고급 주거지역", "feature": "수성못과 범어동"},
+                "en": {"name": "Suseong-gu", "description": "Upscale residential area of Daegu",
+                       "feature": "Suseong Lake and Beomeo-dong"},
+                "jp": {"name": "寿城区", "description": "大邱の高級住宅地域", "feature": "寿城池と凡魚洞"},
+                "cn": {"name": "寿城区", "description": "大邱高档住宅区", "feature": "寿城池和凡鱼洞"}
+            }, "favorite_count": 8, "latitude": 35.8581, "longitude": 128.6305},
+
+            {"region_id": 4, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "중구", "description": "대구의 중심 상업지역", "feature": "동성로와 대구역"},
+                "en": {"name": "Jung-gu", "description": "Central commercial area of Daegu",
+                       "feature": "Dongseong-ro and Daegu Station"},
+                "jp": {"name": "中区", "description": "大邱の中心商業地域", "feature": "東城路と大邱駅"},
+                "cn": {"name": "中区", "description": "大邱中心商业区", "feature": "东城路和大邱站"}
+            }, "favorite_count": 9, "latitude": 35.8663, "longitude": 128.5928},
+
+            # ===== 충청북도 (11개 시/군) =====
+            {"region_id": 11, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "괴산군", "description": "속리산과 산막이옛마을이 있는 산간군", "feature": "속리산과 산막이옛마을"},
+                "en": {"name": "Goesan-gun", "description": "Mountain county with Songnisan and Sanmakyi Old Village",
+                       "feature": "Songnisan Mountain and Sanmakyi Old Village"},
+                "jp": {"name": "槐山郡", "description": "俗離山と山幕里古村がある山間郡",
+                       "feature": "俗離山と山幕里古村"},
+                "cn": {"name": "槐山郡", "description": "俗离山和山幕里古村所在的山区郡",
+                       "feature": "俗离山和山幕里古村"}
+            }, "favorite_count": 7, "latitude": 36.8148, "longitude": 127.7884},
+
+            {"region_id": 11, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "단양군", "description": "단양팔경과 도담삼봉이 있는 관광군", "feature": "단양팔경과 도담삼봉"},
+                "en": {"name": "Danyang-gun",
+                       "description": "Tourism county with Danyang Eight Scenes and Dodamsambong",
+                       "feature": "Danyang Eight Scenes and Dodamsambong Peaks"},
+                "jp": {"name": "丹陽郡", "description": "丹陽八景と島潭三峰がある観光郡",
+                       "feature": "丹陽八景と島潭三峰"},
+                "cn": {"name": "丹阳郡", "description": "丹阳八景和岛潭三峰所在的旅游郡",
+                       "feature": "丹阳八景和岛潭三峰"}
+            }, "favorite_count": 12, "latitude": 36.9845, "longitude": 128.3655},
+
+            {"region_id": 11, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "보은군", "description": "법주사와 속리산이 있는 불교성지", "feature": "법주사와 속리산"},
+                "en": {"name": "Boeun-gun", "description": "Buddhist sanctuary with Beopjusa Temple and Songnisan",
+                       "feature": "Beopjusa Temple and Songnisan Mountain"},
+                "jp": {"name": "報恩郡", "description": "法住寺と俗離山がある仏教聖地", "feature": "法住寺と俗離山"},
+                "cn": {"name": "报恩郡", "description": "法住寺和俗离山所在的佛教圣地", "feature": "法住寺和俗离山"}
+            }, "favorite_count": 10, "latitude": 36.4895, "longitude": 127.7294},
+
+            {"region_id": 11, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "영동군", "description": "영동포도와 난계국악박물관이 있는 음악의고장", "feature": "영동포도와 난계국악박물관"},
+                "en": {"name": "Yeongdong-gun",
+                       "description": "Music hometown with Yeongdong grapes and Nangye Gugak Museum",
+                       "feature": "Yeongdong grapes and Nangye Gugak Museum"},
+                "jp": {"name": "永同郡", "description": "永同葡萄と蘭渓国楽博物館がある音楽の故郷",
+                       "feature": "永同葡萄と蘭渓国楽博物館"},
+                "cn": {"name": "永同郡", "description": "永同葡萄和兰溪国乐博物馆所在的音乐故乡",
+                       "feature": "永同葡萄和兰溪国乐博物馆"}
+            }, "favorite_count": 6, "latitude": 36.1750, "longitude": 127.7764},
+
+            {"region_id": 11, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "옥천군", "description": "정지용문학관과 장계관광지가 있는 문학의고장", "feature": "정지용문학관과 장계관광지"},
+                "en": {"name": "Okcheon-gun",
+                       "description": "Literary hometown with Jeong Ji-yong Literature Hall and Janggye Tourist Site",
+                       "feature": "Jeong Ji-yong Literature Hall and Janggye Tourist Site"},
+                "jp": {"name": "沃川郡", "description": "鄭芝溶文学館と長溪観光地がある文学の故郷",
+                       "feature": "鄭芝溶文学館と長溪観光地"},
+                "cn": {"name": "沃川郡", "description": "郑芝溶文学馆和长溪旅游地所在的文学故乡",
+                       "feature": "郑芝溶文学馆和长溪旅游地"}
+            }, "favorite_count": 5, "latitude": 36.3065, "longitude": 127.5707},
+
+            {"region_id": 11, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "음성군", "description": "설성공원과 금왕읍이 있는 교통요지", "feature": "설성공원과 금왕읍"},
+                "en": {"name": "Eumseong-gun", "description": "Transportation hub with Seolseong Park and Geumwang-eup",
+                       "feature": "Seolseong Park and Geumwang-eup"},
+                "jp": {"name": "陰城郡", "description": "雪城公園と金旺邑がある交通要地",
+                       "feature": "雪城公園と金旺邑"},
+                "cn": {"name": "阴城郡", "description": "雪城公园和金旺邑所在的交通要地", "feature": "雪城公园和金旺邑"}
+            }, "favorite_count": 4, "latitude": 36.9441, "longitude": 127.6884},
+
+            {"region_id": 11, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "제천시", "description": "청풍호와 월악산이 있는 관광도시", "feature": "청풍호와 월악산"},
+                "en": {"name": "Jecheon-si", "description": "Tourism city with Cheongpung Lake and Woraksan",
+                       "feature": "Cheongpung Lake and Woraksan Mountain"},
+                "jp": {"name": "堤川市", "description": "清風湖と月岳山がある観光都市", "feature": "清風湖と月岳山"},
+                "cn": {"name": "堤川市", "description": "清风湖和月岳山所在的旅游城市", "feature": "清风湖和月岳山"}
+            }, "favorite_count": 11, "latitude": 37.1327, "longitude": 128.1910},
+
+            {"region_id": 11, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "진천군", "description": "농다리와 종박물관이 있는 역사군", "feature": "농다리와 종박물관"},
+                "en": {"name": "Jincheon-gun", "description": "Historic county with Nongdari Bridge and Bell Museum",
+                       "feature": "Nongdari Bridge and Bell Museum"},
+                "jp": {"name": "鎮川郡", "description": "籠橋と鐘博物館がある歴史郡", "feature": "籠橋と鐘博物館"},
+                "cn": {"name": "镇川郡", "description": "笼桥和钟博物馆所在的历史郡", "feature": "笼桥和钟博物馆"}
+            }, "favorite_count": 5, "latitude": 36.8575, "longitude": 127.4332},
+
+            {"region_id": 11, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "증평군", "description": "좌구산휴양림과 미니어처빌리지가 있는 작은군", "feature": "좌구산휴양림과 미니어처빌리지"},
+                "en": {"name": "Jeungpyeong-gun",
+                       "description": "Small county with Jwagusan Recreation Forest and Miniature Village",
+                       "feature": "Jwagusan Recreation Forest and Miniature Village"},
+                "jp": {"name": "曾坪郡", "description": "左九山休養林とミニチュアビレッジがある小さな郡",
+                       "feature": "左九山休養林とミニチュアビレッジ"},
+                "cn": {"name": "曾坪郡", "description": "左九山休养林和微缩村庄所在的小郡",
+                       "feature": "左九山休养林和微缩村庄"}
+            }, "favorite_count": 3, "latitude": 36.7819, "longitude": 127.5825},
+
+            {"region_id": 11, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "청주시", "description": "충청북도의 도청소재지", "feature": "청주고인쇄박물관과 상당산성"},
+                "en": {"name": "Cheongju-si", "description": "Provincial capital of Chungcheongbuk-do",
+                       "feature": "Cheongju Early Printing Museum and Sangdangsanseong Fortress"},
+                "jp": {"name": "清州市", "description": "忠清北道の道庁所在地",
+                       "feature": "清州古印刷博物館と上党山城"},
+                "cn": {"name": "清州市", "description": "忠清北道道政府所在地", "feature": "清州古印刷博物馆和上党山城"}
+            }, "favorite_count": 8, "latitude": 36.6424, "longitude": 127.4890},
+
+            {"region_id": 11, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "충주시", "description": "충주호와 중원문화가 있는 중부내륙", "feature": "충주호와 중원고구려비"},
+                "en": {"name": "Chungju-si", "description": "Central inland with Chungju Lake and Jungwon culture",
+                       "feature": "Chungju Lake and Jungwon Goguryeo Stele"},
+                "jp": {"name": "忠州市", "description": "忠州湖と中原文化がある中部内陸",
+                       "feature": "忠州湖と中原高句麗碑"},
+                "cn": {"name": "忠州市", "description": "忠州湖和中原文化所在的中部内陆",
+                       "feature": "忠州湖和中原高句丽碑"}
+            }, "favorite_count": 6, "latitude": 37.0138, "longitude": 127.9259},
+
+            # ===== 충청남도 (15개 시/군) =====
+            {"region_id": 12, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "계룡시", "description": "계룡산과 국방대학교가 있는 군사도시", "feature": "계룡산과 국방대학교"},
+                "en": {"name": "Gyeryong-si",
+                       "description": "Military city with Gyeryongsan and Korea National Defense University",
+                       "feature": "Gyeryongsan Mountain and Korea National Defense University"},
+                "jp": {"name": "鶏龍市", "description": "鶏龍山と国防大学校がある軍事都市",
+                       "feature": "鶏龍山と国防大学校"},
+                "cn": {"name": "鸡龙市", "description": "鸡龙山和国防大学所在的军事城市", "feature": "鸡龙山和国防大学"}
+            }, "favorite_count": 6, "latitude": 36.2743, "longitude": 127.2149},
+
+            {"region_id": 12, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "공주시", "description": "백제의 고도와 공산성이 있는 역사도시", "feature": "공산성과 무령왕릉"},
+                "en": {"name": "Gongju-si", "description": "Historic city with ancient Baekje capital and Gongsanseong",
+                       "feature": "Gongsanseong Fortress and Tomb of King Muryeong"},
+                "jp": {"name": "公州市", "description": "百済の古都と公山城がある歴史都市",
+                       "feature": "公山城と武寧王陵"},
+                "cn": {"name": "公州市", "description": "百济古都和公山城所在的历史城市", "feature": "公山城和武宁王陵"}
+            }, "favorite_count": 12, "latitude": 36.4465, "longitude": 127.1189},
+
+            {"region_id": 12, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "금산군", "description": "금산인삼과 적벽강이 있는 산간군", "feature": "금산인삼과 적벽강"},
+                "en": {"name": "Geumsan-gun", "description": "Mountain county with Geumsan ginseng and Jeokbyeokgang",
+                       "feature": "Geumsan ginseng and Jeokbyeokgang River"},
+                "jp": {"name": "錦山郡", "description": "錦山人参と赤壁江がある山間郡", "feature": "錦山人参と赤壁江"},
+                "cn": {"name": "锦山郡", "description": "锦山人参和赤壁江所在的山区郡", "feature": "锦山人参和赤壁江"}
+            }, "favorite_count": 7, "latitude": 36.1086, "longitude": 127.4880},
+
+            {"region_id": 12, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "논산시", "description": "관촉사와 연무대가 있는 역사도시", "feature": "관촉사와 연무대"},
+                "en": {"name": "Nonsan-si", "description": "Historic city with Gwanchoksa Temple and Yeonmudae",
+                       "feature": "Gwanchoksa Temple and Yeonmudae Training Ground"},
+                "jp": {"name": "論山市", "description": "灌燭寺と練武台がある歴史都市", "feature": "灌燭寺と練武台"},
+                "cn": {"name": "论山市", "description": "灌烛寺和练武台所在的历史城市", "feature": "灌烛寺和练武台"}
+            }, "favorite_count": 6, "latitude": 36.1871, "longitude": 127.0987},
+
+            {"region_id": 12, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "당진시", "description": "석문면과 합덕제가 있는 서해안도시", "feature": "석문면간척지와 합덕제"},
+                "en": {"name": "Dangjin-si", "description": "West coast city with Seokmun-myeon and Hapdeokje",
+                       "feature": "Seokmun-myeon reclaimed land and Hapdeokje reservoir"},
+                "jp": {"name": "唐津市", "description": "石門面と合徳堤がある西海岸都市",
+                       "feature": "石門面干拓地と合徳堤"},
+                "cn": {"name": "唐津市", "description": "石门面和合德堤所在的西海岸城市",
+                       "feature": "石门面围垦地和合德堤"}
+            }, "favorite_count": 5, "latitude": 36.8934, "longitude": 126.6297},
+
+            {"region_id": 12, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "보령시", "description": "머드축제로 유명한 서해안 관광도시", "feature": "대천해수욕장과 머드축제"},
+                "en": {"name": "Boryeong-si", "description": "West coast tourism city famous for Mud Festival",
+                       "feature": "Daecheon Beach and Mud Festival"},
+                "jp": {"name": "保寧市", "description": "マッドフェスティバルで有名な西海岸観光都市",
+                       "feature": "大川海水浴場とマッドフェスティバル"},
+                "cn": {"name": "保宁市", "description": "以泥浆节闻名的西海岸旅游城市",
+                       "feature": "大川海水浴场和泥浆节"}
+            }, "favorite_count": 10, "latitude": 36.3333, "longitude": 126.6128},
+
+            {"region_id": 12, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "부여군", "description": "백제문화단지와 정림사지가 있는 백제고도", "feature": "백제문화단지와 정림사지"},
+                "en": {"name": "Buyeo-gun",
+                       "description": "Ancient Baekje capital with Baekje Cultural Land and Jeongnimsaji",
+                       "feature": "Baekje Cultural Land and Jeongnimsaji Temple Site"},
+                "jp": {"name": "扶余郡", "description": "百済文化団地と定林寺址がある百済古都",
+                       "feature": "百済文化団地と定林寺址"},
+                "cn": {"name": "扶余郡", "description": "百济文化园区和定林寺址所在的百济古都",
+                       "feature": "百济文化园区和定林寺址"}
+            }, "favorite_count": 11, "latitude": 36.2756, "longitude": 126.9100},
+
+            {"region_id": 12, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "서산시", "description": "해미읍성과 간월암이 있는 서해안도시", "feature": "해미읍성과 간월암"},
+                "en": {"name": "Seosan-si", "description": "West coast city with Haemi Fortress and Ganwolam",
+                       "feature": "Haemi Fortress and Ganwolam Hermitage"},
+                "jp": {"name": "瑞山市", "description": "海美邑城と看月庵がある西海岸都市",
+                       "feature": "海美邑城と看月庵"},
+                "cn": {"name": "瑞山市", "description": "海美邑城和看月庵所在的西海岸城市",
+                       "feature": "海美邑城和看月庵"}
+            }, "favorite_count": 9, "latitude": 36.7848, "longitude": 126.4503},
+
+            {"region_id": 12, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "서천군", "description": "국립생태원과 춘장대해수욕장이 있는 생태군", "feature": "국립생태원과 춘장대해수욕장"},
+                "en": {"name": "Seocheon-gun",
+                       "description": "Ecological county with National Institute of Ecology and Chungjangdae Beach",
+                       "feature": "National Institute of Ecology and Chungjangdae Beach"},
+                "jp": {"name": "舒川郡", "description": "国立生態院と春長台海水浴場がある生態郡",
+                       "feature": "国立生態院と春長台海水浴場"},
+                "cn": {"name": "舒川郡", "description": "国立生态院和春长台海水浴场所在的生态郡",
+                       "feature": "国立生态院和春长台海水浴场"}
+            }, "favorite_count": 8, "latitude": 36.0780, "longitude": 126.6919},
+
+            {"region_id": 12, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "아산시", "description": "온양온천과 현충사가 있는 온천도시", "feature": "온양온천과 현충사"},
+                "en": {"name": "Asan-si",
+                       "description": "Hot spring city with Onyang Hot Springs and Hyeonchungsa Shrine",
+                       "feature": "Onyang Hot Springs and Hyeonchungsa Shrine"},
+                "jp": {"name": "牙山市", "description": "温陽温泉と顕忠祠がある温泉都市",
+                       "feature": "温陽温泉と顕忠祠"},
+                "cn": {"name": "牙山市", "description": "温阳温泉和显忠祠所在的温泉城市", "feature": "温阳温泉和显忠祠"}
+            }, "favorite_count": 10, "latitude": 36.7898, "longitude": 127.0018},
+
+            {"region_id": 12, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "예산군", "description": "수덕사와 윤봉길의사 생가가 있는 역사군", "feature": "수덕사와 윤봉길의사 생가"},
+                "en": {"name": "Yesan-gun",
+                       "description": "Historic county with Sudeoksa Temple and Yun Bong-gil's birthplace",
+                       "feature": "Sudeoksa Temple and Yun Bong-gil's birthplace"},
+                "jp": {"name": "礼山郡", "description": "修徳寺と尹奉吉義士生家がある歴史郡",
+                       "feature": "修徳寺と尹奉吉義士生家"},
+                "cn": {"name": "礼山郡", "description": "修德寺和尹奉吉义士故居所在的历史郡",
+                       "feature": "修德寺和尹奉吉义士故居"}
+            }, "favorite_count": 7, "latitude": 36.6791, "longitude": 126.8428},
+
+            {"region_id": 12, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "청양군", "description": "청양고추와 칠갑산이 있는 산간군", "feature": "청양고추와 칠갑산"},
+                "en": {"name": "Cheongyang-gun",
+                       "description": "Mountain county with Cheongyang peppers and Chilgapsan",
+                       "feature": "Cheongyang peppers and Chilgapsan Mountain"},
+                "jp": {"name": "青陽郡", "description": "青陽唐辛子と七甲山がある山間郡",
+                       "feature": "청양唐辛子と七甲山"},
+                "cn": {"name": "青阳郡", "description": "청양辣椒和七甲山所在的山区郡", "feature": "청양辣椒和七甲山"}
+            }, "favorite_count": 6, "latitude": 36.4593, "longitude": 126.8022},
+
+            {"region_id": 12, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "천안시", "description": "교통의 요지이자 독립기념관이 있는 도시", "feature": "독립기념관과 아라리오"},
+                "en": {"name": "Cheonan-si", "description": "Transportation hub and city with Independence Hall",
+                       "feature": "Independence Hall and Arario"},
+                "jp": {"name": "天安市", "description": "交通の要地かつ独立記念館がある都市",
+                       "feature": "独立記念館とアラリオ"},
+                "cn": {"name": "天安市", "description": "交통要地和독립纪念馆所在的城市", "feature": "독립纪念馆和阿拉里奥"}
+            }, "favorite_count": 7, "latitude": 36.8151, "longitude": 127.1139},
+
+            {"region_id": 12, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "태안군", "description": "안면도와 꽃지해수욕장이 있는 해안군", "feature": "안면도와 꽃지해수욕장"},
+                "en": {"name": "Taean-gun", "description": "Coastal county with Anmyeondo and Kkotji Beach",
+                       "feature": "Anmyeondo Island and Kkotji Beach"},
+                "jp": {"name": "泰安郡", "description": "安眠島と花芝海水浴場がある海岸郡",
+                       "feature": "安眠島と花芝海水浴場"},
+                "cn": {"name": "泰安郡", "description": "安眠岛和花芝海水浴场所在的海岸郡",
+                       "feature": "安眠岛和花芝해수욕장"}
+            }, "favorite_count": 9, "latitude": 36.7455, "longitude": 126.2983},
+
+            {"region_id": 12, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "홍성군", "description": "홍성읍과 결성면이 있는 충남의 중심", "feature": "홍성읍과 결성면"},
+                "en": {"name": "Hongseong-gun",
+                       "description": "Center of Chungnam with Hongseong-eup and Gyeolseong-myeon",
+                       "feature": "Hongseong-eup and Gyeolseong-myeon"},
+                "jp": {"name": "洪城郡", "description": "洪城邑と結城面がある忠南の中心", "feature": "洪城邑と結城面"},
+                "cn": {"name": "洪城郡", "description": "洪城邑和结城面所在的忠南中심", "feature": "洪城邑和결城面"}
+            }, "favorite_count": 5, "latitude": 36.6012, "longitude": 126.6609},
+
+            # ===== 경상북도 (23개 시/군) =====
+            {"region_id": 13, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "경산시", "description": "영남대학교와 와촌면이 있는 교육도시", "feature": "영남대학교와 와촌면"},
+                "en": {"name": "Gyeongsan-si",
+                       "description": "Education city with Yeungnam University and Wachon-myeon",
+                       "feature": "Yeungnam University and Wachon-myeon"},
+                "jp": {"name": "慶山市", "description": "嶺南大学校と瓦村面がある教育都市",
+                       "feature": "嶺南大学校と瓦村面"},
+                "cn": {"name": "庆山市", "description": "岭南大学和瓦村面所在的教育城市", "feature": "岭南大学和瓦村面"}
+            }, "favorite_count": 6, "latitude": 35.8250, "longitude": 128.7411},
+
+            {"region_id": 13, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "경주시", "description": "신라 천년의 고도", "feature": "불국사와 석굴암"},
+                "en": {"name": "Gyeongju-si", "description": "Ancient capital of millennium Silla",
+                       "feature": "Bulguksa Temple and Seokguram Grotto"},
+                "jp": {"name": "慶州市", "description": "新羅千年の古都", "feature": "仏国寺と石窟庵"},
+                "cn": {"name": "庆州市", "description": "新罗千年古都", "feature": "佛国寺和石窟庵"}
+            }, "favorite_count": 25, "latitude": 35.8562, "longitude": 129.2250},
+
+            {"region_id": 13, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "구미시", "description": "삼성전자와 구미전자공업단지가 있는 전자도시", "feature": "삼성전자와 구미전자공업단지"},
+                "en": {"name": "Gumi-si",
+                       "description": "Electronics city with Samsung Electronics and Gumi Electronics Industrial Complex",
+                       "feature": "Samsung Electronics and Gumi Electronics Industrial Complex"},
+                "jp": {"name": "亀尾市", "description": "サムスン電子と亀尾電子工業団地がある電子都市",
+                       "feature": "サムスン電子と亀尾電子工業団地"},
+                "cn": {"name": "龟尾市", "description": "三星电子和龟尾电子工业园区所在的电子城市",
+                       "feature": "三星电子和龟尾电子工业园区"}
+            }, "favorite_count": 8, "latitude": 36.1195, "longitude": 128.3441},
+
+            {"region_id": 13, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "김천시", "description": "직지사와 황악산이 있는 불교도시", "feature": "직지사와 황악산"},
+                "en": {"name": "Gimcheon-si", "description": "Buddhist city with Jikjisa Temple and Hwangaksan",
+                       "feature": "Jikjisa Temple and Hwangaksan Mountain"},
+                "jp": {"name": "金泉市", "description": "直指寺と黄岳山がある仏教都市", "feature": "直指寺と黄岳山"},
+                "cn": {"name": "金泉市", "description": "直指寺和黄岳山所在的佛教城市", "feature": "直指寺和黄岳山"}
+            }, "favorite_count": 7, "latitude": 36.1399, "longitude": 128.1137},
+
+            {"region_id": 13, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "문경시", "description": "문경새재와 문경온천이 있는 관문도시", "feature": "문경새재와 문경온천"},
+                "en": {"name": "Mungyeong-si",
+                       "description": "Gateway city with Mungyeong Saejae and Mungyeong Hot Springs",
+                       "feature": "Mungyeong Saejae Pass and Mungyeong Hot Springs"},
+                "jp": {"name": "聞慶市", "description": "聞慶セジェと聞慶温泉がある関門都市",
+                       "feature": "聞慶セジェと聞慶温泉"},
+                "cn": {"name": "闻庆市", "description": "闻庆鸟岭和闻庆温泉所在的关门城市",
+                       "feature": "闻庆鸟岭和闻庆温泉"}
+            }, "favorite_count": 9, "latitude": 36.5867, "longitude": 128.1866},
+
+            {"region_id": 13, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "상주시", "description": "상주곶감과 경천대가 있는 농업도시", "feature": "상주곶감과 경천대"},
+                "en": {"name": "Sangju-si",
+                       "description": "Agricultural city with Sangju dried persimmons and Gyeongcheon-dae",
+                       "feature": "Sangju dried persimmons and Gyeongcheon-dae"},
+                "jp": {"name": "尚州市", "description": "尚州干し柿と景天台がある農業都市",
+                       "feature": "尚州干し柿と景天台"},
+                "cn": {"name": "尚州市", "description": "尚州柿饼和景天台所在的农业城市", "feature": "尚州柿饼和景天台"}
+            }, "favorite_count": 7, "latitude": 36.4109, "longitude": 128.1591},
+
+            {"region_id": 13, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "안동시", "description": "하회마을과 한국정신문화의 수도", "feature": "안동 하회마을과 도산서원"},
+                "en": {"name": "Andong-si", "description": "Capital of Korean spiritual culture with Hahoe Village",
+                       "feature": "Andong Hahoe Village and Dosan Seowon"},
+                "jp": {"name": "安東市", "description": "河回村と韓国精神文化の首都",
+                       "feature": "安東河回村と陶山書院"},
+                "cn": {"name": "安东市", "description": "河回村和韩国精神文化之都", "feature": "安东河回村和陶山书院"}
+            }, "favorite_count": 18, "latitude": 36.5684, "longitude": 128.7294},
+
+            {"region_id": 13, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "영주시", "description": "부석사와 소수서원이 있는 유교문화도시", "feature": "부석사와 소수서원"},
+                "en": {"name": "Yeongju-si",
+                       "description": "Confucian cultural city with Buseoksa Temple and Sosu Seowon",
+                       "feature": "Buseoksa Temple and Sosu Seowon"},
+                "jp": {"name": "栄州市", "description": "浮石寺と紹修書院がある儒教文化都市",
+                       "feature": "浮石寺と紹修書院"},
+                "cn": {"name": "荣州市", "description": "浮石寺和绍修书院所在的儒教文化城市",
+                       "feature": "浮石寺和绍修书院"}
+            }, "favorite_count": 12, "latitude": 36.8056, "longitude": 128.6240},
+
+            {"region_id": 13, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "영천시", "description": "보현산천문대와 영천시장이 있는 과학도시", "feature": "보현산천문대와 영천시장"},
+                "en": {"name": "Yeongcheon-si",
+                       "description": "Science city with Bohyeonsan Observatory and Yeongcheon Market",
+                       "feature": "Bohyeonsan Observatory and Yeongcheon Market"},
+                "jp": {"name": "永川市", "description": "普賢山天文台と永川市場がある科学都市",
+                       "feature": "普賢山天文台と永川市場"},
+                "cn": {"name": "永川市", "description": "普贤山天文台和永川市场所在的科学城市",
+                       "feature": "普贤山天文台和永川市场"}
+            }, "favorite_count": 6, "latitude": 35.9733, "longitude": 128.9386},
+
+            {"region_id": 13, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "예천군", "description": "회룡포와 삼강주막이 있는 강변군", "feature": "회룡포와 삼강주막"},
+                "en": {"name": "Yecheon-gun", "description": "Riverside county with Hoeryongpo and Samgang Jumak",
+                       "feature": "Hoeryongpo and Samgang Jumak"},
+                "jp": {"name": "醴泉郡", "description": "回龍浦と三江酒幕がある川辺郡", "feature": "回龍浦と三江酒幕"},
+                "cn": {"name": "醴泉郡", "description": "回龙浦和三江酒幕所在的江边郡", "feature": "回龙浦和三江酒幕"}
+            }, "favorite_count": 8, "latitude": 36.6553, "longitude": 128.4516},
+
+            {"region_id": 13, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "울릉군", "description": "독도와 울릉도가 있는 동해의 섬", "feature": "독도와 울릉도"},
+                "en": {"name": "Ulleung-gun", "description": "East Sea island with Dokdo and Ulleungdo",
+                       "feature": "Dokdo and Ulleungdo Islands"},
+                "jp": {"name": "鬱陵郡", "description": "独島と鬱陵島がある東海の島", "feature": "独島と鬱陵島"},
+                "cn": {"name": "郁陵郡", "description": "独岛和郁陵岛所在的东海岛屿", "feature": "独岛和郁陵岛"}
+            }, "favorite_count": 15, "latitude": 37.4844, "longitude": 130.9058},
+
+            {"region_id": 13, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "의성군", "description": "의성마늘과 조문국박물관이 있는 농업군", "feature": "의성마늘과 조문국박물관"},
+                "en": {"name": "Uiseong-gun",
+                       "description": "Agricultural county with Uiseong garlic and Jomungguk Museum",
+                       "feature": "Uiseong garlic and Jomungguk Museum"},
+                "jp": {"name": "義城郡", "description": "義城ニンニクと召文国博物館がある農業郡",
+                       "feature": "義城ニンニクと召文国博物館"},
+                "cn": {"name": "义城郡", "description": "义城大蒜和召文国博物馆所在的农业郡",
+                       "feature": "义城大蒜和召文国博物馆"}
+            }, "favorite_count": 5, "latitude": 36.3522, "longitude": 128.6975},
+
+            {"region_id": 13, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "청도군", "description": "청도소싸움과 프로방스마을이 있는 체험군", "feature": "청도소싸움과 프로방스마을"},
+                "en": {"name": "Cheongdo-gun",
+                       "description": "Experience county with Cheongdo bull fighting and Provence Village",
+                       "feature": "Cheongdo bull fighting and Provence Village"},
+                "jp": {"name": "清道郡", "description": "清道闘牛とプロバンス村がある体験郡",
+                       "feature": "清道闘牛とプロバンス村"},
+                "cn": {"name": "清道郡", "description": "清道斗牛和普罗旺斯村所在的体验郡",
+                       "feature": "清道斗牛和普罗旺斯村"}
+            }, "favorite_count": 8, "latitude": 35.6484, "longitude": 128.7357},
+
+            {"region_id": 13, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "청송군", "description": "주왕산과 청송사과가 있는 산간군", "feature": "주왕산과 청송사과"},
+                "en": {"name": "Cheongsong-gun", "description": "Mountain county with Juwangsan and Cheongsong apples",
+                       "feature": "Juwangsan Mountain and Cheongsong apples"},
+                "jp": {"name": "青松郡", "description": "周王山と青松リンゴがある山間郡",
+                       "feature": "周王山と青松リンゴ"},
+                "cn": {"name": "青松郡", "description": "周王山和青松苹果所在的山区郡", "feature": "周王山和青松苹果"}
+            }, "favorite_count": 9, "latitude": 36.4335, "longitude": 129.0572},
+
+            {"region_id": 13, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "칠곡군", "description": "가산산성과 인동장시장이 있는 역사군", "feature": "가산산성과 인동장시장"},
+                "en": {"name": "Chilgok-gun", "description": "Historic county with Gasan Fortress and Indong Market",
+                       "feature": "Gasan Fortress and Indong Market"},
+                "jp": {"name": "漆谷郡", "description": "嘉山山城と仁同場市場がある歴史郡",
+                       "feature": "嘉山山城と仁同場市場"},
+                "cn": {"name": "漆谷郡", "description": "嘉山山城和仁同场市场所在的历史郡",
+                       "feature": "嘉山山城和仁同场市场"}
+            }, "favorite_count": 5, "latitude": 35.9955, "longitude": 128.4014},
+
+            {"region_id": 13, "tour_api_subcode": "16", "translations": {
+                "ko": {"name": "봉화군", "description": "청량산과 춘양목이 있는 산림군", "feature": "청량산과 춘양목"},
+                "en": {"name": "Bonghwa-gun", "description": "Forest county with Cheongnyangsan and Chunyang pine",
+                       "feature": "Cheongnyangsan Mountain and Chunyang pine"},
+                "jp": {"name": "奉化郡", "description": "清涼山と春陽木がある山林郡", "feature": "清涼山と春陽木"},
+                "cn": {"name": "奉化郡", "description": "清凉山和春阳木所在的山林郡", "feature": "清凉山和春阳木"}
+            }, "favorite_count": 7, "latitude": 36.8931, "longitude": 128.7320},
+
+            {"region_id": 13, "tour_api_subcode": "17", "translations": {
+                "ko": {"name": "성주군", "description": "성주참외와 성주산성이 있는 농업군", "feature": "성주참외와 성주산성"},
+                "en": {"name": "Seongju-gun",
+                       "description": "Agricultural county with Seongju melons and Seongju Fortress",
+                       "feature": "Seongju melons and Seongju Fortress"},
+                "jp": {"name": "星州郡", "description": "星州マスクメロンと星州山城がある農業郡",
+                       "feature": "星州マスクメロンと星州山城"},
+                "cn": {"name": "星州郡", "description": "星州甜瓜和星州山城所在的农业郡",
+                       "feature": "星州甜瓜和星州山城"}
+            }, "favorite_count": 6, "latitude": 35.9189, "longitude": 128.2823},
+
+            {"region_id": 13, "tour_api_subcode": "18", "translations": {
+                "ko": {"name": "고령군", "description": "대가야박물관과 지산동고분군이 있는 가야군", "feature": "대가야박물관과 지산동고분군"},
+                "en": {"name": "Goryeong-gun",
+                       "description": "Gaya county with Daegaya Museum and Jisan-dong Tomb Complex",
+                       "feature": "Daegaya Museum and Jisan-dong Tomb Complex"},
+                "jp": {"name": "高霊郡", "description": "大伽耶博物館と池山洞古墳群がある伽耶郡",
+                       "feature": "大伽耶博物館と池山洞古墳群"},
+                "cn": {"name": "高灵郡", "description": "大伽耶博物馆和池山洞古坟群所在的伽耶郡",
+                       "feature": "大伽耶博物馆和池山洞古坟群"}
+            }, "favorite_count": 8, "latitude": 35.7274, "longitude": 128.2635},
+
+            {"region_id": 13, "tour_api_subcode": "19", "translations": {
+                "ko": {"name": "군위군", "description": "화산산성과 삼국유사테마파크가 있는 문화군", "feature": "화산산성과 삼국유사테마파크"},
+                "en": {"name": "Gunwi-gun",
+                       "description": "Cultural county with Hwasan Fortress and Samguk Yusa Theme Park",
+                       "feature": "Hwasan Fortress and Samguk Yusa Theme Park"},
+                "jp": {"name": "軍威郡", "description": "花山山城と三国遺事テーマパークがある文化郡",
+                       "feature": "花山山城と三国遺事テーマパーク"},
+                "cn": {"name": "军威郡", "description": "花山山城和三国遗事主题公园所在的文化郡",
+                       "feature": "花山山城和三国遗事主题公园"}
+            }, "favorite_count": 6, "latitude": 36.2365, "longitude": 128.5717},
+
+            {"region_id": 13, "tour_api_subcode": "20", "translations": {
+                "ko": {"name": "영양군", "description": "영양고추와 일월산이 있는 산간군", "feature": "영양고추와 일월산"},
+                "en": {"name": "Yeongyang-gun", "description": "Mountain county with Yeongyang peppers and Ilwolsan",
+                       "feature": "Yeongyang peppers and Ilwolsan Mountain"},
+                "jp": {"name": "英陽郡", "description": "英陽唐辛子と日月山がある山間郡",
+                       "feature": "英陽唐辛子と日月山"},
+                "cn": {"name": "英阳郡", "description": "英阳辣椒和日月山所在的山区郡", "feature": "英阳辣椒和日月山"}
+            }, "favorite_count": 5, "latitude": 36.6695, "longitude": 129.1126},
+
+            {"region_id": 13, "tour_api_subcode": "21", "translations": {
+                "ko": {"name": "영덕군", "description": "영덕대게와 강구항이 있는 동해안군", "feature": "영덕대게와 강구항"},
+                "en": {"name": "Yeongdeok-gun",
+                       "description": "East coast county with Yeongdeok snow crab and Ganggu Port",
+                       "feature": "Yeongdeok snow crab and Ganggu Port"},
+                "jp": {"name": "盈德郡", "description": "盈德ズワイガニと江口港がある東海岸郡",
+                       "feature": "盈德ズワイガニと江口港"},
+                "cn": {"name": "盈德郡", "description": "盈德雪蟹和江口港所在的东海岸郡", "feature": "盈德雪蟹和江口港"}
+            }, "favorite_count": 10, "latitude": 36.4151, "longitude": 129.3665},
+
+            {"region_id": 13, "tour_api_subcode": "22", "translations": {
+                "ko": {"name": "울진군", "description": "울진금강송과 불영사가 있는 동해안군", "feature": "울진금강송과 불영사"},
+                "en": {"name": "Uljin-gun",
+                       "description": "East coast county with Uljin Geumgangsong pine and Bulyeongsa Temple",
+                       "feature": "Uljin Geumgangsong pine and Bulyeongsa Temple"},
+                "jp": {"name": "蔚珍郡", "description": "蔚珍金剛松と仏影寺がある東海岸郡",
+                       "feature": "蔚珍金剛松と仏影寺"},
+                "cn": {"name": "蔚珍郡", "description": "蔚珍金刚松和佛影寺所在的东海岸郡",
+                       "feature": "蔚珍金刚松和佛影寺"}
+            }, "favorite_count": 8, "latitude": 36.9931, "longitude": 129.4003},
+
+            {"region_id": 13, "tour_api_subcode": "23", "translations": {
+                "ko": {"name": "포항시", "description": "철강산업과 호미곶이 있는 동해안 도시", "feature": "호미곶과 포스코"},
+                "en": {"name": "Pohang-si", "description": "East coast city with steel industry and Homigot Cape",
+                       "feature": "Homigot Cape and POSCO"},
+                "jp": {"name": "浦項市", "description": "鉄鋼産業と虎尾岬がある東海岸都市",
+                       "feature": "虎尾岬とポスコ"},
+                "cn": {"name": "浦项市", "description": "钢铁产业和虎尾岬所在的东海岸城市",
+                       "feature": "虎尾岬和浦项制铁"}
+            }, "favorite_count": 12, "latitude": 36.0190, "longitude": 129.3435},
+
+            # ===== 경상남도 (18개 시/군) =====
+            {"region_id": 14, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "거제시", "description": "거제도와 조선소가 있는 섬도시", "feature": "거제도와 대우조선해양"},
+                "en": {"name": "Geoje-si", "description": "Island city with Geojedo and shipyard",
+                       "feature": "Geojedo Island and Daewoo Shipbuilding & Marine Engineering"},
+                "jp": {"name": "巨済市", "description": "巨済島と造船所がある島都市",
+                       "feature": "巨済島と大宇造船海洋"},
+                "cn": {"name": "巨济市", "description": "巨济岛和造船厂所在的岛屿城市",
+                       "feature": "巨济岛和大宇造船海洋"}
+            }, "favorite_count": 12, "latitude": 34.8807, "longitude": 128.6211},
+
+            {"region_id": 14, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "거창군", "description": "가조온천과 수승대가 있는 산간군", "feature": "가조온천과 수승대"},
+                "en": {"name": "Geochang-gun", "description": "Mountain county with Gajo Hot Springs and Suseungdae",
+                       "feature": "Gajo Hot Springs and Suseungdae"},
+                "jp": {"name": "居昌郡", "description": "加祚温泉と水昇台がある山間郡", "feature": "加祚温泉と水昇台"},
+                "cn": {"name": "居昌郡", "description": "加祚温泉和水升台所在的山区郡", "feature": "加祚温泉和水升台"}
+            }, "favorite_count": 7, "latitude": 35.6871, "longitude": 127.9095},
+
+            {"region_id": 14, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "고성군", "description": "공룡발자국과 당항포가 있는 남해안군", "feature": "공룡발자국과 당항포"},
+                "en": {"name": "Goseong-gun",
+                       "description": "South coast county with dinosaur footprints and Danghangpo",
+                       "feature": "Dinosaur footprints and Danghangpo Port"},
+                "jp": {"name": "固城郡", "description": "恐竜足跡と唐項浦がある南海岸郡",
+                       "feature": "恐竜足跡と唐項浦"},
+                "cn": {"name": "固城郡", "description": "恐龙足迹和唐项浦所在的南海岸郡", "feature": "恐龙足迹和唐项浦"}
+            }, "favorite_count": 9, "latitude": 34.9732, "longitude": 128.3227},
+
+            {"region_id": 14, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "김해시", "description": "가야의 고도이자 김해공항이 있는 도시", "feature": "수로왕릉과 가야의 숨결"},
+                "en": {"name": "Gimhae-si", "description": "Ancient capital of Gaya with Gimhae Airport",
+                       "feature": "Tomb of King Suro and Breath of Gaya"},
+                "jp": {"name": "金海市", "description": "伽耶の古都かつ金海空港がある都市",
+                       "feature": "首露王陵と伽耶の息吹"},
+                "cn": {"name": "金海市", "description": "伽倻古都和金海机场所在的城市", "feature": "首露王陵和伽倻气息"}
+            }, "favorite_count": 8, "latitude": 35.2281, "longitude": 128.8889},
+
+            {"region_id": 14, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "남해군", "description": "남해대교와 독일마을이 있는 섬군", "feature": "남해대교와 독일마을"},
+                "en": {"name": "Namhae-gun", "description": "Island county with Namhae Bridge and German Village",
+                       "feature": "Namhae Bridge and German Village"},
+                "jp": {"name": "南海郡", "description": "南海大橋とドイツ村がある島郡",
+                       "feature": "南海大橋とドイツ村"},
+                "cn": {"name": "南海郡", "description": "南海大桥和德国村所在的岛郡", "feature": "南海大桥和德国村"}
+            }, "favorite_count": 11, "latitude": 34.8374, "longitude": 127.8926},
+
+            {"region_id": 14, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "밀양시", "description": "밀양아리랑과 표충사가 있는 전통도시", "feature": "밀양아리랑과 표충사"},
+                "en": {"name": "Miryang-si",
+                       "description": "Traditional city with Miryang Arirang and Pyochungsa Temple",
+                       "feature": "Miryang Arirang and Pyochungsa Temple"},
+                "jp": {"name": "密陽市", "description": "密陽アリランと表忠寺がある伝統都市",
+                       "feature": "密陽アリランと表忠寺"},
+                "cn": {"name": "密阳市", "description": "密阳阿里郎和表忠寺所在的传统城市",
+                       "feature": "密阳阿里郎和表忠寺"}
+            }, "favorite_count": 8, "latitude": 35.5041, "longitude": 128.7463},
+
+            {"region_id": 14, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "사천시", "description": "한국항공우주산업과 실안해수욕장이 있는 항공도시", "feature": "한국항공우주산업과 실안해수욕장"},
+                "en": {"name": "Sacheon-si",
+                       "description": "Aviation city with Korea Aerospace Industries and Silan Beach",
+                       "feature": "Korea Aerospace Industries and Silan Beach"},
+                "jp": {"name": "泗川市", "description": "韓国航空宇宙産業と実安海水浴場がある航空都市",
+                       "feature": "韓国航空宇宙産業と実安海水浴場"},
+                "cn": {"name": "泗川市", "description": "韩国航空宇宙产业和实安海水浴场所在的航空城市",
+                       "feature": "韩国航空宇宙产业和实安海水浴场"}
+            }, "favorite_count": 7, "latitude": 35.0036, "longitude": 128.0645},
+
+            {"region_id": 14, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "산청군", "description": "지리산과 한의학박물관이 있는 산간군", "feature": "지리산과 한의학박물관"},
+                "en": {"name": "Sancheong-gun",
+                       "description": "Mountain county with Jirisan and Traditional Korean Medicine Museum",
+                       "feature": "Jirisan Mountain and Traditional Korean Medicine Museum"},
+                "jp": {"name": "山清郡", "description": "智異山と韓医学博物館がある山間郡",
+                       "feature": "智異山と韓医学博物館"},
+                "cn": {"name": "山清郡", "description": "智异山和韩医学博物馆所在的山区郡",
+                       "feature": "智异山和韩医学博物馆"}
+            }, "favorite_count": 9, "latitude": 35.4151, "longitude": 127.8733},
+
+            {"region_id": 14, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "양산시", "description": "통도사와 신불산이 있는 불교도시", "feature": "통도사와 신불산"},
+                "en": {"name": "Yangsan-si", "description": "Buddhist city with Tongdosa Temple and Sinbulsan",
+                       "feature": "Tongdosa Temple and Sinbulsan Mountain"},
+                "jp": {"name": "梁山市", "description": "通度寺と神仏山がある仏教都市", "feature": "通度寺と神仏山"},
+                "cn": {"name": "梁山市", "description": "通度寺和神佛山所在的佛教城市", "feature": "通度寺和神佛山"}
+            }, "favorite_count": 9, "latitude": 35.3351, "longitude": 129.0378},
+
+            {"region_id": 14, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "의령군", "description": "의병박물관과 정암루가 있는 의병의고장", "feature": "의병박물관과 정암루"},
+                "en": {"name": "Uiryeong-gun",
+                       "description": "Hometown of righteous army with Uibyeong Museum and Jeongamnu",
+                       "feature": "Uibyeong Museum and Jeongamnu Pavilion"},
+                "jp": {"name": "宜寧郡", "description": "義兵博物館と鄭菴楼がある義兵の故郷",
+                       "feature": "義兵博物館と鄭菴楼"},
+                "cn": {"name": "宜宁郡", "description": "义兵博物馆和郑庵楼所在的义兵故乡",
+                       "feature": "义兵博物馆和郑庵楼"}
+            }, "favorite_count": 6, "latitude": 35.3220, "longitude": 128.2618},
+
+            {"region_id": 14, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "진주시", "description": "진주성과 유등축제로 유명한 역사도시", "feature": "진주성과 촉석루"},
+                "en": {"name": "Jinju-si", "description": "Historic city famous for Jinju Castle and Lantern Festival",
+                       "feature": "Jinju Castle and Chokseongnu Pavilion"},
+                "jp": {"name": "晋州市", "description": "晋州城と流燈祭で有名な歴史都市", "feature": "晋州城と矗石楼"},
+                "cn": {"name": "晋州市", "description": "晋州城和流灯节闻名的历史城市", "feature": "晋州城和矗石楼"}
+            }, "favorite_count": 10, "latitude": 35.1800, "longitude": 128.1076},
+
+            {"region_id": 14, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "창녕군", "description": "우포늪과 부곡온천이 있는 생태군", "feature": "우포늪과 부곡온천"},
+                "en": {"name": "Changnyeong-gun",
+                       "description": "Ecological county with Upo Wetland and Bugok Hot Springs",
+                       "feature": "Upo Wetland and Bugok Hot Springs"},
+                "jp": {"name": "昌寧郡", "description": "牛浦沼と釜谷温泉がある生態郡", "feature": "牛浦沼と釜谷温泉"},
+                "cn": {"name": "昌宁郡", "description": "牛浦沼和釜谷温泉所在的生态郡", "feature": "牛浦沼和釜谷温泉"}
+            }, "favorite_count": 8, "latitude": 35.5445, "longitude": 128.4924},
+
+            {"region_id": 14, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "창원시", "description": "경상남도청이 있는 도청소재지", "feature": "창원시청과 용지호수공원"},
+                "en": {"name": "Changwon-si", "description": "Provincial capital of Gyeongsangnam-do",
+                       "feature": "Changwon City Hall and Yongji Lake Park"},
+                "jp": {"name": "昌原市", "description": "慶尚南道庁がある道庁所在地",
+                       "feature": "昌原市庁と龍池湖水公園"},
+                "cn": {"name": "昌原市", "description": "庆尚南道道政府所在地", "feature": "昌原市政府和龙池湖水公园"}
+            }, "favorite_count": 10, "latitude": 35.2281, "longitude": 128.6811},
+
+            {"region_id": 14, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "통영시", "description": "한려수도의 아름다운 바다도시", "feature": "통영케이블카와 동피랑"},
+                "en": {"name": "Tongyeong-si", "description": "Beautiful sea city of Hallyeohaesang",
+                       "feature": "Tongyeong Cable Car and Dongpirang"},
+                "jp": {"name": "統営市", "description": "閑麗水道の美しい海都市",
+                       "feature": "統営ケーブルカーと東皮郎"},
+                "cn": {"name": "统营市", "description": "闲丽水道美丽的海洋城市", "feature": "统营缆车和东皮郎"}
+            }, "favorite_count": 15, "latitude": 34.8543, "longitude": 128.4330},
+
+            {"region_id": 14, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "하동군", "description": "하동녹차와 화개장터가 있는 차의고장", "feature": "하동녹차와 화개장터"},
+                "en": {"name": "Hadong-gun", "description": "Tea hometown with Hadong green tea and Hwagae Market",
+                       "feature": "Hadong green tea and Hwagae Market"},
+                "jp": {"name": "河東郡", "description": "河東緑茶と花開場터がある茶の故郷",
+                       "feature": "河東緑茶と花開場터"},
+                "cn": {"name": "河东郡", "description": "河东绿茶和花开集市所在的茶叶故乡",
+                       "feature": "河东绿茶和花开集市"}
+            }, "favorite_count": 9, "latitude": 35.0675, "longitude": 127.7514},
+
+            {"region_id": 14, "tour_api_subcode": "16", "translations": {
+                "ko": {"name": "함안군", "description": "아라가야와 함안연꽃축제가 있는 고대군", "feature": "아라가야와 함안연꽃축제"},
+                "en": {"name": "Haman-gun", "description": "Ancient county with Ara-Gaya and Haman Lotus Festival",
+                       "feature": "Ara-Gaya and Haman Lotus Festival"},
+                "jp": {"name": "咸安郡", "description": "阿羅伽耶と咸安蓮花祭がある古代郡",
+                       "feature": "阿羅伽耶と咸安蓮花祭"},
+                "cn": {"name": "咸安郡", "description": "阿罗伽倻和咸安莲花节所在的古代郡",
+                       "feature": "阿罗伽倻和咸安莲花节"}
+            }, "favorite_count": 7, "latitude": 35.2722, "longitude": 128.4065},
+
+            {"region_id": 14, "tour_api_subcode": "17", "translations": {
+                "ko": {"name": "함양군", "description": "지리산과 상림공원이 있는 산간군", "feature": "지리산과 상림공원"},
+                "en": {"name": "Hamyang-gun", "description": "Mountain county with Jirisan and Sangnim Park",
+                       "feature": "Jirisan Mountain and Sangnim Park"},
+                "jp": {"name": "咸陽郡", "description": "智異山と上林公園がある山間郡", "feature": "智異山と上林公園"},
+                "cn": {"name": "咸阳郡", "description": "智异山和上林公园所在的山区郡", "feature": "智异山和上林公园"}
+            }, "favorite_count": 8, "latitude": 35.5204, "longitude": 127.7250},
+
+            {"region_id": 14, "tour_api_subcode": "18", "translations": {
+                "ko": {"name": "합천군", "description": "해인사와 팔만대장경이 있는 불교성지", "feature": "해인사와 팔만대장경"},
+                "en": {"name": "Hapcheon-gun",
+                       "description": "Buddhist sanctuary with Haeinsa Temple and Tripitaka Koreana",
+                       "feature": "Haeinsa Temple and Tripitaka Koreana"},
+                "jp": {"name": "陜川郡", "description": "海印寺と八万大蔵経がある仏教聖地",
+                       "feature": "海印寺と八万大蔵経"},
+                "cn": {"name": "陕川郡", "description": "海印寺和八万大藏经所在的佛教圣地",
+                       "feature": "海印寺和八万大藏经"}
+            }, "favorite_count": 12, "latitude": 35.5664, "longitude": 128.1695},
+
+            # ===== 전북특별자치도 (14개 시/군) =====
+            {"region_id": 15, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "고창군", "description": "고창갯벌과 운곡습지가 있는 생태군", "feature": "고창갯벌과 운곡습지"},
+                "en": {"name": "Gochang-gun",
+                       "description": "Ecological county with Gochang Tidal Flat and Ungok Wetland",
+                       "feature": "Gochang Tidal Flat and Ungok Wetland"},
+                "jp": {"name": "高敞郡", "description": "高敞干潟と雲谷湿地がある生態郡",
+                       "feature": "高敞干潟と雲谷湿地"},
+                "cn": {"name": "高敞郡", "description": "高敞滩涂和云谷湿地所在的生态郡",
+                       "feature": "高敞滩涂和云谷湿地"}
+            }, "favorite_count": 8, "latitude": 35.4355, "longitude": 126.7011},
+
+            {"region_id": 15, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "군산시", "description": "근대문화유산과 새만금이 있는 항구도시", "feature": "군산근대역사박물관과 이성당"},
+                "en": {"name": "Gunsan-si", "description": "Port city with modern cultural heritage and Saemangeum",
+                       "feature": "Gunsan Modern History Museum and Iseongdang"},
+                "jp": {"name": "群山市", "description": "近代文化遺産とセマングムがある港都市",
+                       "feature": "群山近代歴史博物館と李成堂"},
+                "cn": {"name": "群山市", "description": "近代文化遗产和新万金所在的港口城市",
+                       "feature": "群山近代历史博物馆和李成堂"}
+            }, "favorite_count": 8, "latitude": 35.9676, "longitude": 126.7369},
+
+            {"region_id": 15, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "김제시", "description": "김제평야와 금산사가 있는 농업도시", "feature": "김제평야와 금산사"},
+                "en": {"name": "Gimje-si", "description": "Agricultural city with Gimje Plain and Geumsansa Temple",
+                       "feature": "Gimje Plain and Geumsansa Temple"},
+                "jp": {"name": "金堤市", "description": "金堤平野と金山寺がある農業都市",
+                       "feature": "金堤平野と金山寺"},
+                "cn": {"name": "金堤市", "description": "金堤平原和金山寺所在的农业城市", "feature": "金堤平原和金山寺"}
+            }, "favorite_count": 6, "latitude": 35.8039, "longitude": 126.8819},
+
+            {"region_id": 15, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "남원시", "description": "춘향전과 지리산이 있는 문학도시", "feature": "춘향테마파크와 지리산"},
+                "en": {"name": "Namwon-si", "description": "Literary city with Chunhyang story and Jirisan",
+                       "feature": "Chunhyang Theme Park and Jirisan Mountain"},
+                "jp": {"name": "南原市", "description": "春香伝と智異山がある文学都市",
+                       "feature": "春香テーマパークと智異山"},
+                "cn": {"name": "南原市", "description": "春香传和智异山所在的文学城市",
+                       "feature": "春香主题公园和智异山"}
+            }, "favorite_count": 10, "latitude": 35.4164, "longitude": 127.3904},
+
+            {"region_id": 15, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "무주군", "description": "무주리조트와 덕유산이 있는 산간군", "feature": "무주리조트와 덕유산"},
+                "en": {"name": "Muju-gun", "description": "Mountain county with Muju Resort and Deogyusan",
+                       "feature": "Muju Resort and Deogyusan Mountain"},
+                "jp": {"name": "茂朱郡", "description": "茂朱リゾートと徳裕山がある山間郡",
+                       "feature": "茂朱リゾートと徳裕山"},
+                "cn": {"name": "茂朱郡", "description": "茂朱度假村和德裕山所在的山区郡",
+                       "feature": "茂朱度假村和德裕山"}
+            }, "favorite_count": 9, "latitude": 35.9078, "longitude": 127.6615},
+
+            {"region_id": 15, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "부안군", "description": "변산반도와 채석강이 있는 해안군", "feature": "변산반도와 채석강"},
+                "en": {"name": "Buan-gun", "description": "Coastal county with Byeonsan Peninsula and Chaeseokgang",
+                       "feature": "Byeonsan Peninsula and Chaeseokgang Cliff"},
+                "jp": {"name": "扶安郡", "description": "扁山半島と彩石江がある海岸郡", "feature": "扁山半島と彩石江"},
+                "cn": {"name": "扶安郡", "description": "边山半岛和彩石江所在的海岸郡", "feature": "边山半岛和彩石江"}
+            }, "favorite_count": 10, "latitude": 35.7318, "longitude": 126.7338},
+
+            {"region_id": 15, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "순창군", "description": "순창고추장과 강천산이 있는 전통군", "feature": "순창고추장과 강천산"},
+                "en": {"name": "Sunchang-gun",
+                       "description": "Traditional county with Sunchang gochujang and Gangcheonsan",
+                       "feature": "Sunchang gochujang and Gangcheonsan Mountain"},
+                "jp": {"name": "淳昌郡", "description": "淳昌コチュジャンと江川山がある伝統郡",
+                       "feature": "淳昌コチュジャンと江川山"},
+                "cn": {"name": "淳昌郡", "description": "淳昌韩式辣椒酱和江川山所在的传统郡",
+                       "feature": "淳昌韩式辣椒酱和江川山"}
+            }, "favorite_count": 7, "latitude": 35.3745, "longitude": 127.1373},
+
+            {"region_id": 15, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "완주군", "description": "전주와 인접한 위성도시", "feature": "완주삼례문화예술촌과 대둔산"},
+                "en": {"name": "Wanju-gun", "description": "Satellite city adjacent to Jeonju",
+                       "feature": "Wanju Samrye Culture Art Village and Daedunsan Mountain"},
+                "jp": {"name": "完州郡", "description": "全州と隣接する衛星都市",
+                       "feature": "完州三礼文化芸術村と大屯山"},
+                "cn": {"name": "完州郡", "description": "与全州相邻的卫星城市", "feature": "完州三礼文化艺术村和大屯山"}
+            }, "favorite_count": 6, "latitude": 35.9054, "longitude": 127.1669},
+
+            {"region_id": 15, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "익산시", "description": "백제왕궁리유적과 미륵사지가 있는 백제도시", "feature": "백제왕궁리유적과 미륵사지"},
+                "en": {"name": "Iksan-si", "description": "Baekje city with Baekje Royal Palace site and Mireuksaji",
+                       "feature": "Baekje Royal Palace site and Mireuksaji Temple Site"},
+                "jp": {"name": "益山市", "description": "百済王宮里遺跡と弥勒寺址がある百済都市",
+                       "feature": "百済王宮里遺跡と弥勒寺址"},
+                "cn": {"name": "益山市", "description": "百济王宫里遗址和弥勒寺址所在的百济城市",
+                       "feature": "百济王宫里遗址和弥勒寺址"}
+            }, "favorite_count": 9, "latitude": 35.9483, "longitude": 126.9575},
+
+            {"region_id": 15, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "임실군", "description": "임실치즈와 국사봉이 있는 치즈의고장", "feature": "임실치즈와 국사봉"},
+                "en": {"name": "Imsil-gun", "description": "Cheese hometown with Imsil cheese and Guksabong",
+                       "feature": "Imsil cheese and Guksabong Peak"},
+                "jp": {"name": "任実郡", "description": "任実チーズと国師峰があるチーズの故郷",
+                       "feature": "任実チーズと国師峰"},
+                "cn": {"name": "任实郡", "description": "任实奶酪和国师峰所在的奶酪故乡", "feature": "任实奶酪和国师峰"}
+            }, "favorite_count": 6, "latitude": 35.6176, "longitude": 127.2886},
+
+            {"region_id": 15, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "장수군", "description": "장수한우와 논개생가가 있는 산간군", "feature": "장수한우와 논개생가"},
+                "en": {"name": "Jangsu-gun",
+                       "description": "Mountain county with Jangsu Hanwoo and Nongae's birthplace",
+                       "feature": "Jangsu Hanwoo and Nongae's birthplace"},
+                "jp": {"name": "長水郡", "description": "長水韓牛と論介生家がある山間郡",
+                       "feature": "長水韓牛と論介生家"},
+                "cn": {"name": "长水郡", "description": "长水韩牛和论介故居所在的山区郡",
+                       "feature": "长水韩牛和论介故居"}
+            }, "favorite_count": 5, "latitude": 35.6475, "longitude": 127.5194},
+
+            {"region_id": 15, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "전주시", "description": "한옥마을과 비빔밥의 고장", "feature": "전주한옥마을과 전통음식"},
+                "en": {"name": "Jeonju-si", "description": "Hometown of Hanok Village and bibimbap",
+                       "feature": "Jeonju Hanok Village and traditional food"},
+                "jp": {"name": "全州市", "description": "韓屋村とビビンバの故郷", "feature": "全州韓屋村と伝統料理"},
+                "cn": {"name": "全州市", "description": "韩屋村和拌饭的故乡", "feature": "全州韩屋村和传统料理"}
+            }, "favorite_count": 22, "latitude": 35.8242, "longitude": 127.1480},
+
+            {"region_id": 15, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "정읍시", "description": "내장산과 정읍사가 있는 단풍도시", "feature": "내장산과 정읍사"},
+                "en": {"name": "Jeongeup-si", "description": "Autumn foliage city with Naejangsan and Jeongeupsagok",
+                       "feature": "Naejangsan Mountain and Jeongeupsagok"},
+                "jp": {"name": "井邑市", "description": "内蔵山と井邑詞がある紅葉都市", "feature": "内蔵山と井邑詞"},
+                "cn": {"name": "井邑市", "description": "内藏山和井邑歌所在的枫叶城市", "feature": "内藏山和井邑歌"}
+            }, "favorite_count": 9, "latitude": 35.5697, "longitude": 126.8561},
+
+            {"region_id": 15, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "진안군", "description": "진안홍삼과 마이산이 있는 산간군", "feature": "진안홍삼과 마이산"},
+                "en": {"name": "Jinan-gun", "description": "Mountain county with Jinan red ginseng and Maisan",
+                       "feature": "Jinan red ginseng and Maisan Mountain"},
+                "jp": {"name": "鎮安郡", "description": "鎮安紅参と馬耳山がある山間郡", "feature": "鎮安紅参と馬耳山"},
+                "cn": {"name": "镇安郡", "description": "镇安红参和马耳山所在的山区郡", "feature": "镇安红参和马耳山"}
+            }, "favorite_count": 7, "latitude": 35.7919, "longitude": 127.4249},
+
+            # ===== 전라남도 (22개 시/군) =====
+            {"region_id": 16, "tour_api_subcode": "1", "translations": {
+                "ko": {"name": "강진군", "description": "다산초당과 고려청자가 있는 문화군", "feature": "다산초당과 고려청자"},
+                "en": {"name": "Gangjin-gun", "description": "Cultural county with Dasan Chodang and Goryeo celadon",
+                       "feature": "Dasan Chodang and Goryeo celadon"},
+                "jp": {"name": "康津郡", "description": "茶山草堂と高麗青磁がある文化郡",
+                       "feature": "茶山草堂と高麗青磁"},
+                "cn": {"name": "康津郡", "description": "茶山草堂和高丽青瓷所在的文化郡",
+                       "feature": "茶山草堂和高丽青瓷"}
+            }, "favorite_count": 8, "latitude": 34.6420, "longitude": 126.7675},
+
+            {"region_id": 16, "tour_api_subcode": "2", "translations": {
+                "ko": {"name": "고흥군", "description": "나로우주센터와 소록도가 있는 우주군", "feature": "나로우주센터와 소록도"},
+                "en": {"name": "Goheung-gun", "description": "Space county with Naro Space Center and Sorokdo",
+                       "feature": "Naro Space Center and Sorokdo Island"},
+                "jp": {"name": "高興郡", "description": "羅老宇宙センターと小鹿島がある宇宙郡",
+                       "feature": "羅老宇宙センターと小鹿島"},
+                "cn": {"name": "高兴郡", "description": "罗老宇宙中心和小鹿岛所在的宇宙郡",
+                       "feature": "罗老宇宙中心和小鹿岛"}
+            }, "favorite_count": 10, "latitude": 34.6112, "longitude": 127.2846},
+
+            {"region_id": 16, "tour_api_subcode": "3", "translations": {
+                "ko": {"name": "곡성군", "description": "섬진강기차마을과 심청이야기가 있는 기차군", "feature": "섬진강기차마을과 심청이야기"},
+                "en": {"name": "Gokseong-gun",
+                       "description": "Train county with Seomjingang Train Village and Simcheong story",
+                       "feature": "Seomjingang Train Village and Simcheong story"},
+                "jp": {"name": "谷城郡", "description": "蟾津江汽車村と沈清物語がある汽車郡",
+                       "feature": "蟾津江汽車村と沈清物語"},
+                "cn": {"name": "谷城郡", "description": "蟾津江火车村和沈清故事所在的火车郡",
+                       "feature": "蟾津江火车村和沈清故事"}
+            }, "favorite_count": 8, "latitude": 35.2820, "longitude": 127.2914},
+
+            {"region_id": 16, "tour_api_subcode": "4", "translations": {
+                "ko": {"name": "광양시", "description": "광양제철소와 매화축제가 있는 철강도시", "feature": "광양제철소와 매화축제"},
+                "en": {"name": "Gwangyang-si",
+                       "description": "Steel city with Gwangyang Steel Works and Plum Blossom Festival",
+                       "feature": "Gwangyang Steel Works and Plum Blossom Festival"},
+                "jp": {"name": "光陽市", "description": "光陽製鉄所と梅花祭がある鉄鋼都市",
+                       "feature": "光陽製鉄所と梅花祭"},
+                "cn": {"name": "光阳市", "description": "光阳钢铁厂和梅花节所在的钢铁城市",
+                       "feature": "光阳钢铁厂和梅花节"}
+            }, "favorite_count": 7, "latitude": 34.9404, "longitude": 127.5956},
+
+            {"region_id": 16, "tour_api_subcode": "5", "translations": {
+                "ko": {"name": "구례군", "description": "지리산과 산수유마을이 있는 산간군", "feature": "지리산과 산수유마을"},
+                "en": {"name": "Gurye-gun", "description": "Mountain county with Jirisan and Sansuyu Village",
+                       "feature": "Jirisan Mountain and Sansuyu Village"},
+                "jp": {"name": "求礼郡", "description": "智異山と山茱萸村がある山間郡", "feature": "智異山と山茱萸村"},
+                "cn": {"name": "求礼郡", "description": "智异山和山茱萸村所在的山区郡", "feature": "智异山和山茱萸村"}
+            }, "favorite_count": 9, "latitude": 35.2022, "longitude": 127.4636},
+
+            {"region_id": 16, "tour_api_subcode": "6", "translations": {
+                "ko": {"name": "나주시", "description": "나주배와 금성관이 있는 전통도시", "feature": "나주배와 금성관"},
+                "en": {"name": "Naju-si", "description": "Traditional city with Naju pears and Geumseongwan",
+                       "feature": "Naju pears and Geumseongwan"},
+                "jp": {"name": "羅州市", "description": "羅州梨と錦城館がある伝統都市", "feature": "羅州梨と錦城館"},
+                "cn": {"name": "罗州市", "description": "罗州梨和锦城馆所在的传统城市", "feature": "罗州梨和锦城馆"}
+            }, "favorite_count": 6, "latitude": 35.0160, "longitude": 126.7107},
+
+            {"region_id": 16, "tour_api_subcode": "7", "translations": {
+                "ko": {"name": "담양군", "description": "죽녹원과 메타세쿼이아길이 있는 대나무군", "feature": "죽녹원과 메타세쿼이아길"},
+                "en": {"name": "Damyang-gun", "description": "Bamboo county with Juknokwon and Metasequoia Road",
+                       "feature": "Juknokwon and Metasequoia Road"},
+                "jp": {"name": "潭陽郡", "description": "竹緑苑とメタセコイア道がある竹郡",
+                       "feature": "竹緑苑とメタセコイア道"},
+                "cn": {"name": "潭阳郡", "description": "竹绿苑和水杉路所在的竹子郡", "feature": "竹绿苑和水杉路"}
+            }, "favorite_count": 10, "latitude": 35.3214, "longitude": 126.9881},
+
+            {"region_id": 16, "tour_api_subcode": "8", "translations": {
+                "ko": {"name": "목포시", "description": "목포항과 유달산이 있는 항구도시", "feature": "목포항과 유달산"},
+                "en": {"name": "Mokpo-si", "description": "Port city with Mokpo Port and Yudalsan",
+                       "feature": "Mokpo Port and Yudalsan Mountain"},
+                "jp": {"name": "木浦市", "description": "木浦港と儒達山がある港都市", "feature": "木浦港と儒達山"},
+                "cn": {"name": "木浦市", "description": "木浦港和儒达山所在的港口城市", "feature": "木浦港和儒达山"}
+            }, "favorite_count": 9, "latitude": 34.8118, "longitude": 126.3922},
+
+            {"region_id": 16, "tour_api_subcode": "9", "translations": {
+                "ko": {"name": "무안군", "description": "무안공항과 회산백련지가 있는 공항군", "feature": "무안공항과 회산백련지"},
+                "en": {"name": "Muan-gun", "description": "Airport county with Muan Airport and Hoesan Baengnyeonji",
+                       "feature": "Muan Airport and Hoesan Baengnyeonji Lotus Pond"},
+                "jp": {"name": "務安郡", "description": "務安空港と回山白蓮池がある空港郡",
+                       "feature": "務安空港と回山白蓮池"},
+                "cn": {"name": "务安郡", "description": "务安机场和回山白莲池所在的机场郡",
+                       "feature": "务安机场和回山白莲池"}
+            }, "favorite_count": 7, "latitude": 34.9900, "longitude": 126.4828},
+
+            {"region_id": 16, "tour_api_subcode": "10", "translations": {
+                "ko": {"name": "보성군", "description": "보성녹차와 벌교꼬막이 있는 차의군", "feature": "보성녹차와 벌교꼬막"},
+                "en": {"name": "Boseong-gun", "description": "Tea county with Boseong green tea and Beolgyo cockles",
+                       "feature": "Boseong green tea and Beolgyo cockles"},
+                "jp": {"name": "宝城郡", "description": "宝城緑茶と筏橋血蛤がある茶の郡",
+                       "feature": "宝城緑茶と筏橋血蛤"},
+                "cn": {"name": "宝城郡", "description": "宝城绿茶和筏桥血蛤所在的茶叶郡",
+                       "feature": "宝城绿茶和筏桥血蛤"}
+            }, "favorite_count": 11, "latitude": 34.7712, "longitude": 127.0801},
+
+            {"region_id": 16, "tour_api_subcode": "11", "translations": {
+                "ko": {"name": "순천시", "description": "순천만 국가정원이 있는 생태도시", "feature": "순천만 국가정원과 선암사"},
+                "en": {"name": "Suncheon-si", "description": "Ecological city with Suncheon Bay National Garden",
+                       "feature": "Suncheon Bay National Garden and Seonamsa Temple"},
+                "jp": {"name": "順天市", "description": "順天湾国家庭園がある生態都市",
+                       "feature": "順天湾国家庭園と仙岩寺"},
+                "cn": {"name": "顺天市", "description": "顺天湾国家庭园所在的生态城市",
+                       "feature": "顺天湾国家庭园和仙岩寺"}
+            }, "favorite_count": 15, "latitude": 34.9506, "longitude": 127.4872},
+
+            {"region_id": 16, "tour_api_subcode": "12", "translations": {
+                "ko": {"name": "신안군", "description": "천사대교와 천일염전이 있는 섬군", "feature": "천사대교와 천일염전"},
+                "en": {"name": "Sinan-gun", "description": "Island county with Angel Bridge and Cheonil Salt Fields",
+                       "feature": "Angel Bridge and Cheonil Salt Fields"},
+                "jp": {"name": "新安郡", "description": "天使大橋と天日塩田がある島郡",
+                       "feature": "天使大橋と天日塩田"},
+                "cn": {"name": "新安郡", "description": "天使大桥和天日盐田所在的岛屿郡",
+                       "feature": "天使大桥和天日盐田"}
+            }, "favorite_count": 9, "latitude": 34.8267, "longitude": 126.1063},
+
+            {"region_id": 16, "tour_api_subcode": "13", "translations": {
+                "ko": {"name": "여수시", "description": "2012 여수엑스포 개최지", "feature": "여수밤바다와 오동도"},
+                "en": {"name": "Yeosu-si", "description": "Host city of 2012 Yeosu Expo",
+                       "feature": "Yeosu night sea and Odongdo Island"},
+                "jp": {"name": "麗水市", "description": "2012麗水エキスポ開催地", "feature": "麗水夜海とオドンド"},
+                "cn": {"name": "丽水市", "description": "2012年丽水世博会举办地", "feature": "丽水夜海和梧桐岛"}
+            }, "favorite_count": 20, "latitude": 34.7604, "longitude": 127.6622},
+
+            {"region_id": 16, "tour_api_subcode": "14", "translations": {
+                "ko": {"name": "영광군", "description": "영광원전과 백수해안도로가 있는 해안군", "feature": "영광원전과 백수해안도로"},
+                "en": {"name": "Yeonggwang-gun",
+                       "description": "Coastal county with Yeonggwang Nuclear Power Plant and Baeksu Coastal Road",
+                       "feature": "Yeonggwang Nuclear Power Plant and Baeksu Coastal Road"},
+                "jp": {"name": "霊光郡", "description": "霊光原発と白水海岸道路がある海岸郡",
+                       "feature": "霊光原発と白水海岸道路"},
+                "cn": {"name": "灵光郡", "description": "灵光核电站和白水海岸公路所在的海岸郡",
+                       "feature": "灵光核电站和白水海岸公路"}
+            }, "favorite_count": 6, "latitude": 35.2772, "longitude": 126.5116},
+
+            {"region_id": 16, "tour_api_subcode": "15", "translations": {
+                "ko": {"name": "영암군", "description": "월출산과 왕인박사유적지가 있는 역사군", "feature": "월출산과 왕인박사유적지"},
+                "en": {"name": "Yeongam-gun",
+                       "description": "Historic county with Wolchulsan and Dr. Wangin Historic Site",
+                       "feature": "Wolchulsan Mountain and Dr. Wangin Historic Site"},
+                "jp": {"name": "霊岩郡", "description": "月出山と王仁博士遺跡地がある歴史郡",
+                       "feature": "月出山と王仁博士遺跡地"},
+                "cn": {"name": "灵岩郡", "description": "月出山和王仁博士遗址所在的历史郡",
+                       "feature": "月出山和王仁博士遗址"}
+            }, "favorite_count": 7, "latitude": 34.8005, "longitude": 126.6968},
+
+            {"region_id": 16, "tour_api_subcode": "16", "translations": {
+                "ko": {"name": "완도군", "description": "완도수목원과 청산도가 있는 섬군", "feature": "완도수목원과 청산도"},
+                "en": {"name": "Wando-gun", "description": "Island county with Wando Arboretum and Cheongsando",
+                       "feature": "Wando Arboretum and Cheongsando Island"},
+                "jp": {"name": "莞島郡", "description": "莞島樹木園と青山島がある島郡",
+                       "feature": "莞島樹木園と青山島"},
+                "cn": {"name": "莞岛郡", "description": "莞岛树木园和青山岛所在的岛屿郡",
+                       "feature": "莞岛树木园和青山岛"}
+            }, "favorite_count": 10, "latitude": 34.3117, "longitude": 126.7555},
+
+            {"region_id": 16, "tour_api_subcode": "17", "translations": {
+                "ko": {"name": "장성군", "description": "백양사와 홍길동테마파크가 있는 문화군", "feature": "백양사와 홍길동테마파크"},
+                "en": {"name": "Jangseong-gun",
+                       "description": "Cultural county with Baegyangsa Temple and Hong Gildong Theme Park",
+                       "feature": "Baegyangsa Temple and Hong Gildong Theme Park"},
+                "jp": {"name": "長城郡", "description": "白羊寺と洪吉童テーマパークがある文化郡",
+                       "feature": "白羊寺と洪吉童テーマパーク"},
+                "cn": {"name": "长城郡", "description": "白羊寺和洪吉童主题公园所在的文化郡",
+                       "feature": "白羊寺和洪吉童主题公园"}
+            }, "favorite_count": 7, "latitude": 35.3018, "longitude": 126.7855},
+
+            {"region_id": 16, "tour_api_subcode": "18", "translations": {
+                "ko": {"name": "장흥군", "description": "정남진과 천관산이 있는 남쪽군", "feature": "정남진과 천관산"},
+                "en": {"name": "Jangheung-gun", "description": "Southern county with Jeongnamjin and Cheongwansan",
+                       "feature": "Jeongnamjin and Cheongwansan Mountain"},
+                "jp": {"name": "長興郡", "description": "正南津と天冠山がある南側郡", "feature": "正南津と天冠山"},
+                "cn": {"name": "长兴郡", "description": "正南津和天冠山所在的南方郡", "feature": "正南津和天冠山"}
+            }, "favorite_count": 6, "latitude": 34.6888, "longitude": 126.9067},
+
+            {"region_id": 16, "tour_api_subcode": "19", "translations": {
+                "ko": {"name": "진도군", "description": "진도개와 진도아리랑이 있는 전통섬", "feature": "진도개와 진도아리랑"},
+                "en": {"name": "Jindo-gun", "description": "Traditional island with Jindo dogs and Jindo Arirang",
+                       "feature": "Jindo dogs and Jindo Arirang"},
+                "jp": {"name": "珍島郡", "description": "珍島犬と珍島アリランがある伝統島",
+                       "feature": "珍島犬と珍島アリラン"},
+                "cn": {"name": "珍岛郡", "description": "珍岛犬和珍岛阿里郎所在的传统岛屿",
+                       "feature": "珍岛犬和珍岛阿里郎"}
+            }, "favorite_count": 8, "latitude": 34.4867, "longitude": 126.2633},
+
+            {"region_id": 16, "tour_api_subcode": "20", "translations": {
+                "ko": {"name": "함평군", "description": "함평나비축제와 자연생태공원이 있는 나비군", "feature": "함평나비축제와 자연생태공원"},
+                "en": {"name": "Hampyeong-gun",
+                       "description": "Butterfly county with Hampyeong Butterfly Festival and Natural Ecology Park",
+                       "feature": "Hampyeong Butterfly Festival and Natural Ecology Park"},
+                "jp": {"name": "咸平郡", "description": "咸平蝶祭りと自然生態公園がある蝶郡",
+                       "feature": "咸平蝶祭りと自然生態公園"},
+                "cn": {"name": "咸平郡", "description": "咸平蝴蝶节和自然生态公园所在的蝴蝶郡",
+                       "feature": "咸平蝴蝶节和自然生态公园"}
+            }, "favorite_count": 7, "latitude": 35.0658, "longitude": 126.5165},
+
+            {"region_id": 16, "tour_api_subcode": "21", "translations": {
+                "ko": {"name": "해남군", "description": "땅끝마을과 대흥사가 있는 최남단", "feature": "땅끝마을과 대흥사"},
+                "en": {"name": "Haenam-gun",
+                       "description": "Southernmost county with Land's End Village and Daeheungsa Temple",
+                       "feature": "Land's End Village and Daeheungsa Temple"},
+                "jp": {"name": "海南郡", "description": "土地の果て村と大興寺がある最南端",
+                       "feature": "土地の果て村と大興寺"},
+                "cn": {"name": "海南郡", "description": "陆地尽头村和大兴寺所在的最南端",
+                       "feature": "陆地尽头村和大兴寺"}
+            }, "favorite_count": 8, "latitude": 34.5733, "longitude": 126.5990},
+
+            {"region_id": 16, "tour_api_subcode": "22", "translations": {
+                "ko": {"name": "화순군", "description": "화순고인돌과 적벽이 있는 고인돌군", "feature": "화순고인돌과 적벽"},
+                "en": {"name": "Hwasun-gun", "description": "Dolmen county with Hwasun Dolmens and Red Cliffs",
+                       "feature": "Hwasun Dolmens and Red Cliffs"},
+                "jp": {"name": "和順郡", "description": "和順支石墓と赤壁がある支石墓郡",
+                       "feature": "和順支石墓と赤壁"},
+                "cn": {"name": "和顺郡", "description": "和顺支石墓和赤壁所在的支石墓郡", "feature": "和顺支石墓和赤壁"}
+            }, "favorite_count": 6, "latitude": 35.0641, "longitude": 126.9895},
+
 
             # ======= 제주특별자치도 (2개 시) =======
             {
