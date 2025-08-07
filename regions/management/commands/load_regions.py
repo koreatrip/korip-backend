@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
+from django.contrib.gis.geos import Point
 
 
 class Command(BaseCommand):
@@ -2332,8 +2333,10 @@ class Command(BaseCommand):
             subregion = SubRegion.objects.create(
                 region=region,
                 favorite_count=subregion_data["favorite_count"],
-                latitude=subregion_data["latitude"],
-                longitude=subregion_data["longitude"]
+                location=Point(
+                    subregion_data["longitude"],
+                    subregion_data["latitude"]
+                )
             )
 
             # 서브지역 번역 생성 (모든 언어)
