@@ -7,7 +7,8 @@ from drf_yasg import openapi
 from users.serializers.account import (
     ChangePasswordSerializer,
     FindAccountSerializer,
-    FindPasswordSerializer
+    FindPasswordSerializer,
+    UserInfoSerializer
 )
 from users.models import CustomUser
 from utils.helper.email_helper import EmailHelper
@@ -16,7 +17,7 @@ from exceptions.custom_exception_handler import (
     AuthenticationError,
     RequestError,
     UserError,
-    EmailError
+    EmailError,
 )
 
 
@@ -245,3 +246,27 @@ class ChangePasswordAPIView(APIView):
         user.save()
         
         return Response(status=status.HTTP_200_OK)
+
+
+class UserInfoAPIView(APIView):
+    """유저정보 조회, 수정, 삭제"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserInfoSerializer
+
+    def get(self, request):
+        serializer = self.serializer_class(instance=request.user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        serializer = self.serializer_class(
+            instance=request.user,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def delete(self, request):
+        pass
