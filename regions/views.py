@@ -22,7 +22,7 @@ class RegionsListAPI(APIView):
                 description="언어 코드 (기본값: ko)",
                 type=openapi.TYPE_STRING,
                 default='ko',
-                enum=['ko', 'en']
+                enum=['ko', 'en', 'jp', 'cn']
             )
         ],
         responses={
@@ -81,7 +81,7 @@ class RegionDetailAPI(APIView):
                 description="언어 코드 (기본값: ko)",
                 type=openapi.TYPE_STRING,
                 default='ko',
-                enum=['ko', 'en']
+                enum=['ko', 'en', 'jp', 'cn']
             ),
             openapi.Parameter(
                 'region_id',
