@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from places.models import Place
@@ -7,6 +8,7 @@ from places.serializers import PlaceSerializer
 
 
 class PlacesListAPI(APIView):
+    permission_classes = [AllowAny]
 
     def get(self, request):
         language = request.query_params.get("lang", "ko")
@@ -33,6 +35,7 @@ class PlacesListAPI(APIView):
 
 
 class PlaceDetailAPI(APIView):
+    permission_classes = [AllowAny]
 
     def get(self, request, place_id):
         language = request.query_params.get("lang", "ko")
@@ -49,6 +52,8 @@ class PlaceDetailAPI(APIView):
 
 
 class PlacesBySubRegionAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, subregion_id):
         language = request.query_params.get("lang", "ko")
         sort_type = request.query_params.get("sort_type", "favorite")

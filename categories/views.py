@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -16,6 +17,8 @@ from categories.serializers import (
 
 # 카테고리 목록 API
 class CategoriesAPIView(APIView):
+    permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="카테고리 목록 조회",
         operation_description="전체 카테고리 목록을 조회합니다. 언어 파라미터를 통해 다국어 지원이 가능합니다.",
@@ -97,6 +100,8 @@ class CategoriesAPIView(APIView):
 
 
 class SubCategoriesAPIView(APIView):
+    permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="서브카테고리 목록 조회",
         operation_description="특정 카테고리의 서브카테고리 목록을 조회합니다.",
