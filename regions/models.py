@@ -9,7 +9,7 @@ LANGUAGE_CHOICES = [
 ]
 
 
-# 기본 지역 모델
+# 지역 모델
 class Region(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
@@ -32,11 +32,19 @@ class Region(models.Model):
         except RegionTranslation.DoesNotExist:
             return None
 
-    # 지정한 언어의 지역 설명 가져오기
+    # 지역 설명
     def get_description(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
             return translation.description
+        except RegionTranslation.DoesNotExist:
+            return ""
+
+    # 지역 특징
+    def get_features(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            return translation.features
         except RegionTranslation.DoesNotExist:
             return ""
 
@@ -63,6 +71,12 @@ class RegionTranslation(models.Model):
         verbose_name="지역 설명",
         help_text="이 지역에 대한 간단한 설명 (예: 전통과 현대가 공존하는 도시)"
     )
+    # 지역 특징 필드
+    features = models.TextField(
+        blank=True,
+        verbose_name="특징",
+        help_text="이 지역의 특징 설명 (예: K-POP과 전통 문화의 중심지, 다양한 쇼핑몰과 맛집)"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
@@ -76,7 +90,7 @@ class RegionTranslation(models.Model):
         return f"{self.region.id} - {self.lang}: {self.name}"
 
 
-# 🔥 지역구 모델 GIS 전환 (즐겨찾기 수, 날씨 연동용 위치 정보 포함)
+# 지역구 모델 GIS 전환 (즐겨찾기 수, 날씨 연동용 위치 정보 포함)
 class SubRegion(models.Model):
     region = models.ForeignKey(
         Region,
@@ -92,12 +106,12 @@ class SubRegion(models.Model):
         help_text="이 지역구가 즐겨찾기된 횟수"
     )
 
-    # 🔥 GIS 위치 정보 (날씨 API 연동용)
+    # GIS 위치 정보
     location = gis_models.PointField(
         null=True,
         blank=True,
         verbose_name="위치",
-        help_text="날씨 API 연동용 대표 위치 (경도, 위도)"
+        help_text="대표 위치 (경도, 위도)"
     )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
@@ -117,16 +131,14 @@ class SubRegion(models.Model):
             return f"{region_name} {korean_name}"
         return f"SubRegion {self.id}"
 
-    # 🔥 호환성 프로퍼티 - 기존 latitude 코드 호환
+    # 호환성 프로퍼티 - 기존 latitude 코드 호환
     @property
     def latitude(self):
-        """기존 코드 호환용 위도 프로퍼티"""
         return self.location.y if self.location else None
 
-    # 🔥 호환성 프로퍼티 - 기존 longitude 코드 호환
+    # 호환성 프로퍼티 - 기존 longitude 코드 호환
     @property
     def longitude(self):
-        """기존 코드 호환용 경도 프로퍼티"""
         return self.location.x if self.location else None
 
     # 지정한 언어의 지역구 이름 가져오기
