@@ -1,12 +1,8 @@
 from django.test import TestCase
 from categories.models import Category, SubCategory, CategoryTranslation, SubCategoryTranslation
-from categories.serializers import (
-    CategorySerializer,
-    SubCategoryListSerializer
-)
+from categories.serializers import CategorySerializer, SubCategoryListSerializer
 
 
-# 카테고리 시리얼라이저 테스트
 class CategorySerializerTest(TestCase):
 
     def setUp(self):
@@ -28,7 +24,6 @@ class CategorySerializerTest(TestCase):
             name="自然"
         )
 
-        # 서브카테고리 생성
         self.subcategory = SubCategory.objects.create(category=self.category)
         SubCategoryTranslation.objects.create(
             sub_category=self.subcategory,
@@ -41,7 +36,6 @@ class CategorySerializerTest(TestCase):
             name="Mountain"
         )
 
-    # 카테고리 시리얼라이저 한국어 테스트
     def test_category_serializer_with_korean_language(self):
         serializer = CategorySerializer(
             [self.category],
@@ -55,11 +49,12 @@ class CategorySerializerTest(TestCase):
         category_data = data[0]
         self.assertEqual(category_data["id"], self.category.id)
         self.assertEqual(category_data["name"], "자연")
-        self.assertIn("subcategories", category_data)
 
-        subcategories = category_data["subcategories"]
-        self.assertEqual(len(subcategories), 1)
-        self.assertEqual(subcategories[0]["name"], "산")
+        self.assertNotIn("subcategories", category_data)
+
+        expected_fields = {"id", "name"}
+        actual_fields = set(category_data.keys())
+        self.assertEqual(actual_fields, expected_fields)
 
     def test_category_serializer_with_english_language(self):
         serializer = CategorySerializer(
@@ -72,21 +67,7 @@ class CategorySerializerTest(TestCase):
         category_data = data[0]
 
         self.assertEqual(category_data["name"], "Nature")
-
-        subcategories = category_data["subcategories"]
-        self.assertEqual(subcategories[0]["name"], "Mountain")
-
-    def test_category_serializer_with_missing_translation(self):
-        serializer = CategorySerializer(
-            [self.category],
-            many=True,
-            context={"language": "cn"}
-        )
-
-        data = serializer.data
-        category_data = data[0]
-
-        self.assertIn(category_data["name"], [None, ""])
+        self.assertNotIn("subcategories", category_data)
 
     def test_category_serializer_with_japanese_language(self):
         serializer = CategorySerializer(
@@ -99,6 +80,57 @@ class CategorySerializerTest(TestCase):
         category_data = data[0]
 
         self.assertEqual(category_data["name"], "自然")
+        self.assertNotIn("subcategories", category_data)
+
+    def test_category_serializer_with_missing_translation(self):
+        serializer = CategorySerializer(
+            [self.category],
+            many=True,
+            context={"language": "cn"}
+        )
+
+        data = serializer.data
+        category_data = data[0]
+
+        self.assertIn(category_data["name"], [None, ""])
+        self.assertNotIn("subcategories", category_data)
+
+    def test_category_serializer_default_language(self):
+        serializer = CategorySerializer(
+            [self.category],
+            many=True,
+            context={}
+        )
+
+        data = serializer.data
+        category_data = data[0]
+
+        self.assertEqual(category_data["name"], "자연")
+        self.assertNotIn("subcategories", category_data)
+
+    def test_multiple_categories_serialization(self):
+        food_category = Category.objects.create()
+        CategoryTranslation.objects.create(
+            category=food_category,
+            lang="ko",
+            name="음식"
+        )
+
+        categories = [self.category, food_category]
+        serializer = CategorySerializer(
+            categories,
+            many=True,
+            context={"language": "ko"}
+        )
+
+        data = serializer.data
+        self.assertEqual(len(data), 2)
+
+        self.assertEqual(data[0]["name"], "자연")
+        self.assertNotIn("subcategories", data[0])
+
+        self.assertEqual(data[1]["name"], "음식")
+        self.assertNotIn("subcategories", data[1])
 
 
 class SubCategoryListSerializerTest(TestCase):
@@ -147,6 +179,11 @@ class SubCategoryListSerializerTest(TestCase):
         self.assertIn("산", names)
         self.assertIn("바다", names)
 
+        for sub in subcategories_data:
+            expected_fields = {"id", "name"}
+            actual_fields = set(sub.keys())
+            self.assertEqual(actual_fields, expected_fields)
+
     def test_subcategory_list_serializer_english(self):
         subcategories = SubCategory.objects.filter(category=self.category)
 
@@ -178,6 +215,36 @@ class SubCategoryListSerializerTest(TestCase):
             context={
                 "language": "ko",
                 "subcategories_queryset": empty_queryset
+            }
+        )
+
+        data = serializer.data
+        self.assertEqual(data["subcategories"], [])
+
+    def test_subcategory_list_serializer_response_structure(self):
+        subcategories = SubCategory.objects.filter(category=self.category)
+
+        serializer = SubCategoryListSerializer(
+            {},
+            context={
+                "language": "ko",
+                "subcategories_queryset": subcategories
+            }
+        )
+
+        data = serializer.data
+
+        self.assertEqual(set(data.keys()), {"subcategories"})
+
+        for sub in data["subcategories"]:
+            self.assertEqual(set(sub.keys()), {"id", "name"})
+
+    def test_subcategory_list_serializer_without_queryset(self):
+        serializer = SubCategoryListSerializer(
+            {},
+            context={
+                "language": "ko",
+                "subcategories_queryset": None
             }
         )
 

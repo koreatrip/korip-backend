@@ -3,64 +3,47 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from categories.models import (
-    Category, SubCategory,
-    CategoryTranslation, SubCategoryTranslation
-)
-from categories.serializers import (
-    CategorySerializer,
-    SubCategoryListSerializer
-)
+from categories.models import Category, SubCategory
+from categories.serializers import CategorySerializer, SubCategoryListSerializer
 
 
-# 카테고리 목록 API
 class CategoriesAPIView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
-        operation_summary="카테고리 목록 조회",
-        operation_description="전체 카테고리 목록을 조회합니다. 언어 파라미터를 통해 다국어 지원이 가능합니다.",
+        operation_summary="대분류 카테고리 목록 조회",
         manual_parameters=[
             openapi.Parameter(
-                'lang',
+                "lang",
                 openapi.IN_QUERY,
                 description="언어 코드 (ko, en, jp, cn)",
                 type=openapi.TYPE_STRING,
-                default='ko',
-                enum=['ko', 'en', 'jp', 'cn']
+                default="ko",
+                enum=["ko", "en", "jp", "cn"]
             )
         ],
         responses={
             200: openapi.Response(
-                description="카테고리 목록 조회 성공",
+                description="대분류 카테고리 목록 조회 성공",
                 examples={
                     "application/json": {
                         "categories": [
-                            {
-                                "id": 1,
-                                "name": "여행",
-                                "subcategories": [
-                                    {
-                                        "id": 1,
-                                        "name": "국내여행"
-                                    },
-                                    {
-                                        "id": 2,
-                                        "name": "해외여행"
-                                    }
-                                ]
-                            }
+                            {"id": 1, "name": "문화"},
+                            {"id": 2, "name": "자연"},
+                            {"id": 3, "name": "액티비티"},
+                            {"id": 4, "name": "쇼핑"},
+                            {"id": 5, "name": "음식"},
+                            {"id": 6, "name": "K-POP"}
                         ]
                     }
                 }
             ),
-            400: openapi.Response(
-                description="잘못된 요청"
-            )
+            400: openapi.Response(description="잘못된 요청")
         },
-        tags=['카테고리']
+        tags=["카테고리"]
     )
     def get(self, request):
         try:
@@ -70,7 +53,6 @@ class CategoriesAPIView(APIView):
             if language not in supported_languages:
                 language = "ko"
 
-            # 카테고리 목록만 조회
             return self._get_categories(request, language)
 
         except Exception as e:
@@ -80,9 +62,8 @@ class CategoriesAPIView(APIView):
 
     def _get_categories(self, request, language):
         try:
-            categories = Category.objects.prefetch_related("subcategories").all()
+            categories = Category.objects.all()
 
-            # Context 방식 사용
             serializer = CategorySerializer(
                 categories,
                 many=True,
@@ -104,22 +85,21 @@ class SubCategoriesAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="서브카테고리 목록 조회",
-        operation_description="특정 카테고리의 서브카테고리 목록을 조회합니다.",
         manual_parameters=[
             openapi.Parameter(
-                'category_id',
+                "category_id",
                 openapi.IN_PATH,
-                description="카테고리 ID",
+                description="대분류 카테고리 ID",
                 type=openapi.TYPE_INTEGER,
                 required=True
             ),
             openapi.Parameter(
-                'lang',
+                "lang",
                 openapi.IN_QUERY,
                 description="언어 코드 (ko, en, jp, cn)",
                 type=openapi.TYPE_STRING,
-                default='ko',
-                enum=['ko', 'en', 'jp', 'cn']
+                default="ko",
+                enum=["ko", "en", "jp", "cn"]
             )
         ],
         responses={
@@ -128,14 +108,10 @@ class SubCategoriesAPIView(APIView):
                 examples={
                     "application/json": {
                         "subcategories": [
-                            {
-                                "id": 1,
-                                "name": "국내여행"
-                            },
-                            {
-                                "id": 2,
-                                "name": "해외여행"
-                            }
+                            {"id": 1, "name": "뉴진스"},
+                            {"id": 2, "name": "BTS"},
+                            {"id": 3, "name": "시티즈"},
+                            {"id": 4, "name": "블랙핑크"}
                         ]
                     }
                 }
@@ -148,47 +124,42 @@ class SubCategoriesAPIView(APIView):
                     }
                 }
             ),
-            400: openapi.Response(
-                description="잘못된 요청"
-            )
+            400: openapi.Response(description="잘못된 요청")
         },
-        tags=['카테고리']
+        tags=["카테고리"]
     )
     def get(self, request, category_id):
-        try:
-            language = request.query_params.get("lang", "ko")
-            supported_languages = ["ko", "en", "jp", "cn"]
+        language = request.query_params.get("lang", "ko")
+        supported_languages = ["ko", "en", "jp", "cn"]
 
-            if language not in supported_languages:
-                language = "ko"
+        if language not in supported_languages:
+            language = "ko"
 
-            # 서브카테고리 목록 조회
-            return self._get_subcategories(request, language, category_id)
-
-        except Exception as e:
-            return Response({
-                "error": f"서버 에러: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return self._get_subcategories(request, language, category_id)
 
     def _get_subcategories(self, request, language, category_id):
         try:
-            category = Category.objects.get(id=category_id)
-        except Category.DoesNotExist:
+            category = get_object_or_404(Category, id=category_id)
+            subcategories = SubCategory.objects.filter(category=category)
+
+            serializer = SubCategoryListSerializer(
+                {},
+                context={
+                    "language": language,
+                    "subcategories_queryset": subcategories
+                }
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        except Http404:
             return Response({
                 "error": "존재하지 않는 카테고리입니다."
             }, status=status.HTTP_404_NOT_FOUND)
-
-        subcategories = SubCategory.objects.filter(category=category)
-
-        serializer = SubCategoryListSerializer(
-            {},
-            context={
-                "language": language,
-                "subcategories_queryset": subcategories
-            }
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        except Exception as e:
+            return Response({
+                "error": f"서브카테고리 조회 에러: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
