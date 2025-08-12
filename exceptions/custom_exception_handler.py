@@ -44,10 +44,10 @@ class UserError(APIException):
 class RequestError(APIException):
     default_code = "REQUEST_ERROR"
 
-    def __init__(self, errorcode, status_code=status.HTTP_400_BAD_REQUEST):
+    def __init__(self, errorcode, status_code=status.HTTP_400_BAD_REQUEST, message=None):
         self.detail = {
             "error_code": errorcode.code,
-            "error_message": errorcode.message
+            "error_message": message or errorcode.message
         }
         self.status_code = status_code
 

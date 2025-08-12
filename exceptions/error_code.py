@@ -19,7 +19,12 @@ class ErrorCode(Enum):
 
     INVALID_DATA = ("INVALID_DATA", "데이터가 올바르지 않습니다.")
     SERVER_ERROR = ("SERVER_ERROR", "예기치 않은 에러가 발생했습니다.")
+    TOO_MANY_PREFERENCES = ("TOO_MANY_PREFERENCES", "관심사는 최대 9개 선택할 수 있습니다.")
+    INVALID_SUBCATEGORY_ID = ("INVALID_SUBCATEGORY_ID", "{} 는 존재하지 않는 관심사 입니다.")
 
     def __init__(self, code, message):
         self.code = code
         self.message = message
+
+    def format_message(self, *args, **kwargs):
+        return self.message.format(*args, **kwargs)

@@ -10,7 +10,8 @@ from users.views.auth.token import CustomTokenRefreshView
 from users.views.account import (
     ChangePasswordAPIView,
     FindAccountAPIView,
-    FindPasswordAPIView
+    FindPasswordAPIView,
+    UserInfoAPIView
 )
 from users.views.create_preferences import CreatePreferenceAPIView
 
@@ -27,4 +28,5 @@ urlpatterns = [
     path("find-account", FindAccountAPIView.as_view(), name="find-account"),
     path("find-pwd", FindPasswordAPIView.as_view(), name="find-pwd"),
     path("<int:user_id>/preferences", CreatePreferenceAPIView.as_view(), name="create-preferences"),
+    path("info", UserInfoAPIView.as_view(), name="user-info"),
 ]

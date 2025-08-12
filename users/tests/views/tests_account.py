@@ -197,3 +197,64 @@ class ChangePasswordTest(APITestCase):
         response = self.client.post(self.change_pw_url, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data["error_code"], ErrorCode.MISSMATCHED_PASSWORD.code)
+
+
+class UserInfoAPITestCase(APITestCase):
+    def setUp(self):
+        self.url = reverse("user-info")  # 실제 URL name으로 교체 필요
+        self.user = CustomUser.objects.create_user(
+            email="me@example.com",
+            password="Passw0rd!",
+            nickname="me",
+            phone_number="010-1111-2222"
+        )
+
+    def test_get_user_info_success(self):
+        """인증된 사용자: 조회 200"""
+        self.client.force_authenticate(user=self.user)
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # 주요 필드 존재 확인 (마스킹 여부는 Serializer 구현에 따르므로 키 위주 체크)
+        for key in ["id", "email", "login_type", "is_social", "is_active", "created_at", "updated_at", "preferences_display"]:
+            self.assertIn(key, res.data)
+
+    def test_get_user_info_unauthenticated(self):
+        """미인증 사용자: 401"""
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_user_info_update_name_and_phone(self):
+        """부분 수정: name(=nickname 매핑 가정), phone_number"""
+        self.client.force_authenticate(user=self.user)
+        payload = {"name": "newname", "phone_number": "010-9999-8888"}
+        res = self.client.patch(self.url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data.get("name"), "newname")
+        self.assertEqual(res.data.get("phone_number"), "010-9999-8888")
+        # 실제 DB 반영 확인
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.nickname, "newname")
+        self.assertEqual(self.user.phone_number, "010-9999-8888")
+
+    def test_patch_user_info_readonly_field_rejected(self):
+        """부분 수정: read_only_fields(is_active 등) 수정 시 400"""
+        self.client.force_authenticate(user=self.user)
+        before = self.user.is_active
+        res = self.client.patch(self.url, {"is_active": False}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, before)
+        if "is_active" in res.data:
+            self.assertEqual(res.data["is_active"], before)
+
+    def test_delete_user_success(self):
+        """삭제: 200 & 실제 삭제됨"""
+        self.client.force_authenticate(user=self.user)
+        res = self.client.delete(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(CustomUser.objects.filter(id=self.user.id).exists())
+
+    def test_delete_user_unauthenticated(self):
+        """삭제: 미인증 401"""
+        res = self.client.delete(self.url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)

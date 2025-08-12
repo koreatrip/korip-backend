@@ -81,12 +81,14 @@ class CreatePreferenceAPIViewTest(TestCase):
     def test_non_existing_subcategories_in_request(self):
         """존재하지 않는 서브카테고리 ID 요청 테스트"""
         data = {"preferences": [1, 999]}
-        
         response = self.client.post(self.url, data, format='json')
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['error_code'], ErrorCode.INVALID_DATA.code)
-        self.assertEqual(response.data['error_message'], ErrorCode.INVALID_DATA.message)
+        self.assertEqual(response.data['error_code'], ErrorCode.INVALID_SUBCATEGORY_ID.code)
+
+        invalid_ids = [999]  # <- 추가
+        expected_message = ErrorCode.INVALID_SUBCATEGORY_ID.format_message(invalid_ids)
+        self.assertEqual(response.data['error_message'], expected_message)
     
     def test_max_preferences_limit(self):
         """최대 관심사 개수 제한 테스트"""
