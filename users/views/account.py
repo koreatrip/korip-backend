@@ -21,6 +21,14 @@ from exceptions.custom_exception_handler import (
 )
 
 
+authorization_header = openapi.Parameter(
+    'Authorization', 
+    openapi.IN_HEADER,
+    description="JWT Token을 'Bearer <token>' 형식으로 추가하세요.",
+    type=openapi.TYPE_STRING,
+)
+
+
 class FindAccountAPIView(APIView):
     """가입한 계정 찾기"""
     permission_classes = [AllowAny]
@@ -63,7 +71,7 @@ class FindAccountAPIView(APIView):
                 examples={
                     "application/json": {
                         "error_code": "ACCOUNT_NOT_FOUND",
-                        "message": "해당 전화번호로 가입된 계정이 없습니다."
+                        "error_message": "해당 전화번호로 가입된 계정이 없습니다."
                     }
                 }
             )
@@ -116,7 +124,6 @@ class FindPasswordAPIView(APIView):
     """비밀번호 찾기"""
     permission_classes = [AllowAny]
     serializer_class = FindPasswordSerializer
-
 
     @swagger_auto_schema(
         operation_summary="비밀번호 찾기",
@@ -209,11 +216,7 @@ class ChangePasswordAPIView(APIView):
         responses={
             200: openapi.Response(
                 description="변경 성공",
-                examples={
-                    "application/json": {
-                        "message": "비밀번호가 성공적으로 변경되었습니다."
-                    }
-                }
+                examples={}
             ),
             400: openapi.Response(
                 description="입력 오류 또는 인증 실패",
@@ -225,9 +228,9 @@ class ChangePasswordAPIView(APIView):
                 }
             )
         },
+        manual_parameters=[authorization_header],
         tags=['비밀번호']
     )
-
     
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'request': request})
@@ -253,9 +256,93 @@ class UserInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserInfoSerializer
 
+    @swagger_auto_schema(
+        operation_summary="사용자 정보 조회",
+        operation_description="현재 인증된 사용자의 정보를 조회합니다. 이메일과 전화번호 등의 중요한 정보는 마스킹되어 반환됩니다.",
+        responses={
+            200: openapi.Response(
+                description="사용자 정보 조회 성공",
+                examples={
+                    "application/json": {
+                        "id": 3,
+                        "email": "test@test.com",
+                        "name": "testuser",
+                        "phone_number": "8201012345678",
+                        "login_type": "email",
+                        "is_social": False,
+                        "is_active": True,
+                        "created_at": "2025-07-31T16:15:58.044344+09:00",
+                        "updated_at": "2025-08-08T00:20:03.148108+09:00",
+                        "preferences_display": [
+                            {"id": 1, "name": "역사"},
+                            {"id": 2, "name": "박물관"},
+                            {"id": 3, "name": "미술관"},
+                            {"id": 7, "name": "산"},
+                            {"id": 8, "name": "바다"},
+                            {"id": 9, "name": "강"}
+                        ]
+                    }
+                }
+            ),
+            401: openapi.Response(
+                description="인증 실패",
+                examples={
+                    "application/json": {
+                        "error_code": "AUTHENTICATION_FAILED",
+                        "error_message": "인증이 실패했습니다. 로그인 후 다시 시도해 주세요."
+                    }
+                }
+            )
+        },
+        manual_parameters=[authorization_header],
+        tags=["사용자 계정"]
+    )
+
     def get(self, request):
         serializer = self.serializer_class(instance=request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_summary="사용자 정보 조회",
+        operation_description="현재 인증된 사용자의 정보를 조회합니다. 이메일과 전화번호 등의 중요한 정보는 마스킹되어 반환됩니다.",
+        responses={
+            200: openapi.Response(
+                description="사용자 정보 조회 성공",
+                examples={
+                    "application/json": {
+                        "id": 3,
+                        "email": "test@test.com",
+                        "name": "testuser",
+                        "phone_number": "8201012345678",
+                        "login_type": "email",
+                        "is_social": False,
+                        "is_active": True,
+                        "created_at": "2025-07-31T16:15:58.044344+09:00",
+                        "updated_at": "2025-08-08T00:20:03.148108+09:00",
+                        "preferences_display": [
+                            {"id": 1, "name": "역사"},
+                            {"id": 2, "name": "박물관"},
+                            {"id": 3, "name": "미술관"},
+                            {"id": 7, "name": "산"},
+                            {"id": 8, "name": "바다"},
+                            {"id": 9, "name": "강"}
+                        ]
+                    }
+                }
+            ),
+            401: openapi.Response(
+                description="인증 실패",
+                examples={
+                    "application/json": {
+                        "error_code": "AUTHENTICATION_FAILED",
+                        "error_message": "인증이 실패했습니다. 로그인 후 다시 시도해 주세요."
+                    }
+                }
+            )
+        },
+        manual_parameters=[authorization_header],
+        tags=["사용자 계정"]
+    )
 
     def patch(self, request):
         serializer = self.serializer_class(
@@ -268,5 +355,29 @@ class UserInfoAPIView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    @swagger_auto_schema(
+        operation_summary="사용자 삭제",
+        operation_description="현재 인증된 사용자의 계정을 삭제합니다. 계정 삭제 후에는 복구할 수 없습니다.",
+        responses={
+            200: openapi.Response(
+                description="사용자 삭제 성공",
+                examples={}
+            ),
+            404: openapi.Response(
+                description="사용자를 찾을 수 없음",
+                examples={
+                    "application/json": {
+                        "error_code": "USER_NOT_FOUND",
+                        "error_message": "해당 사용자 정보를 찾을 수 없습니다."
+                    }
+                }
+            )
+        },
+        manual_parameters=[authorization_header],
+        tags=["사용자 계정"]
+    )
+    
     def delete(self, request):
-        pass
+        user = request.user
+        user.delete()
+        return Response(status=status.HTTP_200_OK)
