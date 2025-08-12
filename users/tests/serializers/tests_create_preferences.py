@@ -1,6 +1,8 @@
 from django.test import TestCase
 from categories.models import Category, SubCategory
 from users.serializers.create_preferences import CreatePreferenceSerializer
+from exceptions.error_code import ErrorCode
+from exceptions.custom_exception_handler import RequestError
 
 
 class CreatePreferenceSerializerTest(TestCase):
@@ -53,12 +55,18 @@ class CreatePreferenceSerializerTest(TestCase):
         """존재하지 않는 서브카테고리 ID 테스트"""
         data = {"preferences": [1, 2, 999]}
         serializer = self.serializer_class(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('preferences', serializer.errors)
-    
+        
+        with self.assertRaises(RequestError) as context:
+            serializer.is_valid(raise_exception=True)
+        
+        self.assertEqual(context.exception.detail["error_code"], ErrorCode.INVALID_SUBCATEGORY_ID.code)
+
     def test_invalid_preference_values(self):
         """잘못된 타입의 preference 값 테스트"""
         data = {"preferences": [200, 3]}
         serializer = self.serializer_class(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('preferences', serializer.errors)
+        
+        with self.assertRaises(RequestError) as context:
+            serializer.is_valid(raise_exception=True)
+        
+        self.assertEqual(context.exception.detail["error_code"], ErrorCode.INVALID_SUBCATEGORY_ID.code)
