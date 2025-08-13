@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "categories",
     "regions",
     "preferences",
+    "weather",
 ]
 
 MIDDLEWARE = [
@@ -167,6 +168,10 @@ LOCALE_PATHS = [
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -181,8 +186,8 @@ CORS_ALLOWED_ORIGINS = [
 # CSRF 설정
 CSRF_TRUSTED_ORIGINS = [
     "https://korip.me",      # 운영 도메인
-    "http://localhost:8000", # 로컬 개발용
-    "http://127.0.0.1:8000", # 로컬 개발용
+    "http://localhost:9000", # 로컬 개발용
+    "http://127.0.0.1:9000", # 로컬 개발용
 ]
 
 ALLOWED_HOSTS = [
@@ -330,3 +335,24 @@ OSM_MAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 #     # 매일 새벽 1시에 1000개 관광지 데이터 수집
 #     ("0 1 * * *", "django.core.management.call_command", ["sync_tour_api", "--limit=1000"]),
 # ]
+
+# 기상청 API 키 (환경변수에서 로드)
+WEATHER_API_KEY = config("WEATHER_API_KEY", default="")
+
+# HTTPS 사용 여부 (운영환경: True, 개발환경: False)
+USE_HTTPS = config("USE_HTTPS", default=True, cast=bool)
+
+# 날씨 API 관련 설정
+WEATHER_API_SETTINGS = {
+    "API_KEY": WEATHER_API_KEY,
+    "USE_HTTPS": USE_HTTPS,
+    "TIMEOUT": 30,  # API 응답 대기 시간 (초)
+    "RETRY_COUNT": 3,  # 재시도 횟수
+    "CACHE_TIMEOUT": 300,  # 캐시 유지 시간 (5분)
+}
+
+# API 호출 제한 설정
+WEATHER_API_RATE_LIMITS = {
+    "REQUESTS_PER_MINUTE": 60,  # 분당 최대 요청 수
+    "REQUESTS_PER_HOUR": 1000,  # 시간당 최대 요청 수
+}
