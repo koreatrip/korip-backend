@@ -28,16 +28,20 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "9000:8000"  # 외부 9000 포트로 접속
     # AWS RDS 사용하므로 depends_on 제거
     # depends_on:
     #   - db
     depends_on:
       - redis
     env_file:
-      - .env
+      - .env  # 운영환경 설정 사용
     networks:
       - korip-network
+    environment:
+      # 날씨 API 환경변수 추가
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - USE_HTTPS=${USE_HTTPS:-True}  # 기본값 True (운영환경)
 
 # 로컬 PostgreSQL 볼륨도 주석처리
 # volumes:
