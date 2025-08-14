@@ -264,7 +264,7 @@ class MultiLangTourAPIClient:
         decoded_service_key = unquote(self.service_key)
 
         base_params = {
-            "serviceKey": decoded_service_key,  # 디코딩된 키 사용!
+            "serviceKey": self.service_key,
             "MobileOS": self.mobile_os,
             "MobileApp": self.mobile_app,
             "_type": "json"
@@ -274,6 +274,8 @@ class MultiLangTourAPIClient:
         url = f"{base_url}/{endpoint}?"
         param_strings = [f"{key}={value}" for key, value in all_params.items()]
         url += "&".join(param_strings)
+
+        print(f"🌍 {lang} API URL: {url}")
 
         return url
 
