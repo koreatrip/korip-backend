@@ -1,8 +1,3 @@
-# places/services/multilang_tour_api_client.py
-
-# places/services/multilang_tour_api_client.py
-# 다국어 투어 API 클라이언트 - API 키 디코딩 적용
-
 import requests
 import time
 from typing import Dict, List, Any, Optional
@@ -23,8 +18,8 @@ class MultiLangTourAPIClient:
     MOBILE_OS = "ETC"
     MOBILE_APP = "KORIP"
     SUPPORTED_LANGUAGES = ["ko", "en", "jp", "cn"]
-    DAILY_LIMIT_PER_LANGUAGE = 1000  # 언어별 일일 제한
-    REQUEST_DELAY = 0.1  # 요청 간 딜레이 (서버 부하 방지)
+    DAILY_LIMIT_PER_LANGUAGE = 1000
+    REQUEST_DELAY = 0.1
 
     def __init__(self):
         self.base_urls = self.BASE_URLS
@@ -164,6 +159,101 @@ class MultiLangTourAPIClient:
                 "error": f"데이터 처리 실패: {str(e)}"
             }
 
+    def get_place_detail_intro(self, content_id: str, content_type_id: str, lang: str = "ko") -> Dict[str, Any]:
+        """관광지 소개정보 조회 (전화번호, 이용시간, 홈페이지 등)"""
+        if lang not in self.supported_languages:
+            return {
+                "status": "error",
+                "error": f"지원하지 않는 언어 코드: {lang}"
+            }
+
+        if self.api_call_count_by_language.get(lang, 0) >= self.DAILY_LIMIT_PER_LANGUAGE:
+            return {
+                "status": "error",
+                "error": f"{lang.upper()} 언어 일일 API 호출 제한 초과 ({self.DAILY_LIMIT_PER_LANGUAGE}회)"
+            }
+
+        try:
+            url = self._build_api_url(lang, "detailIntro2", {
+                "contentId": content_id,
+                "contentTypeId": content_type_id
+            })
+
+            self._apply_request_delay()
+
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+
+            self.api_call_count_by_language[lang] += 1
+
+            response_data = response.json()
+            items = self._extract_items_from_response(response_data)
+
+            return {
+                "status": "success",
+                "data": items[0] if items else {},
+                "language": lang,
+                "content_id": content_id
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {
+                "status": "error",
+                "error": f"소개정보 조회 실패: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": f"데이터 처리 실패: {str(e)}"
+            }
+
+    def get_place_detail_common(self, content_id: str, lang: str = "ko") -> Dict[str, Any]:
+        """관광지 상세 공통정보 조회 (overview, usetime, homepage 등)"""
+        if lang not in self.supported_languages:
+            return {
+                "status": "error",
+                "error": f"지원하지 않는 언어 코드: {lang}"
+            }
+
+        if self.api_call_count_by_language.get(lang, 0) >= self.DAILY_LIMIT_PER_LANGUAGE:
+            return {
+                "status": "error",
+                "error": f"{lang.upper()} 언어 일일 API 호출 제한 초과 ({self.DAILY_LIMIT_PER_LANGUAGE}회)"
+            }
+
+        try:
+            url = self._build_api_url(lang, "detailCommon2", {
+                "contentId": content_id
+            })
+
+            self._apply_request_delay()
+
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+
+            self.api_call_count_by_language[lang] += 1
+
+            response_data = response.json()
+            items = self._extract_items_from_response(response_data)
+
+            return {
+                "status": "success",
+                "data": items[0] if items else {},
+                "language": lang,
+                "content_id": content_id
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {
+                "status": "error",
+                "error": f"상세정보 조회 실패: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": f"데이터 처리 실패: {str(e)}"
+            }
+
     def collect_all_languages(self, area_code: int = 1, num_of_rows: int = 10) -> Dict[str, Any]:
         """모든 언어로 관광지 데이터 수집"""
         all_language_data = {}
@@ -250,18 +340,10 @@ class MultiLangTourAPIClient:
             }
 
     def _build_api_url(self, lang: str, endpoint: str, params: Dict[str, Any]) -> str:
-        """
-        API URL 생성
-
-        ✅ 핵심 수정: API 키를 urllib.parse.unquote로 디코딩해서 사용
-        - 이유: settings에 저장된 키가 URL 인코딩된 상태이기 때문
-        """
+        """API URL 생성"""
         base_url = self.base_urls.get(lang)
         if not base_url:
             raise ValueError(f"지원하지 않는 언어: {lang}")
-
-        # 🔥 API 키 디코딩 - 이 부분이 핵심 수정사항!
-        decoded_service_key = unquote(self.service_key)
 
         base_params = {
             "serviceKey": self.service_key,
@@ -274,8 +356,6 @@ class MultiLangTourAPIClient:
         url = f"{base_url}/{endpoint}?"
         param_strings = [f"{key}={value}" for key, value in all_params.items()]
         url += "&".join(param_strings)
-
-        print(f"🌍 {lang} API URL: {url}")
 
         return url
 
