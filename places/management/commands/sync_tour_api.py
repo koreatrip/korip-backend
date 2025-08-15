@@ -1,18 +1,17 @@
-# 투어 API 데이터 동기화 명령어 - 지역 저장 로직 강화
-
-# places/management/commands/sync_tour_api.py
-
+import math
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django.db import transaction
-from places.models import Place
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
+from places.models import Place, PlaceTranslation
 from places.services.tour_api_client import TourAPIClient
 from places.services.category_mapper import CategoryMapper
 import time
 
 
 class Command(BaseCommand):
-    help = "투어 API에서 관광지 데이터를 가져와서 DB에 저장합니다 (ForeignKey 대응)"
+    help = "투어 API에서 관광지 데이터를 가져와서 DB에 저장합니다 (다국어 지원)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -49,29 +48,9 @@ class Command(BaseCommand):
             help="지역 필터링을 비활성화 (모든 지역 저장)"
         )
         parser.add_argument(
-            "--filter-stats",
-            action="store_true",
-            help="지역 필터링 통계만 출력하고 종료"
-        )
-        parser.add_argument(
-            "--collect-details",
-            action="store_true",
-            help="상세정보도 함께 수집 (overview, homepage, 이미지 등)"
-        )
-        parser.add_argument(
-            "--collect-images",
-            action="store_true",
-            help="추가 이미지도 함께 수집 (detailImage2)"
-        )
-        parser.add_argument(
-            "--collect-intro",
-            action="store_true",
-            help="소개정보도 함께 수집 (운영시간, 입장료 등)"
-        )
-        parser.add_argument(
             "--collect-all",
             action="store_true",
-            help="모든 상세정보 수집 (--collect-details + --collect-images + --collect-intro)"
+            help="모든 상세정보 수집"
         )
         parser.add_argument(
             "--detail-delay",
@@ -80,14 +59,11 @@ class Command(BaseCommand):
             help="상세정보 수집 시 API 호출 간 대기시간 (초, 기본값: 1.0)"
         )
         parser.add_argument(
-            "--debug-region",
-            action="store_true",
-            help="지역 매핑 디버깅 모드 활성화"
-        )
-        parser.add_argument(
-            "--test-region-only",
-            action="store_true",
-            help="지역 매핑 테스트만 실행 (실제 저장 안함)"
+            "--language",
+            type=str,
+            default="all",
+            choices=["ko", "en", "jp", "cn", "all"],
+            help="수집할 언어 (기본값: all - 모든 언어)"
         )
 
     def handle(self, *args, **options):
@@ -97,17 +73,11 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         force_update = options["force_update"]
         disable_region_filter = options["disable_region_filter"]
-        filter_stats_only = options["filter_stats"]
-        collect_details = options["collect_details"] or options["collect_all"]
-        collect_images = options["collect_images"] or options["collect_all"]
-        collect_intro = options["collect_intro"] or options["collect_all"]
+        collect_all = options["collect_all"]
         detail_delay = options["detail_delay"]
-        self.debug_region = options["debug_region"]
-        self.test_region_only = options["test_region_only"]
+        language = options["language"]
 
-        self.stdout.write(
-            self.style.SUCCESS("🚀 KORIP 투어 API 동기화 시작 (ForeignKey 대응)")
-        )
+        self.stdout.write("KORIP 투어 API 동기화 시작 (다국어 지원)")
         self.stdout.write("=" * 60)
 
         self.client = TourAPIClient()
@@ -115,88 +85,51 @@ class Command(BaseCommand):
 
         if disable_region_filter:
             self.mapper.enable_all_regions()
-            self.stdout.write(
-                self.style.WARNING("⚠️ 지역 필터링 비활성화 - 모든 지역 저장됨")
-            )
+            self.stdout.write("지역 필터링 비활성화 - 모든 지역 저장됨")
 
-        if filter_stats_only:
-            self.print_filter_statistics_only()
-            return
+        # 언어 설정
+        if language == "all":
+            self.languages = ["ko", "en", "jp", "cn"]
+        else:
+            self.languages = [language]
 
-        self.stdout.write(f"📊 처리 설정:")
+        self.stdout.write(f"처리 설정:")
         self.stdout.write(f"   - 총 처리: {limit}개")
         self.stdout.write(f"   - 지역 코드: {area_code or '전체'}")
-        self.stdout.write(f"   - 시작 페이지: {page}")
-        self.stdout.write(f"   - 테스트 모드: {'예' if dry_run else '아니오'}")
-        self.stdout.write(f"   - 강제 업데이트: {'예' if force_update else '아니오'}")
-        self.stdout.write(f"   - 지역 필터링: {'비활성화' if disable_region_filter else '활성화'}")
-        self.stdout.write(f"   - 🔍 지역 디버깅: {'활성화' if self.debug_region else '비활성화'}")
-        self.stdout.write(f"   - 🧪 지역 테스트만: {'예' if self.test_region_only else '아니오'}")
-
-        self.stdout.write(f"\n🔍 상세정보 수집 설정:")
-        self.stdout.write(f"   - 상세정보 (overview, homepage): {'예' if collect_details else '아니오'}")
-        self.stdout.write(f"   - 추가 이미지 (detailImage2): {'예' if collect_images else '아니오'}")
-        self.stdout.write(f"   - 소개정보 (운영시간 등): {'예' if collect_intro else '아니오'}")
-        if any([collect_details, collect_images, collect_intro]):
-            self.stdout.write(f"   - API 호출 대기시간: {detail_delay}초")
+        self.stdout.write(f"   - 언어: {', '.join(self.languages)}")
+        self.stdout.write(f"   - 상세정보 수집: {'예' if collect_all else '아니오'}")
 
         try:
             self.check_region_database_status()
-            self.print_mapping_and_filter_info()
 
-            self.stdout.write("🔍 투어 API 연결 테스트 중...")
+            self.stdout.write("투어 API 연결 테스트 중...")
             connection_test_result = self.client.test_connection(from_command=True)
 
             if not connection_test_result:
-                self.stdout.write(
-                    self.style.WARNING("⚠️ 투어 API 연결 테스트 일부 실패! 하지만 계속 진행합니다.")
-                )
-                self.stdout.write("💡 API 연결은 정상이므로 실제 동기화를 시도합니다.")
+                self.stdout.write("투어 API 연결 테스트 일부 실패! 하지만 계속 진행합니다.")
             else:
-                self.stdout.write(
-                    self.style.SUCCESS("✅ 투어 API 연결 성공!")
-                )
+                self.stdout.write("투어 API 연결 성공!")
 
-            result = self.sync_places(
+            result = self.sync_places_multilang(
                 limit=limit,
                 area_code=area_code,
                 page=page,
                 dry_run=dry_run,
                 force_update=force_update,
-                collect_details=collect_details,
-                collect_images=collect_images,
-                collect_intro=collect_intro,
+                collect_all=collect_all,
                 detail_delay=detail_delay
             )
 
             if result is not None:
                 self.print_summary(result)
-            else:
-                self.stdout.write(
-                    self.style.ERROR("❌ 동기화 결과를 가져올 수 없습니다!")
-                )
 
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f"❌ 동기화 중 치명적 에러 발생: {e}")
-            )
+            self.stdout.write(f"동기화 중 치명적 에러 발생: {e}")
             import traceback
             traceback.print_exc()
             raise CommandError(f"동기화 실패: {e}")
 
-        finally:
-            try:
-                mapping_stats = self.mapper.get_mapping_statistics()
-                if isinstance(mapping_stats, dict):
-                    self.stdout.write(f"\n📊 카테고리 매핑 통계:")
-                    self.stdout.write(f"   - 총 매핑: {mapping_stats.get('total_mappings', 0)}개")
-                    self.stdout.write(f"   - 서브카테고리: {mapping_stats.get('subcategory_mappings', 0)}개")
-                    self.stdout.write(f"   - 지역 매핑: {mapping_stats.get('region_mappings', 0)}개")
-            except Exception as e:
-                self.stdout.write(f"\n⚠️ 매핑 통계 조회 실패: {e}")
-
-    def sync_places(self, limit, area_code, page, dry_run, force_update,
-                    collect_details, collect_images, collect_intro, detail_delay):
+    def sync_places_multilang(self, limit, area_code, page, dry_run, force_update, collect_all, detail_delay):
         stats = {
             "total_processed": 0,
             "created": 0,
@@ -204,93 +137,378 @@ class Command(BaseCommand):
             "skipped": 0,
             "errors": 0,
             "region_saved": 0,
-            "region_failed": 0
+            "region_failed": 0,
+            "translations_created": 0,
+            "translations_updated": 0
         }
 
-        try:
-            places_data = self.client.get_area_list(
-                area_code=area_code,
-                page_no=page,
-                num_of_rows=limit
-            )
+        # 각 언어별로 데이터 수집하고 GIS로 매칭
+        all_places_data = {}
 
-            if not places_data:
-                self.stdout.write(self.style.WARNING("⚠️ 투어 API에서 데이터를 가져올 수 없습니다."))
-                return stats
+        for lang in self.languages:
+            try:
+                self.stdout.write(f"[{lang.upper()}] 언어 데이터 수집 중...")
 
-            self.stdout.write(f"✅ {len(places_data)}개의 관광지 데이터를 가져왔습니다.")
+                # TourAPIClient의 다국어 메서드 사용
+                places_data = self.client.get_area_list_by_language(
+                    area_code=area_code,
+                    page_no=page,
+                    num_of_rows=limit,
+                    lang=lang
+                )
 
-            for place_data in places_data:
-                stats["total_processed"] += 1
+                if not places_data:
+                    self.stdout.write(f"[{lang.upper()}] 데이터를 가져올 수 없습니다.")
+                    continue
 
+                self.stdout.write(f"[{lang.upper()}] {len(places_data)}개의 관광지 데이터를 가져왔습니다.")
+
+                # GIS 기반으로 같은 장소 매핑
+                for place_data in places_data:
+                    lat = place_data.get("mapy")
+                    lng = place_data.get("mapx")
+
+                    if not lat or not lng:
+                        continue
+
+                    current_lat = float(lat)
+                    current_lng = float(lng)
+
+                    print(f"[{lang.upper()}] 처리 중: {place_data.get('title')} (좌표: {current_lat}, {current_lng})")
+
+                    # 수동 거리 계산 우선 (GIS 매칭 문제로 인해)
+                    found_existing = False
+                    matched_key = None
+                    existing_place_from_gis = None
+
+                    # 1. 기존 DB에서 500m 이내 관광지 찾기 (수동 계산)
+                    existing_places = Place.objects.exclude(location__isnull=True)
+                    for existing_place in existing_places:
+                        if existing_place.location:
+                            existing_lat = existing_place.location.y
+                            existing_lng = existing_place.location.x
+                            distance = self.calculate_distance_simple(current_lat, current_lng, existing_lat,
+                                                                      existing_lng)
+
+                            if distance <= 500:  # 500m 이내
+                                print(
+                                    f"[{lang.upper()}] DB 매칭 발견: {place_data.get('title')} <-> 기존 Place {existing_place.id} (거리: {distance:.0f}m)")
+                                existing_place_from_gis = existing_place
+                                break
+
+                    # 2. all_places_data에서도 찾기
+                    if not existing_place_from_gis:
+                        for existing_key, existing_data in all_places_data.items():
+                            existing_lat = existing_data["lat"]
+                            existing_lng = existing_data["lng"]
+
+                            # 500m 이내인지 수동 계산 (반경 확대)
+                            distance = self.calculate_distance_simple(current_lat, current_lng, existing_lat,
+                                                                      existing_lng)
+                            if distance <= 500:  # 500m 이내로 확대
+                                # 이름 유사도도 체크 (핵심 키워드 매칭)
+                                current_title = place_data.get('title', '').lower()
+                                existing_title = existing_data['base_data'].get('title', '').lower()
+
+                                # 숫자나 특수문자 제거해서 핵심 단어만 추출
+                                import re
+                                current_clean = re.sub(r'[^a-zA-Z가-힣]', '', current_title)
+                                existing_clean = re.sub(r'[^a-zA-Z가-힣]', '', existing_title)
+
+                                # 괄호 안 한국어 매칭 우선 체크
+                                if self.is_same_place_by_korean_name(current_title, existing_title, distance):
+                                    print(
+                                        f"[{lang.upper()}] 괄호 한국어 매칭 성공: {place_data.get('title')} <-> {existing_data['base_data'].get('title')} (거리: {distance:.0f}m)")
+                                    found_existing = True
+                                    matched_key = existing_key
+                                    break
+                                # 일반 제목 유사도 체크
+                                elif (len(current_clean) >= 2 and len(existing_clean) >= 2 and
+                                      self.is_similar_place(current_clean, existing_clean, distance)):
+                                    print(
+                                        f"[{lang.upper()}] 일반 매칭 성공: {place_data.get('title')} <-> {existing_data['base_data'].get('title')} (거리: {distance:.0f}m, 제목 유사)")
+                                    found_existing = True
+                                    matched_key = existing_key
+                                    break
+                                else:
+                                    print(
+                                        f"[{lang.upper()}] 거리는 가깝지만 제목이 달라서 제외: {current_title} vs {existing_title} (거리: {distance:.0f}m)")
+                            elif distance <= 1000:  # 1km 이내는 로그만 출력
+                                print(
+                                    f"[{lang.upper()}] 근처 장소 발견: {place_data.get('title')} vs {existing_data['base_data'].get('title')} (거리: {distance:.0f}m)")
+
+                    if existing_place_from_gis:
+                        # 기존 관광지와 매칭됨
+                        existing_lat, existing_lng = existing_place_from_gis.location.y, existing_place_from_gis.location.x
+                        existing_coord_key = f"{existing_lat:.3f},{existing_lng:.3f}"
+
+                        # all_places_data에서 해당 키 찾기
+                        for key, data in all_places_data.items():
+                            if abs(data["lat"] - existing_lat) < 0.001 and abs(data["lng"] - existing_lng) < 0.001:
+                                found_existing = True
+                                matched_key = key
+                                print(
+                                    f"[{lang.upper()}] GIS 매칭 성공: {place_data.get('title')} <-> {data['base_data'].get('title')} (Place ID: {existing_place_from_gis.id})")
+                                break
+
+                        # all_places_data에 없으면 새로 추가 (기존 DB 관광지용)
+                        if not found_existing:
+                            matched_key = existing_coord_key
+                            all_places_data[matched_key] = {
+                                "base_data": place_data.copy(),
+                                "translations": {},
+                                "detailed_translations": {},
+                                "lat": existing_lat,
+                                "lng": existing_lng,
+                                "existing_place_id": existing_place_from_gis.id
+                            }
+                            found_existing = True
+                            print(
+                                f"[{lang.upper()}] 기존 DB 관광지와 매칭: {place_data.get('title')} (Place ID: {existing_place_from_gis.id})")
+
+                    if not found_existing:
+                        # 새로운 관광지
+                        coord_key = f"{current_lat:.3f},{current_lng:.3f}"
+                        all_places_data[coord_key] = {
+                            "base_data": place_data.copy(),
+                            "translations": {},
+                            "detailed_translations": {},
+                            "lat": current_lat,
+                            "lng": current_lng
+                        }
+                        print(f"[{lang.upper()}] 새로운 관광지 생성: {place_data.get('title')}")
+                        matched_key = coord_key
+
+                    # 번역 정보 저장 (기본 정보)
+                    all_places_data[matched_key]["translations"][lang] = {
+                        "content_id": place_data.get("contentid"),
+                        "title": place_data.get("title", ""),
+                        "addr1": place_data.get("addr1", ""),
+                        "overview": place_data.get("overview", "")
+                    }
+
+                    # 상세정보 수집 (언어별로 별도 저장)
+                    if collect_all and place_data.get("contentid"):
+                        detailed_info = self.collect_detailed_info_by_language(
+                            place_data.get("contentid"),
+                            place_data.get("contenttypeid", "12"),
+                            lang
+                        )
+                        all_places_data[matched_key]["detailed_translations"][lang] = detailed_info
+                        time.sleep(detail_delay)
+
+            except Exception as e:
+                self.stdout.write(f"[{lang.upper()}] 에러: {e}")
+                stats["errors"] += 1
+
+        # 통합된 데이터로 Place 생성/업데이트
+        for coord_key, place_info in all_places_data.items():
+            stats["total_processed"] += 1
+
+            try:
+                base_data = place_info["base_data"]
+                translations = place_info["translations"]
+                detailed_translations = place_info["detailed_translations"]
+
+                # Place 생성/업데이트 시 한국어 content_id를 우선 사용하되, 없으면 첫 번째 언어 사용
+                ko_data = translations.get("ko")
+                if not ko_data:
+                    for priority_lang in ["en", "jp", "cn"]:
+                        if priority_lang in translations:
+                            ko_data = translations[priority_lang]
+                            break
+
+                    if not ko_data:
+                        ko_data = next(iter(translations.values()), {})
+
+                if not ko_data or not ko_data.get("content_id"):
+                    stats["skipped"] += 1
+                    continue
+
+                print(f"=== CategoryMapper 처리 전 ===")
+                print(f"사용할 메인 언어: {next((lang for lang, data in translations.items() if data == ko_data), 'unknown')}")
+                print(f"메인 content_id: {ko_data.get('content_id')}")
+
+                # 한국어 상세정보를 base_data에 병합
+                if "ko" in detailed_translations:
+                    base_data.update(detailed_translations["ko"])
+
+                # CategoryMapper가 상세정보가 포함된 base_data를 처리
+                processed_data = self.mapper.process_tour_api_place(base_data)
+                if not processed_data:
+                    stats["skipped"] += 1
+                    continue
+
+                # 메인 content_id 설정 (한국어 우선, 없으면 첫 번째 언어)
+                main_content_id = ko_data.get("content_id")
+                processed_data["content_id"] = main_content_id
+                processed_data["latitude"] = place_info["lat"]
+                processed_data["longitude"] = place_info["lng"]
+
+                # Place 생성/업데이트
                 try:
-                    processed_data = self.mapper.process_tour_api_place(place_data)
+                    # 기존 Place가 있는지 확인
+                    existing_place = None
+                    if "existing_place_id" in place_info:
+                        try:
+                            existing_place = Place.objects.get(id=place_info["existing_place_id"])
+                            print(f"기존 GIS 매칭된 Place 사용: ID {existing_place.id}")
+                        except Place.DoesNotExist:
+                            print(f"GIS 매칭된 Place {place_info['existing_place_id']}를 찾을 수 없음")
 
-                    if not processed_data or not isinstance(processed_data, dict):
-                        stats["skipped"] += 1
-                        continue
+                    # content_id로도 확인 (모든 언어의 content_id 확인)
+                    if not existing_place:
+                        for lang, trans_data in translations.items():
+                            content_id = trans_data.get("content_id")
+                            if content_id:
+                                try:
+                                    existing_place = Place.objects.get(content_id=content_id)
+                                    print(f"content_id로 기존 Place 찾음: {content_id} (언어: {lang})")
+                                    break
+                                except Place.DoesNotExist:
+                                    continue
 
-                    content_id = processed_data.get("content_id")
-                    if not content_id:
-                        stats["skipped"] += 1
-                        continue
-
-                    if collect_details and not dry_run:
-                        self._collect_detailed_info(content_id, place_data.get("contenttypeid", "12"), processed_data)
-
-                    try:
-                        from places.models import Place
-                        existing_place = Place.objects.get(content_id=content_id)
-
-                        if not force_update:
+                    if existing_place:
+                        if force_update:
+                            if not dry_run:
+                                region_saved = self.update_place(existing_place, processed_data, translations,
+                                                                 detailed_translations)
+                                if region_saved:
+                                    stats["region_saved"] += 1
+                                else:
+                                    stats["region_failed"] += 1
+                                stats["translations_updated"] += len(translations)
+                            stats["updated"] += 1
+                        else:
+                            # 기존 Place가 있으면 번역만 업데이트
+                            if not dry_run:
+                                trans_stats = self.update_translations_with_details(existing_place, translations,
+                                                                                    detailed_translations)
+                                stats["translations_updated"] += trans_stats
                             stats["skipped"] += 1
-                            continue
-
+                    else:
+                        # 새로운 Place 생성
                         if not dry_run:
-                            region_saved = self.update_place(existing_place, processed_data)
-                            if region_saved:
-                                stats["region_saved"] += 1
-                            else:
-                                stats["region_failed"] += 1
-                        stats["updated"] += 1
-
-                    except Place.DoesNotExist:
-                        if not dry_run:
-                            region_saved = self.create_place(processed_data)
-                            if region_saved:
-                                stats["region_saved"] += 1
-                            else:
-                                stats["region_failed"] += 1
+                            place, region_saved = self.create_place_with_detailed_translations(processed_data,
+                                                                                               translations,
+                                                                                               detailed_translations)
+                            if place:
+                                stats["translations_created"] += len(translations)
+                                if region_saved:
+                                    stats["region_saved"] += 1
+                                else:
+                                    stats["region_failed"] += 1
                         stats["created"] += 1
 
                 except Exception as e:
                     stats["errors"] += 1
-                    self.stdout.write(f"❌ 처리 중 에러: {e}")
+                    self.stdout.write(f"처리 중 에러: {e}")
 
-        except Exception as e:
-            self.stdout.write(f"❌ 동기화 중 에러: {e}")
-            stats["errors"] += 1
+            except Exception as e:
+                stats["errors"] += 1
+                self.stdout.write(f"처리 중 에러: {e}")
 
         return stats
 
-    def _collect_detailed_info(self, content_id, content_type_id, processed_data):
+    def find_matching_place_by_gis(self, lat, lng, radius_meters):
+        # GIS를 사용해서 반경 내 기존 Place 찾기 (개선된 버전)
         try:
-            detail_info = self.client.get_place_detail(content_id)
+            # Point 생성 (lng, lat 순서 주의!)
+            point = Point(lng, lat)
+
+            # 1. PostGIS distance 사용 (정확한 계산)
+            try:
+                nearby_places = Place.objects.filter(
+                    location__distance_lte=(point, D(m=radius_meters))
+                ).exclude(location__isnull=True)
+
+                if nearby_places.exists():
+                    closest_place = nearby_places.first()
+                    print(f"GIS 매칭 성공 (PostGIS): Place ID {closest_place.id}")
+                    return closest_place
+
+            except Exception as e:
+                print(f"PostGIS 계산 실패: {e}, 대안 방법 사용")
+
+                # 2. 대안: bbox로 범위 검색 후 수동 거리 계산
+                try:
+                    # 대략적인 bbox 계산 (1도 ≈ 111km)
+                    degree_diff = radius_meters / 111000.0
+
+                    bbox_places = Place.objects.filter(
+                        location__latitude__range=(lat - degree_diff, lat + degree_diff),
+                        location__longitude__range=(lng - degree_diff, lng + degree_diff)
+                    ).exclude(location__isnull=True)
+
+                    for place in bbox_places:
+                        if place.location:
+                            place_lat = place.location.y
+                            place_lng = place.location.x
+                            distance = self.calculate_distance_simple(lat, lng, place_lat, place_lng)
+
+                            if distance <= radius_meters:
+                                print(f"GIS 매칭 성공 (수동 계산): Place ID {place.id}, 거리: {distance:.0f}m")
+                                return place
+
+                except Exception as e2:
+                    print(f"대안 방법도 실패: {e2}")
+
+            print(f"GIS 매칭 실패: 반경 {radius_meters}m 내에 기존 Place 없음")
+            return None
+
+        except Exception as e:
+            print(f"GIS 매칭 중 에러: {e}")
+            return None
+
+    def collect_detailed_info_by_language(self, content_id, content_type_id, lang):
+        # 언어별로 상세정보를 별도 수집
+        detailed_info = {}
+
+        try:
+            print(f"[{lang.upper()}] 상세정보 수집: content_id={content_id}")
+
+            # detailCommon2 호출
+            detail_info = self.client.get_place_detail(content_id, lang)
             if detail_info:
-                processed_data.update({
-                    "overview": detail_info.get("overview", ""),
+                overview = detail_info.get('overview', '')
+                print(f"[{lang.upper()}] overview: {overview[:50]}...")
+
+                detailed_info.update({
+                    "overview": overview,
                     "homepage": detail_info.get("homepage", ""),
                     "tel": detail_info.get("tel", ""),
+                    "firstimage": detail_info.get("firstimage", ""),
+                    "firstimage2": detail_info.get("firstimage2", "")
                 })
-        except Exception as e:
-            pass
 
-    @transaction.atomic
-    def create_place(self, processed_data):
+            # detailIntro2 호출
+            intro_info = self.client.get_place_detail_intro(content_id, content_type_id, lang)
+            if intro_info:
+                detailed_info.update({
+                    "usetime": intro_info.get("usetime", ""),
+                    "usetimeculture": intro_info.get("usetimeculture", ""),
+                    "usetimeleports": intro_info.get("usetimeleports", ""),
+                    "opentime": intro_info.get("opentime", ""),
+                    "opentimefood": intro_info.get("opentimefood", ""),
+                    "infocenter": intro_info.get("infocenter", ""),
+                    "infocenterlodging": intro_info.get("infocenterlodging", ""),
+                    "infocentershopping": intro_info.get("infocentershopping", ""),
+                    "infocenterculture": intro_info.get("infocenterculture", ""),
+                    "infocenterfood": intro_info.get("infocenterfood", ""),
+                    "infocenterleports": intro_info.get("infocenterleports", ""),
+                })
+
+        except Exception as e:
+            print(f"[{lang.upper()}] 상세정보 수집 실패: {e}")
+
+        return detailed_info
+
+    def create_place_with_detailed_translations(self, processed_data, translations, detailed_translations):
         region_saved = False
         region_obj = None
         subregion_obj = None
 
+        # 지역 정보 처리
         region_id = processed_data.get("region_id")
         sub_region_id = processed_data.get("sub_region_id")
 
@@ -300,12 +518,13 @@ class Command(BaseCommand):
                 region_obj = Region.objects.get(id=region_id)
                 subregion_obj = SubRegion.objects.get(id=sub_region_id)
                 region_saved = True
-                print(f"[SUCCESS] 지역 정보 로드: {region_obj} > {subregion_obj}")
+                print(f"지역 정보 로드: {region_obj} > {subregion_obj}")
             except (Region.DoesNotExist, SubRegion.DoesNotExist) as e:
-                print(f"[WARNING] 지역 객체 못 찾음: region_id={region_id}, sub_region_id={sub_region_id}")
+                print(f"지역 객체 못 찾음: region_id={region_id}, sub_region_id={sub_region_id}")
             except Exception as e:
-                print(f"[ERROR] 지역 조회 중 에러: {e}")
+                print(f"지역 조회 중 에러: {e}")
 
+        # 카테고리 정보 처리
         category_obj = None
         sub_category_obj = None
 
@@ -314,23 +533,24 @@ class Command(BaseCommand):
             try:
                 from categories.models import Category
                 category_obj = Category.objects.get(id=category_id)
-                print(f"[SUCCESS] 카테고리 객체 찾음: {category_obj} (ID: {category_id})")
             except Category.DoesNotExist:
-                print(f"[WARNING] 카테고리 객체 못 찾음: ID {category_id}")
-            except Exception as e:
-                print(f"[WARNING] 카테고리 객체 조회 중 에러: {e}")
+                print(f"카테고리 객체 못 찾음: ID {category_id}")
 
         sub_category_id = processed_data.get("sub_category_id")
         if sub_category_id:
             try:
                 from categories.models import SubCategory
                 sub_category_obj = SubCategory.objects.get(id=sub_category_id)
-                print(f"[SUCCESS] 서브카테고리 객체 찾음: {sub_category_obj} (ID: {sub_category_id})")
             except SubCategory.DoesNotExist:
-                print(f"[WARNING] 서브카테고리 객체 못 찾음: ID {sub_category_id}")
-            except Exception as e:
-                print(f"[WARNING] 서브카테고리 객체 조회 중 에러: {e}")
+                print(f"서브카테고리 객체 못 찾음: ID {sub_category_id}")
 
+        # 카테고리별 전화번호 처리
+        phone_number = self.get_phone_by_category(processed_data)
+
+        # 카테고리별 운영시간 처리
+        use_time = self.get_usetime_by_category(processed_data)
+
+        # Place 생성
         try:
             place = Place.objects.create(
                 content_id=processed_data["content_id"],
@@ -338,61 +558,137 @@ class Command(BaseCommand):
                 sub_category_id=sub_category_obj.id if sub_category_obj else None,
                 region=region_obj,
                 sub_region=subregion_obj,
-                phone_number=processed_data.get("tel", processed_data.get("phone_number", ""))[:20],
-                use_time=processed_data.get("use_time", "")[:200] if processed_data.get("use_time") else "",
+                phone_number=phone_number[:20] if phone_number else "",
+                use_time=use_time[:200] if use_time else "",
                 link_url=processed_data.get("homepage", "")[:500],
                 favorite_count=0,
                 last_synced_at=timezone.now()
             )
 
-            print(f"[SUCCESS] Place 생성 성공! ID: {place.id}, content_id: {place.content_id}")
+            print(f"Place 생성 성공! ID: {place.id}, content_id: {place.content_id}")
+            print(f"저장된 전화번호: {place.phone_number}")
+            print(f"저장된 운영시간: {place.use_time}")
 
+            # 좌표 저장
             if processed_data.get("latitude") and processed_data.get("longitude"):
                 try:
-                    from django.contrib.gis.geos import Point
                     lat = float(processed_data["latitude"])
                     lng = float(processed_data["longitude"])
                     place.location = Point(lng, lat)
                     place.save()
-                    print(f"[SUCCESS] 좌표 저장 성공: ({lat}, {lng})")
+                    print(f"좌표 저장 성공: ({lat}, {lng})")
                 except Exception as e:
-                    print(f"[WARNING] 좌표 저장 실패: {e}")
+                    print(f"좌표 저장 실패: {e}")
 
-            if region_obj and subregion_obj:
-                saved_region_name = place.region.get_name("ko") if place.region else None
-                saved_subregion_name = place.sub_region.get_name("ko") if place.sub_region else None
-                print(f"[SUCCESS] 지역 정보도 함께 저장됨!")
-                print(f"[SUCCESS] - 저장된 지역: {saved_region_name}")
-                print(f"[SUCCESS] - 저장된 하위지역: {saved_subregion_name}")
-            else:
-                print(f"[INFO] 지역 정보 없이 Place만 저장됨 (ID: {place.id})")
+            # 다국어 번역 생성
+            self.create_translations_with_details(place, translations, detailed_translations)
+
+            return place, region_saved
 
         except Exception as e:
-            print(f"[ERROR] Place 생성 실패: {e}")
+            print(f"Place 생성 실패: {e}")
             import traceback
             traceback.print_exc()
-            raise
+            return None, False
 
-        try:
-            from places.models import PlaceTranslation
-            translation = PlaceTranslation.objects.create(
-                place=place,
-                lang="ko",
-                name=processed_data.get("title", ""),
-                address=processed_data.get("address", ""),
-                tour_api_content_id=processed_data["content_id"]
-            )
-            print(f"[SUCCESS] PlaceTranslation 생성 성공: {translation.name}")
+    def create_translations_with_details(self, place, translations, detailed_translations):
+        # 각 언어별 번역 생성
+        for lang, trans_data in translations.items():
+            try:
+                # 해당 언어의 상세정보에서 설명 가져오기
+                detailed_info = detailed_translations.get(lang, {})
+                description = detailed_info.get("overview", trans_data.get("overview", ""))
 
-        except Exception as e:
-            print(f"[ERROR] PlaceTranslation 생성 실패: {e}")
-            import traceback
-            traceback.print_exc()
+                translation = PlaceTranslation.objects.create(
+                    place=place,
+                    lang=lang,
+                    name=trans_data.get("title", ""),
+                    address=trans_data.get("addr1", ""),
+                    description=description,
+                    tour_api_content_id=trans_data.get("content_id", "")
+                )
+                print(f"[{lang.upper()}] 번역 생성: {translation.name}")
 
-        return region_saved
+            except Exception as e:
+                print(f"[{lang.upper()}] 번역 생성 실패: {e}")
+                import traceback
+                traceback.print_exc()
 
-    @transaction.atomic
-    def update_place(self, existing_place, processed_data):
+    def update_translations_with_details(self, place, translations, detailed_translations):
+        updated_count = 0
+
+        for lang, trans_data in translations.items():
+            try:
+                # 해당 언어의 상세정보에서 설명 가져오기
+                detailed_info = detailed_translations.get(lang, {})
+                description = detailed_info.get("overview", trans_data.get("overview", ""))
+
+                translation, created = PlaceTranslation.objects.get_or_create(
+                    place=place,
+                    lang=lang,
+                    defaults={
+                        "name": trans_data.get("title", ""),
+                        "address": trans_data.get("addr1", ""),
+                        "description": description,
+                        "tour_api_content_id": trans_data.get("content_id", "")
+                    }
+                )
+
+                if not created:
+                    # 기존 번역 업데이트
+                    translation.name = trans_data.get("title", "")
+                    translation.address = trans_data.get("addr1", "")
+                    translation.description = description
+                    translation.tour_api_content_id = trans_data.get("content_id", "")
+                    translation.save()
+
+                updated_count += 1
+                print(f"[{lang.upper()}] 번역 업데이트: {translation.name}")
+
+            except Exception as e:
+                print(f"[{lang.upper()}] 번역 업데이트 실패: {e}")
+
+        return updated_count
+
+    def get_phone_by_category(self, processed_data):
+        # 카테고리별 전화번호 필드 우선순위 처리
+        if processed_data.get("tel"):
+            return processed_data["tel"]
+
+        phone_priority = [
+            "infocenterfood",
+            "infocentershopping",
+            "infocenterculture",
+            "infocenterleports",
+            "infocenter",
+            "infocenterlodging"
+        ]
+
+        for field in phone_priority:
+            if processed_data.get(field):
+                return processed_data[field]
+
+        return ""
+
+    def get_usetime_by_category(self, processed_data):
+        # 카테고리별 운영시간 필드 우선순위 처리
+        time_priority = [
+            "opentimefood",
+            "opentime",
+            "usetimeculture",
+            "usetimeleports",
+            "usetime",
+            "opendateshopping",
+            "checkintime",
+        ]
+
+        for field in time_priority:
+            if processed_data.get(field):
+                return processed_data[field]
+
+        return ""
+
+    def update_place(self, existing_place, processed_data, translations, detailed_translations):
         region_saved = False
         region_obj = None
         subregion_obj = None
@@ -406,99 +702,261 @@ class Command(BaseCommand):
                 region_obj = Region.objects.get(id=region_id)
                 subregion_obj = SubRegion.objects.get(id=sub_region_id)
                 region_saved = True
-                print(f"[UPDATE] 지역 정보 업데이트: {region_obj} > {subregion_obj}")
-            except (Region.DoesNotExist, SubRegion.DoesNotExist) as e:
-                print(f"[WARNING] 지역 객체 못 찾음: region_id={region_id}, sub_region_id={sub_region_id}")
-            except Exception as e:
-                print(f"[ERROR] 지역 조회 중 에러: {e}")
+            except (Region.DoesNotExist, SubRegion.DoesNotExist):
+                pass
 
-        category_obj = existing_place.category_id
-        sub_category_obj = existing_place.sub_category_id
-
-        category_id = processed_data.get("category_id")
-        if category_id:
-            try:
-                from categories.models import Category
-                category_obj = Category.objects.get(id=category_id)
-            except Category.DoesNotExist:
-                print(f"[WARNING] 카테고리 객체 못 찾음: ID {category_id}")
-            except Exception as e:
-                print(f"[WARNING] 카테고리 객체 조회 중 에러: {e}")
-
-        sub_category_id = processed_data.get("sub_category_id")
-        if sub_category_id:
-            try:
-                from categories.models import SubCategory
-                sub_category_obj = SubCategory.objects.get(id=sub_category_id)
-            except SubCategory.DoesNotExist:
-                print(f"[WARNING] 서브카테고리 객체 못 찾음: ID {sub_category_id}")
-            except Exception as e:
-                print(f"[WARNING] 서브카테고리 객체 조회 중 에러: {e}")
+        # 카테고리별 전화번호/운영시간 처리
+        phone_number = self.get_phone_by_category(processed_data)
+        use_time = self.get_usetime_by_category(processed_data)
 
         try:
-            existing_place.category = category_obj.id if category_obj else None
-            existing_place.sub_category = sub_category_obj.id if sub_category_obj else None
             existing_place.region = region_obj
             existing_place.sub_region = subregion_obj
-            existing_place.phone_number = processed_data.get("tel", processed_data.get("phone_number", ""))[:20]
-            existing_place.use_time = processed_data.get("use_time", "")[:200] if processed_data.get("use_time") else ""
+            existing_place.phone_number = phone_number[:20] if phone_number else ""
+            existing_place.use_time = use_time[:200] if use_time else ""
             existing_place.link_url = processed_data.get("homepage", "")[:500]
             existing_place.last_synced_at = timezone.now()
             existing_place.save()
 
-            print(f"[UPDATE] Place 업데이트 성공! ID: {existing_place.id}")
+            print(f"Place 업데이트 성공! ID: {existing_place.id}")
 
             if processed_data.get("latitude") and processed_data.get("longitude"):
                 try:
-                    from django.contrib.gis.geos import Point
                     lat = float(processed_data["latitude"])
                     lng = float(processed_data["longitude"])
                     existing_place.location = Point(lng, lat)
                     existing_place.save()
-                    print(f"[UPDATE] 좌표 업데이트 성공: ({lat}, {lng})")
                 except Exception as e:
-                    print(f"[WARNING] 좌표 업데이트 실패: {e}")
+                    print(f"좌표 업데이트 실패: {e}")
 
-            try:
-                from places.models import PlaceTranslation
-                translation, created = PlaceTranslation.objects.get_or_create(
-                    place=existing_place,
-                    lang="ko",
-                    defaults={
-                        "name": processed_data.get("title", ""),
-                        "address": processed_data.get("address", ""),
-                        "tour_api_content_id": processed_data["content_id"]
-                    }
-                )
-
-                if not created:
-                    translation.name = processed_data.get("title", "")
-                    translation.address = processed_data.get("address", "")
-                    translation.tour_api_content_id = processed_data["content_id"]
-                    translation.save()
-
-                print(f"[UPDATE] PlaceTranslation 업데이트 완료: {translation.name}")
-
-            except Exception as e:
-                print(f"[ERROR] PlaceTranslation 업데이트 실패: {e}")
+            # 번역 정보 업데이트 (핵심 수정 부분)
+            self.update_translations_with_details(existing_place, translations, detailed_translations)
 
         except Exception as e:
-            print(f"[ERROR] Place 업데이트 실패: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Place 업데이트 실패: {e}")
             raise
 
         return region_saved
 
+    def is_same_place_by_korean_name(self, title1, title2, distance):
+        # 괄호 안 한국어로 같은 장소인지 체크
+        korean1 = self.extract_korean_from_parentheses(title1)
+        korean2 = self.extract_korean_from_parentheses(title2)
+
+        # 둘 다 괄호 안 한국어가 있으면 비교
+        if korean1 and korean2:
+            # 완전 일치하거나 한쪽이 다른쪽을 포함
+            if korean1 == korean2:
+                return True
+            if korean1 in korean2 or korean2 in korean1:
+                return True
+
+        # 한쪽만 괄호 한국어가 있으면 다른쪽 전체 제목과 비교
+        if korean1 and not korean2:
+            # title2에서 한글 부분 추출
+            korean_part2 = self.extract_korean_part(title2)
+            if korean1 in korean_part2 or korean_part2 in korean1:
+                return True
+
+        if korean2 and not korean1:
+            # title1에서 한글 부분 추출
+            korean_part1 = self.extract_korean_part(title1)
+            if korean2 in korean_part1 or korean_part1 in korean2:
+                return True
+
+        return False
+
+    def extract_korean_from_parentheses(self, title):
+        # 괄호 안 한국어 추출: "60Hz(60헤르츠)" -> "60헤르츠"
+        import re
+
+        # 다양한 괄호 패턴 매칭
+        patterns = [
+            r'\(([^)]*[가-힣][^)]*)\)',  # (한글포함)
+            r'\（([^）]*[가-힣][^）]*)\）',  # （한글포함）
+            r'\[([^\]]*[가-힣][^\]]*)\]',  # [한글포함]
+        ]
+
+        for pattern in patterns:
+            matches = re.findall(pattern, title)
+            for match in matches:
+                # 한글이 포함된 것만 반환
+                if re.search(r'[가-힣]', match):
+                    # 공백과 특수문자 정리
+                    cleaned = re.sub(r'[^\w가-힣]', '', match)
+                    if len(cleaned) >= 2:
+                        return cleaned
+
+        return None
+
+    def extract_korean_part(self, title):
+        # 제목에서 한글 부분만 추출
+        import re
+        korean_chars = re.findall(r'[가-힣]+', title)
+        return ''.join(korean_chars)
+
+    def is_similar_place(self, name1, name2, distance):
+        # 관광지 전용 매칭 로직 (거리 + 이름 조합)
+        if not name1 or not name2:
+            return False
+
+        # 거리별 유사도 임계값 조정
+        if distance <= 100:  # 100m 이내면 유연하게
+            similarity_threshold = 0.3
+        elif distance <= 300:  # 300m 이내면 보통
+            similarity_threshold = 0.5
+        else:  # 500m 이내면 엄격하게
+            similarity_threshold = 0.7
+
+        # 완전히 다른 업종인지 체크 (음식점끼리는 구분)
+        if self.is_different_business_type(name1, name2):
+            return False
+
+        # 핵심 키워드 매칭
+        return self.calculate_place_similarity(name1, name2) >= similarity_threshold
+
+    def is_different_business_type(self, name1, name2):
+        # 명확히 다른 업종만 구분 (같은 관광지의 다른 언어 번역 허용)
+        clear_business_keywords = {
+            "medical": ["약국", "병원", "의원", "한의원", "치과", "pharmacy", "hospital", "clinic"],
+            "food_specific": ["막창", "갈비", "치킨", "피자", "족발", "makchang", "galbi", "chicken"],
+        }
+
+        name1_type = None
+        name2_type = None
+
+        for biz_type, keywords in clear_business_keywords.items():
+            for keyword in keywords:
+                if keyword in name1.lower():
+                    name1_type = biz_type
+                if keyword in name2.lower():
+                    name2_type = biz_type
+
+        # 명확히 다른 업종이면 다른 업체
+        return (name1_type and name2_type and name1_type != name2_type)
+
+    def calculate_place_similarity(self, name1, name2):
+        # 관광지 이름 유사도 계산 (더 유연)
+        if not name1 or not name2:
+            return 0.0
+
+        # 숫자 제거 (168계단, 40계단 등에서 숫자 부분)
+        import re
+        clean1 = re.sub(r'\d+', '', name1).strip()
+        clean2 = re.sub(r'\d+', '', name2).strip()
+
+        # 한쪽이 다른쪽을 포함하면 높은 유사도
+        shorter = clean1 if len(clean1) < len(clean2) else clean2
+        longer = clean2 if len(clean1) < len(clean2) else clean1
+
+        if shorter in longer and len(shorter) >= 2:
+            return 0.8
+
+        # 문자 단위 유사도 계산
+        if len(longer) == 0:
+            return 1.0
+
+        common_chars = 0
+        for char in shorter:
+            if char in longer:
+                common_chars += 1
+
+        return common_chars / len(longer)
+
+    def is_similar_business(self, name1, name2):
+        # 엄격한 업체명 유사도 검사
+        if not name1 or not name2:
+            return False
+
+        # 서로 다른 업종 키워드가 있으면 다른 업체로 판단
+        business_keywords = {
+            "food": ["고기", "막창", "갈비", "치킨", "피자", "족발", "보쌈", "삼겹", "곱창", "순대"],
+            "medical": ["약국", "병원", "의원", "한의원", "치과", "안과", "내과", "정형외과"],
+            "shop": ["마트", "편의점", "상점", "가게", "매장", "스토어", "샵"],
+            "cafe": ["카페", "커피", "coffee", "cafe", "다방", "찻집"],
+            "hotel": ["호텔", "펜션", "모텔", "게스트", "리조트", "콘도"]
+        }
+
+        name1_category = None
+        name2_category = None
+
+        # 각 이름의 업종 분류
+        for category, keywords in business_keywords.items():
+            for keyword in keywords:
+                if keyword in name1:
+                    name1_category = category
+                if keyword in name2:
+                    name2_category = category
+
+        # 서로 다른 업종이면 다른 업체
+        if name1_category and name2_category and name1_category != name2_category:
+            return False
+
+        # 핵심 키워드가 포함되어야 함
+        shorter = name1 if len(name1) < len(name2) else name2
+        longer = name2 if len(name1) < len(name2) else name1
+
+        # 짧은 이름의 70% 이상이 긴 이름에 포함되어야 함
+        if len(shorter) >= 3:
+            match_count = 0
+            for char in shorter:
+                if char in longer:
+                    match_count += 1
+            similarity = match_count / len(shorter)
+            return similarity >= 0.7
+
+        return False
+
+    def calculate_distance_simple(self, lat1, lng1, lat2, lng2):
+        # 간단한 거리 계산 (미터 단위)
+        import math
+        R = 6371000  # 지구 반지름 (미터)
+
+        lat1_rad = math.radians(lat1)
+        lng1_rad = math.radians(lng1)
+        lat2_rad = math.radians(lat2)
+        lng2_rad = math.radians(lng2)
+
+        dlat = lat2_rad - lat1_rad
+        dlng = lng2_rad - lng1_rad
+
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlng / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        return R * c
+
+    def calculate_title_similarity(self, title1, title2):
+        # 제목 유사도 계산 (간단한 문자열 매칭)
+        if not title1 or not title2:
+            return 0.0
+
+        # 더 긴 문자열을 기준으로 유사도 계산
+        longer = title1 if len(title1) > len(title2) else title2
+        shorter = title2 if len(title1) > len(title2) else title1
+
+        if len(longer) == 0:
+            return 1.0
+
+        # 공통 문자 개수 계산
+        common_chars = 0
+        for char in shorter:
+            if char in longer:
+                common_chars += 1
+
+        return common_chars / len(longer)
+
     def print_summary(self, stats):
         self.stdout.write("\n" + "=" * 60)
-        self.stdout.write(f"📋 처리 결과:")
+        self.stdout.write(f"처리 결과:")
         self.stdout.write(f"   - 총 처리: {stats['total_processed']}개")
         self.stdout.write(f"   - 신규 생성: {stats['created']}개")
         self.stdout.write(f"   - 업데이트: {stats['updated']}개")
         self.stdout.write(f"   - 스킵: {stats['skipped']}개")
         self.stdout.write(f"   - 에러: {stats['errors']}개")
-        self.stdout.write(f"\n🗺️ 지역 저장 결과:")
+        self.stdout.write(f"\n다국어 번역 결과:")
+        self.stdout.write(f"   - 번역 생성: {stats['translations_created']}개")
+        self.stdout.write(f"   - 번역 업데이트: {stats['translations_updated']}개")
+        self.stdout.write(f"\n지역 저장 결과:")
         self.stdout.write(f"   - 지역 매핑 성공: {stats['region_saved']}개")
         self.stdout.write(f"   - 지역 매핑 실패: {stats['region_failed']}개")
 
@@ -508,32 +966,11 @@ class Command(BaseCommand):
             region_count = Region.objects.count()
             subregion_count = SubRegion.objects.count()
 
-            self.stdout.write(f"\n🗺️ 지역 데이터베이스 상태:")
+            self.stdout.write(f"지역 데이터베이스 상태:")
             self.stdout.write(f"   - 지역: {region_count}개")
             self.stdout.write(f"   - 하위지역: {subregion_count}개")
 
             if region_count == 0:
-                self.stdout.write(self.style.WARNING("⚠️ 지역 데이터가 없습니다. 지역 매핑이 불가능합니다."))
+                self.stdout.write("지역 데이터가 없습니다. 지역 매핑이 불가능합니다.")
         except Exception as e:
-            self.stdout.write(f"⚠️ 지역 데이터베이스 상태 확인 실패: {e}")
-
-    def print_mapping_and_filter_info(self):
-        self.stdout.write(f"\n🔍 카테고리 매핑 정보:")
-        self.stdout.write(f"   - CategoryMapper 초기화 완료")
-        self.stdout.write(f"   - 신분류 코드 → 우리 카테고리 매핑 활성화")
-
-    def print_filter_statistics_only(self):
-        try:
-            filter_info = self.mapper.get_supported_regions_info()
-            if isinstance(filter_info, dict):
-                self.stdout.write(f"\n🗺️ 지역 필터링 통계:")
-                self.stdout.write(f"   - 필터링 활성화: {filter_info.get('filter_enabled', False)}")
-                self.stdout.write(f"   - 지원 지역 수: {filter_info.get('total_supported', 0)}개")
-
-                supported_regions = filter_info.get('supported_regions', {})
-                for code, region_info in supported_regions.items():
-                    name = region_info.get('name', 'N/A')
-                    count = region_info.get('subregion_count', 0)
-                    self.stdout.write(f"     - {name} ({code}): {count}개 하위지역")
-        except Exception as e:
-            self.stdout.write(f"⚠️ 필터링 통계 조회 실패: {e}")
+            self.stdout.write(f"지역 데이터베이스 상태 확인 실패: {e}")

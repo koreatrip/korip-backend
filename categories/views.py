@@ -36,7 +36,8 @@ class CategoriesAPIView(APIView):
                             {"id": 3, "name": "액티비티"},
                             {"id": 4, "name": "쇼핑"},
                             {"id": 5, "name": "음식"},
-                            {"id": 6, "name": "K-POP"}
+                            {"id": 6, "name": "숙박"},
+                            {"id": 7, "name": "K-POP"}
                         ]
                     }
                 }
@@ -108,10 +109,10 @@ class SubCategoriesAPIView(APIView):
                 examples={
                     "application/json": {
                         "subcategories": [
-                            {"id": 1, "name": "뉴진스"},
-                            {"id": 2, "name": "BTS"},
-                            {"id": 3, "name": "시티즈"},
-                            {"id": 4, "name": "블랙핑크"}
+                            {"id": 26, "name": "호텔"},
+                            {"id": 27, "name": "펜션"},
+                            {"id": 28, "name": "리조트"},
+                            {"id": 29, "name": "모텔"}
                         ]
                     }
                 }

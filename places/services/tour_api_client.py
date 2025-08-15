@@ -1,8 +1,5 @@
 # 투어 API 클라이언트 - 다국어 지원 + 좌표 매칭 개선 (500m 기준)
 
-# places/services/tour_api_client.py
-# 투어 API 클라이언트 - 다국어 지원 + 좌표 매칭 개선 (500m 기준)
-
 import requests
 import json
 import time
@@ -67,23 +64,27 @@ class TourAPIClient:
         """
         API 요청을 수행하는 메서드
 
-        ✅ 핵심 수정: API 키를 urllib.parse.unquote로 디코딩해서 사용
+        핵심 수정: API 키를 urllib.parse.unquote로 디코딩해서 사용
         - 이유: settings에 저장된 키가 URL 인코딩된 상태이기 때문
         - %2B → +, %2F → /, %3D → = 로 변환
         """
         try:
-            # 🔥 API 키 디코딩 - 이 부분이 핵심 수정사항!
+            # API 키 디코딩
             decoded_service_key = unquote(self.service_key)
 
             base_params = {
-                "serviceKey": decoded_service_key,  # 디코딩된 키 사용!
+                "serviceKey": decoded_service_key,  # 디코딩된 키 사용
                 "MobileOS": self.mobile_os,
                 "MobileApp": self.mobile_app,
                 "_type": self.response_type,
             }
 
             final_params = {**base_params, **params}
-            base_url = "http://apis.data.go.kr/B551011/KorService2"
+
+            # 언어별 서비스 선택
+            service = self.service_map.get(lang, "KorService2")
+            base_url = f"http://apis.data.go.kr/B551011/{service}"
+
             headers = {
                 "User-Agent": "KORIP/1.0 (Korean Tourism Information Platform)",
                 "Accept": "application/json"
@@ -114,14 +115,14 @@ class TourAPIClient:
             return None
 
     def _get_service_url(self, lang: str) -> str:
-        """언어별 서비스 URL 생성"""
+        # 언어별 서비스 URL 생성
         service_name = self.service_map.get(lang)
         if not service_name:
             raise ValueError(f"지원하지 않는 언어: {lang}")
         return self.base_url_template.format(service=service_name)
 
     def _wait_for_rate_limit(self):
-        """Rate Limit 관리"""
+        # Rate Limit 관리
         current_time = time.time()
         time_since_last_request = current_time - self.last_request_time
 
@@ -130,7 +131,7 @@ class TourAPIClient:
             time.sleep(wait_time)
 
     def calculate_distance_meters(self, lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-        """두 좌표 간의 거리를 미터 단위로 계산 (Haversine 공식)"""
+        # 두 좌표 간의 거리를 미터 단위로 계산 (Haversine 공식)
         R = 6371.0  # 지구 반지름 (km)
 
         lat1_rad = math.radians(lat1)
@@ -149,7 +150,7 @@ class TourAPIClient:
         return distance_meters
 
     def is_same_location_by_coordinates(self, lat1: float, lng1: float, lat2: float, lng2: float) -> bool:
-        """좌표 기반으로 동일한 장소인지 판단 (500m 임계값)"""
+        # 좌표 기반으로 동일한 장소인지 판단 (500m 임계값)
         if not all([lat1, lng1, lat2, lng2]):
             return False
 
@@ -163,7 +164,7 @@ class TourAPIClient:
             return False
 
     def compare_place_coordinates(self, place1: Dict, place2: Dict) -> Dict:
-        """두 관광지의 좌표를 비교하고 결과 반환"""
+        # 두 관광지의 좌표를 비교하고 결과 반환
         try:
             lat1 = float(place1.get("mapy", 0))
             lng1 = float(place1.get("mapx", 0))
@@ -189,7 +190,7 @@ class TourAPIClient:
             }
 
     def get_category_codes(self) -> Optional[List[Dict]]:
-        """카테고리 코드 조회"""
+        # 카테고리 코드 조회
         params = {
             "numOfRows": 1000,
             "pageNo": 1,
@@ -211,7 +212,7 @@ class TourAPIClient:
         return []
 
     def get_area_codes(self) -> Optional[List[Dict]]:
-        """지역 코드 조회"""
+        # 지역 코드 조회
         params = {
             "numOfRows": 100,
             "pageNo": 1,
@@ -233,7 +234,7 @@ class TourAPIClient:
 
     def get_area_list_multilang(self, area_code: Optional[str] = None, page_no: int = 1,
                                 num_of_rows: int = 10, lang: str = "ko") -> Optional[List[Dict]]:
-        """다국어 관광지 목록 조회"""
+        # 다국어 관광지 목록 조회
         params = {
             "numOfRows": num_of_rows,
             "pageNo": page_no,
@@ -257,7 +258,7 @@ class TourAPIClient:
         return []
 
     def get_place_detail_multilang(self, content_id: str, lang: str = "ko") -> Optional[Dict]:
-        """다국어 관광지 상세 정보 조회"""
+        # 다국어 관광지 상세 정보 조회
         if not content_id:
             return None
 
@@ -279,8 +280,76 @@ class TourAPIClient:
 
         return None
 
+    def get_area_list_by_language(self, area_code=None, page_no=1, num_of_rows=100, lang="ko"):
+        # 언어별 관광지 목록 조회 (sync_tour_api.py 호환용)
+        return self.get_area_list_multilang(area_code, page_no, num_of_rows, lang)
+
+    def get_place_detail(self, content_id, lang="ko"):
+        """
+        관광지 상세정보 조회 (detailCommon2) - sync_tour_api.py 호환용
+
+        핵심 수정: Y/N 파라미터들 모두 제거!
+        - detailCommon2 API는 이런 파라미터들을 지원하지 않음
+        - 기본 파라미터만으로 호출하면 모든 정보가 들어옴
+        """
+        params = {
+            "contentId": content_id
+            # defaultYN, firstImageYN, addrinfoYN, mapinfoYN, overviewYN 모두 제거!
+        }
+
+        result = self._make_request("detailCommon2", params, lang)
+
+        if result and "items" in result:
+            items = result["items"]
+            if items and "item" in items:
+                detail = items["item"]
+                if isinstance(detail, list) and len(detail) > 0:
+                    detail = detail[0]
+                return detail
+
+        return {}
+
+    def get_place_detail_intro(self, content_id, content_type_id="12", lang="ko"):
+        # 관광지 소개정보 조회 (detailIntro2) - 전화번호, 이용시간 등
+        params = {
+            "contentId": content_id,
+            "contentTypeId": content_type_id
+        }
+
+        result = self._make_request("detailIntro2", params, lang)
+
+        if result and "items" in result:
+            items = result["items"]
+            if items and "item" in items:
+                intro = items["item"]
+                if isinstance(intro, list) and len(intro) > 0:
+                    intro = intro[0]
+                return intro
+
+        return {}
+
+    def get_place_detail_image(self, content_id, lang="ko"):
+        # 관광지 추가 이미지 조회 (detailImage2)
+        params = {
+            "contentId": content_id,
+            "imageYN": "Y",
+            "subImageYN": "Y"
+        }
+
+        result = self._make_request("detailImage2", params, lang)
+
+        if result and "items" in result:
+            items = result["items"]
+            if items and "item" in items:
+                images = items["item"]
+                if isinstance(images, dict):
+                    images = [images]
+                return images
+
+        return []
+
     def test_connection(self, from_command=False):
-        """API 연결 테스트"""
+        # API 연결 테스트
         if from_command:
             import sys
             is_test_env = 'test' in sys.argv
@@ -321,7 +390,7 @@ class TourAPIClient:
             return False
 
     def get_stats(self) -> Dict:
-        """API 사용 통계 반환"""
+        # API 사용 통계 반환
         success_rate = 0
         if self.stats["total_requests"] > 0:
             success_rate = (self.stats["successful_requests"] / self.stats["total_requests"]) * 100
@@ -340,26 +409,22 @@ class TourAPIClient:
 
     @property
     def base_url(self):
-        """기본 URL 반환"""
+        # 기본 URL 반환
         return self.base_url_template.format(service=self.default_service)
 
     def get_area_list(self, area_code: Optional[str] = None, page_no: int = 1, num_of_rows: int = 10) -> Optional[
         List[Dict]]:
-        """관광지 목록 조회 (한국어)"""
+        # 관광지 목록 조회 (한국어)
         return self.get_area_list_multilang(area_code, page_no, num_of_rows, "ko")
 
-    def get_place_detail(self, content_id: str) -> Optional[Dict]:
-        """관광지 상세 정보 조회 (한국어)"""
-        return self.get_place_detail_multilang(content_id, "ko")
-
     def search_by_keyword(self, keyword: str, area_code: str = None, page_no: int = 1, num_of_rows: int = 10) -> \
-    Optional[List[Dict]]:
-        """키워드 검색 (한국어)"""
+            Optional[List[Dict]]:
+        # 키워드 검색 (한국어)
         return self.search_by_keyword_multilang(keyword, area_code, page_no, num_of_rows, "ko")
 
     def search_by_keyword_multilang(self, keyword: str, area_code: str = None, page_no: int = 1,
                                     num_of_rows: int = 10, lang: str = "ko") -> Optional[List[Dict]]:
-        """다국어 키워드 검색"""
+        # 다국어 키워드 검색
         if not keyword:
             return None
 

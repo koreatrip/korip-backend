@@ -5,7 +5,7 @@ from categories.models import Category, SubCategory, CategoryTranslation, SubCat
 class Command(BaseCommand):
     help = "새로운 번역 구조로 카테고리 및 서브카테고리 기본 데이터를 생성합니다"
 
-# 명렁어 옵션 추가
+    # 명령어 옵션 추가
     def add_arguments(self, parser):
         parser.add_argument(
             '--clear',
@@ -13,7 +13,7 @@ class Command(BaseCommand):
             help='기존 데이터를 삭제하고 새로 생성합니다',
         )
 
-# 명렁어 실행
+    # 명령어 실행
     def handle(self, *args, **options):
 
         # 기존 데이터 삭제 (--clear 옵션 사용 시)
@@ -25,17 +25,18 @@ class Command(BaseCommand):
             Category.objects.all().delete()
             self.stdout.write(self.style.SUCCESS("기존 데이터 삭제 완료"))
 
-        # 대분류 카테고리 데이터
+        # 대분류 카테고리 데이터 (숙박 추가!)
         categories_data = {
             "문화": {"ko": "문화", "en": "Culture", "jp": "文化", "cn": "文化"},
             "자연": {"ko": "자연", "en": "Nature", "jp": "自然", "cn": "自然"},
             "액티비티": {"ko": "액티비티", "en": "Activities", "jp": "アクティビティ", "cn": "活动"},
             "쇼핑": {"ko": "쇼핑", "en": "Shopping", "jp": "ショッピング", "cn": "购物"},
             "음식": {"ko": "음식", "en": "Food", "jp": "食べ物", "cn": "美食"},
+            "숙박": {"ko": "숙박", "en": "Accommodation", "jp": "宿泊", "cn": "住宿"},
             "K-POP": {"ko": "K-POP", "en": "K-POP", "jp": "K-POP", "cn": "K-POP"}
         }
 
-        # 중분류 서브카테고리 데이터
+        # 중분류 서브카테고리 데이터 (숙박 서브카테고리 추가!)
         subcategories_data = {
             "문화": [
                 {"ko": "역사", "en": "History", "jp": "歴史", "cn": "历史"},
@@ -76,6 +77,12 @@ class Command(BaseCommand):
                 {"ko": "중식", "en": "Chinese Food", "jp": "中華料理", "cn": "中式料理"},
                 {"ko": "양식", "en": "Western Food", "jp": "洋食", "cn": "西式料理"},
             ],
+            "숙박": [
+                {"ko": "호텔", "en": "Hotel", "jp": "ホテル", "cn": "酒店"},
+                {"ko": "펜션", "en": "Pension", "jp": "ペンション", "cn": "民宿"},
+                {"ko": "리조트", "en": "Resort", "jp": "リゾート", "cn": "度假村"},
+                {"ko": "모텔", "en": "Motel", "jp": "モーテル", "cn": "汽车旅馆"},
+            ],
             "K-POP": [
                 {"ko": "BTS", "en": "BTS", "jp": "BTS", "cn": "BTS"},
                 {"ko": "BLACKPINK", "en": "BLACKPINK", "jp": "BLACKPINK", "cn": "BLACKPINK"},
@@ -102,7 +109,7 @@ class Command(BaseCommand):
                 )
 
             self.stdout.write(
-                self.style.SUCCESS(f"✅ 카테고리 생성: {translations['ko']} (ID: {category.id})")
+                self.style.SUCCESS(f"카테고리 생성: {translations['ko']} (ID: {category.id})")
             )
 
         total_subcategories = 0
@@ -121,20 +128,20 @@ class Command(BaseCommand):
 
                 total_subcategories += 1
                 self.stdout.write(
-                    self.style.SUCCESS(f"  ✅ 서브카테고리 생성: {subcategory_data['ko']} (ID: {subcategory.id})")
+                    self.style.SUCCESS(f"  서브카테고리 생성: {subcategory_data['ko']} (ID: {subcategory.id})")
                 )
 
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("=" * 60))
-        self.stdout.write(self.style.SUCCESS("🎉 카테고리 데이터 생성 완료!"))
-        self.stdout.write(self.style.SUCCESS(f"📊 생성된 카테고리: {len(created_categories)}개"))
-        self.stdout.write(self.style.SUCCESS(f"📊 생성된 서브카테고리: {total_subcategories}개"))
-        self.stdout.write(self.style.SUCCESS(f"🌍 지원 언어: 한국어, 영어, 일본어, 중국어"))
+        self.stdout.write(self.style.SUCCESS("카테고리 데이터 생성 완료!"))
+        self.stdout.write(self.style.SUCCESS(f"생성된 카테고리: {len(created_categories)}개"))
+        self.stdout.write(self.style.SUCCESS(f"생성된 서브카테고리: {total_subcategories}개"))
+        self.stdout.write(self.style.SUCCESS(f"지원 언어: 한국어, 영어, 일본어, 중국어"))
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write("")
 
         # 테스트 안내
-        self.stdout.write("🔍 테스트 방법:")
+        self.stdout.write("테스트 방법:")
         self.stdout.write("  python manage.py shell")
         self.stdout.write("  >>> from categories.models import Category")
         self.stdout.write("  >>> Category.objects.first().get_name('ko')")
