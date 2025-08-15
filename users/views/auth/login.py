@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -43,6 +44,11 @@ class LoginAPIView(APIView):
         
         if serializer.is_valid():
             user = serializer.validated_data['user']
+
+            is_first_login = user.last_login is None
+
+            user.last_login = timezone.now()
+            user.save(update_fields=["last_login"])
             
             # JWT 토큰 생성
             refresh = RefreshToken.for_user(user)
@@ -54,6 +60,7 @@ class LoginAPIView(APIView):
             access_token['is_social'] = user.is_social
             
             return Response({
+                'first_login': is_first_login,
                 'access_token': str(access_token),
                 'refresh_token': str(refresh)
             }, status=status.HTTP_200_OK)
