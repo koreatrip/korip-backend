@@ -49,9 +49,8 @@ class Command(BaseCommand):
             if target_category and category_name != target_category:
                 continue
 
-            # 해당 카테고리 관광지 개수
-            tour_categories = self.get_tour_categories_for_our_category(category.id)
-            places_in_category = Place.objects.filter(category_id__in=tour_categories)
+            # 해당 카테고리 관광지 개수 (직접 category 필드로 확인)
+            places_in_category = Place.objects.filter(category=category)
             count = places_in_category.count()
             total_categorized += count
 
@@ -63,6 +62,20 @@ class Command(BaseCommand):
 
             self.stdout.write(f"\n️ {category_name} (ID: {category.id})")
             self.stdout.write(f"    관광지 수: {count:,}개 ({percentage:.1f}%)")
+
+            # 서브카테고리별 분포 확인
+            subcategory_counts = {}
+            for place in places_in_category:
+                if place.sub_category:
+                    sub_ko = place.sub_category.translations.filter(lang="ko").first()
+                    if sub_ko:
+                        sub_name = sub_ko.name
+                        subcategory_counts[sub_name] = subcategory_counts.get(sub_name, 0) + 1
+
+            if subcategory_counts:
+                self.stdout.write(f"    서브카테고리별 분포:")
+                for sub_name, sub_count in subcategory_counts.items():
+                    self.stdout.write(f"      - {sub_name}: {sub_count}개")
 
             # 최근 업데이트된 관광지들 보여주기
             if show_recent > 0:
@@ -78,28 +91,40 @@ class Command(BaseCommand):
                         if korean_translation:
                             korean_name = korean_translation.name
 
+                        # 서브카테고리 정보
+                        sub_name = ""
+                        if place.sub_category:
+                            sub_ko = place.sub_category.translations.filter(lang="ko").first()
+                            if sub_ko:
+                                sub_name = f" ({sub_ko.name})"
+
                         # 업데이트 시간
                         update_time = place.updated_at.strftime("%m/%d %H:%M")
 
-                        self.stdout.write(f"      {i}. {korean_name} (ID: {place.content_id}) - {update_time}")
+                        self.stdout.write(f"      {i}. {korean_name}{sub_name} (ID: {place.content_id}) - {update_time}")
 
-        uncategorized = Place.objects.filter(category_id__isnull=True).count()
+        uncategorized = Place.objects.filter(category__isnull=True).count()
         if uncategorized > 0:
             uncategorized_percentage = (uncategorized / total_places * 100) if total_places > 0 else 0
             self.stdout.write(f"\n 미분류 관광지: {uncategorized:,}개 ({uncategorized_percentage:.1f}%)")
 
         categorized_percentage = (total_categorized / total_places * 100) if total_places > 0 else 0
 
+        # 서브카테고리 통계
+        places_with_subcategory = Place.objects.exclude(sub_category__isnull=True).count()
+        subcategory_percentage = (places_with_subcategory / total_places * 100) if total_places > 0 else 0
+
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write(f" 요약:")
         self.stdout.write(f"   • 전체 관광지: {total_places:,}개")
         self.stdout.write(f"   • 분류된 관광지: {total_categorized:,}개 ({categorized_percentage:.1f}%)")
+        self.stdout.write(f"   • 서브카테고리 있는 관광지: {places_with_subcategory:,}개 ({subcategory_percentage:.1f}%)")
         self.stdout.write(f"   • 미분류 관광지: {uncategorized:,}개")
 
         if not target_category:
             nature_category = categories.filter(translations__name="자연", translations__lang="ko").first()
             if nature_category:
-                nature_count = Place.objects.filter(category_id=nature_category.id).count()
+                nature_count = Place.objects.filter(category=nature_category).count()
                 self.stdout.write(f"\n 자연 카테고리 특별 현황:")
                 self.stdout.write(f"   • 자연 관광지: {nature_count:,}개")
 
@@ -107,7 +132,7 @@ class Command(BaseCommand):
                     # 최근 1시간 내 업데이트된 자연 관광지
                     one_hour_ago = timezone.now() - timezone.timedelta(hours=1)
                     recent_nature = Place.objects.filter(
-                        category_id=nature_category.id,
+                        category=nature_category,
                         updated_at__gte=one_hour_ago
                     ).count()
 
@@ -121,32 +146,3 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f" '{target_category}' 카테고리 통계 조회 완료!"))
         else:
             self.stdout.write(self.style.SUCCESS(" 전체 카테고리 통계 조회 완료!"))
-
-
-def get_tour_categories_for_our_category(self, our_category_id):
-
-    try:
-        from places.services.category_mapper import CategoryMapper
-        mapper = CategoryMapper()
-
-        from categories.models import Category
-        our_category = Category.objects.filter(id=our_category_id).first()
-        if not our_category:
-            return []
-
-        korean_translation = our_category.translations.filter(lang="ko").first()
-        if not korean_translation:
-            return []
-
-        our_category_name = korean_translation.name
-
-        tour_categories = []
-        for tour_cat, mapped_name in mapper.category_mapping.items():
-            if mapped_name == our_category_name:
-                tour_categories.append(tour_cat)
-
-        return tour_categories
-
-    except Exception as e:
-        print(f"CategoryMapper 조회 실패: {e}")
-        return []
