@@ -59,6 +59,12 @@ class Place(models.Model):
         verbose_name="위치 좌표"
     )
 
+    image_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="대표 이미지 URL"
+    )
+
     phone_number = models.CharField(
         max_length=20,
         blank=True,
