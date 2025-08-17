@@ -27,6 +27,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             "phone_number",
             "use_time",
             "link_url",
+            "image_url",
             "category",
             "sub_category",
             "region",
