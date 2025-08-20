@@ -29,6 +29,7 @@ class PlaceAdmin(OSMGeoAdmin):
         "sub_region",
         "favorite_count",
         "get_coordinates",
+        "image_url",
         "created_at"
     ]
 
@@ -49,7 +50,7 @@ class PlaceAdmin(OSMGeoAdmin):
             "fields": ("region", "sub_region")
         }),
         ("연락처/링크", {
-            "fields": ("phone_number", "use_time", "link_url")
+            "fields": ("phone_number", "use_time", "link_url", "image_url")
         }),
         ("통계", {
             "fields": ("favorite_count", "last_synced_at")
@@ -100,6 +101,13 @@ class PlaceAdmin(OSMGeoAdmin):
         return "좌표 없음"
 
     get_coordinates_display.short_description = "현재 좌표"
+
+    def image_preview(self, obj):
+        if obj.image_url:
+            return f'<img src="{obj.image_url}" width="100" height="60" />'
+        return "이미지 없음"
+    image_preview.allow_tags = True
+    image_preview.short_description = "이미지 미리보기"
 
 
 @admin.register(PlaceTranslation)

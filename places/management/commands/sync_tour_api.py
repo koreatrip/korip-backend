@@ -1,3 +1,5 @@
+# places/management/commands/sync_tour_api.py
+
 import math
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -65,6 +67,17 @@ class Command(BaseCommand):
             choices=["ko", "en", "jp", "cn", "all"],
             help="수집할 언어 (기본값: all - 모든 언어)"
         )
+        parser.add_argument(
+            "--incremental-all",
+            action="store_true",
+            help="전국 증분 동기화 모드"
+        )
+        parser.add_argument(
+            "--daily-limit",
+            type=int,
+            default=1000,
+            help="증분 모드 일일 수집 제한 (기본값: 1000)"
+        )
 
     def handle(self, *args, **options):
         limit = min(options["limit"], 1000)
@@ -76,6 +89,12 @@ class Command(BaseCommand):
         collect_all = options["collect_all"]
         detail_delay = options["detail_delay"]
         language = options["language"]
+        incremental_all = options["incremental_all"]
+        daily_limit = options["daily_limit"]
+
+        # 증분 동기화 모드
+        if incremental_all:
+            return self.handle_incremental_all(daily_limit, dry_run, collect_all, detail_delay)
 
         self.stdout.write("KORIP 투어 API 동기화 시작 (다국어 지원)")
         self.stdout.write("=" * 60)
@@ -87,8 +106,11 @@ class Command(BaseCommand):
             self.mapper.enable_all_regions()
             self.stdout.write("지역 필터링 비활성화 - 모든 지역 저장됨")
 
-        # 언어 설정
-        if language == "all":
+        # 언어 설정 (증분 모드에서는 단일 언어 처리)
+        single_language = None  # 기본값 설정
+        if single_language:
+            self.languages = [single_language]
+        elif language == "all":
             self.languages = ["ko", "en", "jp", "cn"]
         else:
             self.languages = [language]
@@ -129,7 +151,139 @@ class Command(BaseCommand):
             traceback.print_exc()
             raise CommandError(f"동기화 실패: {e}")
 
-    def sync_places_multilang(self, limit, area_code, page, dry_run, force_update, collect_all, detail_delay):
+    def handle_incremental_all(self, daily_limit, dry_run, collect_all, detail_delay):
+        # 전국 증분 동기화 처리
+        from places.models import SyncProgress
+
+        # 전국 지역 코드
+        KOREA_AREAS = [
+            ("1", "서울특별시"), ("2", "인천광역시"), ("3", "대전광역시"),
+            ("4", "대구광역시"), ("5", "광주광역시"), ("6", "부산광역시"),
+            ("7", "울산광역시"), ("8", "세종특별자치시"), ("31", "경기도"),
+            ("32", "강원특별자치도"), ("33", "충청북도"), ("34", "충청남도"),
+            ("35", "경상북도"), ("36", "경상남도"), ("37", "전북특별자치도"),
+            ("38", "전라남도"), ("39", "제주특별자치도")
+        ]
+
+        self.stdout.write("KORIP 전국 증분 동기화 시작")
+        self.stdout.write("=" * 60)
+        self.stdout.write(f"일일 수집 한도: {daily_limit}개")
+        self.stdout.write(f"전국 {len(KOREA_AREAS)}개 지역 처리")
+
+        # 지역당 언어별 수집량 계산
+        per_area_limit = max(1, daily_limit // len(KOREA_AREAS) // 4)
+        self.stdout.write(f"지역당 언어별 수집량: {per_area_limit}개")
+
+        total_stats = {
+            "total_processed": 0,
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
+            "errors": 0,
+            "translations_created": 0,
+            "translations_updated": 0
+        }
+
+        # 각 지역별 처리
+        for area_code, area_name in KOREA_AREAS:
+            self.stdout.write(f"\n{area_name} (지역코드: {area_code}) 처리 시작")
+
+            try:
+                area_stats = self.process_area_incremental(
+                    area_code, per_area_limit, dry_run, collect_all, detail_delay
+                )
+
+                # 통계 합산
+                for key in total_stats:
+                    if key in area_stats:
+                        total_stats[key] += area_stats[key]
+
+                self.stdout.write(f"{area_name} 완료: 신규 {area_stats['created']}개")
+
+                # API 부하 방지 딜레이
+                import time
+                time.sleep(1)
+
+            except Exception as e:
+                self.stdout.write(f"{area_name} 처리 실패: {e}")
+                total_stats["errors"] += 1
+
+        # 최종 결과 출력
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("전국 증분 동기화 완료")
+        self.stdout.write("=" * 60)
+        self.stdout.write(f"총 처리: {total_stats['total_processed']}개")
+        self.stdout.write(f"신규 생성: {total_stats['created']}개")
+        self.stdout.write(f"업데이트: {total_stats['updated']}개")
+        self.stdout.write(f"번역 생성: {total_stats['translations_created']}개")
+        self.stdout.write(f"에러: {total_stats['errors']}개")
+
+        return None
+
+    def process_area_incremental(self, area_code, per_area_limit, dry_run, collect_all, detail_delay):
+        # 특정 지역의 증분 처리
+        from places.models import SyncProgress
+
+        languages = ["ko", "en", "jp", "cn"]
+        area_stats = {
+            "total_processed": 0,
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
+            "errors": 0,
+            "translations_created": 0,
+            "translations_updated": 0
+        }
+
+        for lang in languages:
+            try:
+                # 다음 페이지 번호 가져오기
+                next_page = SyncProgress.get_next_page(area_code, lang)
+
+                self.stdout.write(f"  [{lang.upper()}] 페이지 {next_page} 수집 중...")
+
+                # 클래스 속성 임시 설정
+                self.client = TourAPIClient()
+                self.mapper = CategoryMapper()
+
+                # languages 속성도 설정
+                self.languages = [lang]
+
+                # 지역 필터링 비활성화 설정
+                if hasattr(self.mapper, 'enable_all_regions'):
+                    self.mapper.enable_all_regions()
+
+                # 기존 동기화 로직 호출 (단일 언어)
+                result = self.sync_places_multilang(
+                    limit=per_area_limit,
+                    area_code=area_code,
+                    page=next_page,
+                    dry_run=dry_run,
+                    force_update=False,
+                    collect_all=collect_all,
+                    detail_delay=detail_delay,
+                    single_language=lang
+                )
+
+                if result:
+                    # 진행 상태 업데이트
+                    collected_count = result.get("created", 0) + result.get("updated", 0)
+                    if collected_count > 0:
+                        SyncProgress.update_progress(area_code, lang, next_page, collected_count)
+
+                    # 통계 합산
+                    for key in area_stats:
+                        if key in result:
+                            area_stats[key] += result[key]
+
+            except Exception as e:
+                self.stdout.write(f"  [{lang.upper()}] 에러: {e}")
+                area_stats["errors"] += 1
+
+        return area_stats
+
+    def sync_places_multilang(self, limit, area_code, page, dry_run, force_update, collect_all, detail_delay,
+                              single_language=None):
         stats = {
             "total_processed": 0,
             "created": 0,
@@ -558,6 +712,7 @@ class Command(BaseCommand):
                 sub_category_id=sub_category_obj.id if sub_category_obj else None,
                 region=region_obj,
                 sub_region=subregion_obj,
+                image_url=processed_data.get("image_url", "")[:500],
                 phone_number=phone_number[:20] if phone_number else "",
                 use_time=use_time[:200] if use_time else "",
                 link_url=processed_data.get("homepage", "")[:500],

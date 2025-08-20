@@ -812,7 +812,8 @@ class CategoryMapper:
             "region_id": region_id,
             "sub_region_id": subregion_id,
             "phone_number": place_data.get("tel", ""),
-            "image_url": place_data.get("firstimage", ""),
+            "image_url": place_data.get("firstimage", ""),  # 메인 이미지
+            "image_url2": place_data.get("firstimage2", ""),  # 보조 이미지
             "use_time": "",
             "link_url": "",
         }
