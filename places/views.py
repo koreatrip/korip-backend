@@ -305,11 +305,11 @@ class PlaceTourListAPIView(APIView):
         
         if request_subregion_id == "":
             first_subregion = most_favoriate_subregion_ids[0] if most_favoriate_subregion_ids else None
-            request_subregion = SubRegion.objects.filter(id=first_subregion).filter()
+            request_subregion = first_subregion
             major_places = Place.objects.filter(sub_region=first_subregion).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
         else:
             major_places = Place.objects.filter(sub_region=int(request_subregion_id)).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]            
-            request_subregion = SubRegion.objects.filter(id=request_subregion_id).filter()
+            request_subregion = SubRegion.objects.filter(id=request_subregion_id).filter().first()
 
         request_subregion_serializer = SubRegionSerializer(request_subregion, context={"language": language})
 
@@ -336,7 +336,7 @@ class PlaceTourListAPIView(APIView):
             return Response(
                 {
                     "region": region_serializer.data,
-                    "subregion": request_subregion_serializer,
+                    "subregion": request_subregion_serializer.data,
                     "popular_subregions": subregion_serializer.data,
                     "major_places": place_serializer.data,
                     "user_recommended_places": user_recommended_serializer.data
@@ -346,7 +346,7 @@ class PlaceTourListAPIView(APIView):
         return Response(
             {
                 "region": region_serializer.data,
-                "subregion": request_subregion_serializer,
+                "subregion": request_subregion_serializer.data,
                 "popular_subregions": subregion_serializer.data,
                 "major_places": place_serializer.data,
             }, status=status.HTTP_200_OK
