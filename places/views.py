@@ -106,7 +106,7 @@ class PlaceTourListAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="지역별 둘러보기 조회",
         operation_description=(
-            "지역의 인기 시·군·구(4)와 주요 명소(4)를 반환합니다. "
+            "지역의 정보, 서브지역 정보, 인기 시·군·구(4)와 주요 명소(4)를 반환합니다. "
             "인증(Authorization: Bearer <JWT>) 상태라면 관심사 기반 추천 명소(3)도 포함됩니다."
         ),
         manual_parameters=[
@@ -143,10 +143,42 @@ class PlaceTourListAPIView(APIView):
                 description="관광지 홈 블록 조회 성공",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
-                    required=['popular_subregions', 'major_places'],
+                    required=['region', 'subregion', 'weather', 'popular_subregions', 'major_places'],
                     properties={
+                        'region': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            description='지역 정보',
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='지역 ID'),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING, description='지역명(요청 lang 기준)'),
+                                'description': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='설명(요청 lang 기준)'),
+                                'feature': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='특징(요청 lang 기준)'),
+                                'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
+                                'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
+                                'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
+                                'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
+                            }
+                        ),
+                        'subregion': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            description='요청된 서브지역 정보 (subregion_id 지정 시 해당 서브지역, 미지정 시 인기 1위 서브지역)',
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='서브지역 ID'),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING, description='서브지역명(요청 lang 기준)'),
+                                'description': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='설명(요청 lang 기준)'),
+                                'feature': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='특징(요청 lang 기준)'),
+                                'region_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='지역 ID'),
+                                'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
+                                'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
+                                'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
+                                'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
+                            }
+                        ),
                         'popular_subregions': openapi.Schema(
                             type=openapi.TYPE_ARRAY,
+                            description='인기 서브지역 목록 (즐겨찾기 순으로 정렬된 상위 4개)',
                             items=openapi.Schema(
                                 type=openapi.TYPE_OBJECT,
                                 properties={
@@ -165,6 +197,7 @@ class PlaceTourListAPIView(APIView):
                         ),
                         'major_places': openapi.Schema(
                             type=openapi.TYPE_ARRAY,
+                            description='주요 명소 목록 (선택된 서브지역의 즐겨찾기 순으로 정렬된 상위 4개)',
                             items=openapi.Schema(
                                 type=openapi.TYPE_OBJECT,
                                 properties={
@@ -187,7 +220,7 @@ class PlaceTourListAPIView(APIView):
                         ),
                         'user_recommended_places': openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            description='인증 시 포함(미인증 시 생략 가능)',
+                            description='사용자 관심사 기반 추천 명소 (인증된 사용자에게만 제공, 상위 3개)',
                             items=openapi.Schema(
                                 type=openapi.TYPE_OBJECT,
                                 properties={
@@ -212,20 +245,39 @@ class PlaceTourListAPIView(APIView):
                 ),
                 examples={
                     "application/json": {
+                        "region": {
+                            "id": 1,
+                            "name": "서울특별시",
+                            "description": "대한민국의 수도",
+                            "feature": "한강이 도심을 가로지르며 흐르는 천만 인구의 메가시티로, 경복궁과 창덕궁 같은 조선왕조의 찬란한 궁궐 문화유산이 강남의 현대적 마천루와 어우러져 전통과 현대가 조화롭게 공존하는 글로벌 도시입니다. 명동, 홍대, 이태원 등 각기 다른 매력을 가진 지역들과 N서울타워, 한강공원, 동대문디자인플라자 등의 랜드마크가 있어 연간 수천만 명의 관광객이 찾는 아시아 최고의 관광 도시 중 하나입니다.",
+                            "favorite_count": 1500
+                        },
+                        "subregion": {
+                            "id": 1,
+                            "name": "강남구",
+                            "description": "서울의 대표적인 번화가",
+                            "feature": "쇼핑과 엔터테인먼트의 중심지",
+                            "region_id": 1,
+                            "favorite_count": 120,
+                            "latitude": 37.5172,
+                            "longitude": 127.0473
+                        },
                         "popular_subregions": [
-                            {"id": 3, "name": "강북구", "favorite_count": 120},
-                            {"id": 13, "name": "마포구", "favorite_count": 98},
-                            {"id": 5, "name": "관악구", "favorite_count": 76},
-                            {"id": 1, "name": "강남구", "favorite_count": 72}
+                            {"id": 3, "name": "강북구", "region_id": 1, "favorite_count": 120},
+                            {"id": 13, "name": "마포구", "region_id": 1, "favorite_count": 98},
+                            {"id": 5, "name": "관악구", "region_id": 1, "favorite_count": 76},
+                            {"id": 1, "name": "강남구", "region_id": 1, "favorite_count": 72}
                         ],
                         "major_places": [
-                            {"id": 101, "name": "북한산 국립공원", "region_id": 1, "sub_region_id": 10, "favorite_count": 55},
-                            {"id": 102, "name": "OO 박물관", "region_id": 1, "sub_region_id": 10, "favorite_count": 41}
+                            {"id": 101, "name": "북한산 국립공원", "region_id": 1, "sub_region_id": 3, "favorite_count": 55},
+                            {"id": 102, "name": "OO 박물관", "region_id": 1, "sub_region_id": 3, "favorite_count": 41},
+                            {"id": 103, "name": "△△ 공원", "region_id": 1, "sub_region_id": 3, "favorite_count": 38},
+                            {"id": 104, "name": "◇◇ 전시관", "region_id": 1, "sub_region_id": 3, "favorite_count": 32}
                         ],
                         "user_recommended_places": [
-                            {"id": 202, "name": "추천 명소 A", "region_id": 1, "sub_region_id": 3, "favorite_count": 20},
-                            {"id": 203, "name": "추천 명소 B", "region_id": 1, "sub_region_id": 3, "favorite_count": 18},
-                            {"id": 204, "name": "추천 명소 C", "region_id": 1, "sub_region_id": 3, "favorite_count": 16}
+                            {"id": 202, "name": "추천 명소 A", "region_id": 1, "sub_region_id": 5, "favorite_count": 20},
+                            {"id": 203, "name": "추천 명소 B", "region_id": 1, "sub_region_id": 8, "favorite_count": 18},
+                            {"id": 204, "name": "추천 명소 C", "region_id": 1, "sub_region_id": 12, "favorite_count": 16}
                         ]
                     }
                 }
@@ -250,12 +302,16 @@ class PlaceTourListAPIView(APIView):
         )
 
         request_subregion_id = request.query_params.get("subregion_id", "")
-
+        
         if request_subregion_id == "":
             first_subregion = most_favoriate_subregion_ids[0] if most_favoriate_subregion_ids else None
+            request_subregion = SubRegion.objects.filter(id=first_subregion).filter()
             major_places = Place.objects.filter(sub_region=first_subregion).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
         else:
             major_places = Place.objects.filter(sub_region=int(request_subregion_id)).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]            
+            request_subregion = SubRegion.objects.filter(id=request_subregion_id).filter()
+
+        request_subregion_serializer = SubRegionSerializer(request_subregion, context={"language": language})
 
         place_serializer = PlaceSerializer(
             major_places,
@@ -280,7 +336,7 @@ class PlaceTourListAPIView(APIView):
             return Response(
                 {
                     "region": region_serializer.data,
-                    "weather": {},
+                    "subregion": request_subregion_serializer,
                     "popular_subregions": subregion_serializer.data,
                     "major_places": place_serializer.data,
                     "user_recommended_places": user_recommended_serializer.data
@@ -290,7 +346,7 @@ class PlaceTourListAPIView(APIView):
         return Response(
             {
                 "region": region_serializer.data,
-                "weather": {},
+                "subregion": request_subregion_serializer,
                 "popular_subregions": subregion_serializer.data,
                 "major_places": place_serializer.data,
             }, status=status.HTTP_200_OK
