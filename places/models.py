@@ -244,3 +244,47 @@ class PlaceTranslation(models.Model):
         if self.tour_api_content_id:
             return f"{self.name} ({self.lang}) API:{self.tour_api_content_id}"
         return f"{self.name} ({self.lang})"
+
+
+class SyncProgress(models.Model):
+    # 동기화 진행 상태 관리
+    area_code = models.CharField(max_length=10, verbose_name="지역 코드")
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, verbose_name="언어")
+    last_page = models.IntegerField(default=0, verbose_name="마지막 처리 페이지")
+    last_sync_date = models.DateTimeField(auto_now=True, verbose_name="마지막 동기화")
+    total_collected = models.IntegerField(default=0, verbose_name="총 수집 개수")
+    is_completed = models.BooleanField(default=False, verbose_name="완료 여부")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
+
+    class Meta:
+        db_table = "sync_progress"
+        unique_together = ["area_code", "language"]
+        verbose_name = "동기화 진행 상태"
+        ordering = ["area_code", "language"]
+
+    def __str__(self):
+        return f"{self.area_code}_{self.language}_page{self.last_page}"
+
+    @classmethod
+    def get_next_page(cls, area_code, language):
+        # 다음 수집할 페이지 번호 반환
+        progress, created = cls.objects.get_or_create(
+            area_code=area_code,
+            language=language,
+            defaults={"last_page": 0}
+        )
+        return progress.last_page + 1
+
+    @classmethod
+    def update_progress(cls, area_code, language, page, collected_count):
+        # 진행 상태 업데이트
+        progress, created = cls.objects.get_or_create(
+            area_code=area_code,
+            language=language
+        )
+        progress.last_page = page
+        progress.total_collected += collected_count
+        progress.save()
+        return progress
