@@ -194,37 +194,126 @@ class WeatherAPI(APIView, WeatherBaseView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
-        operation_description="지역별 또는 지역구별 날씨 조회",
+        operation_id="get_weather",
+        operation_summary="날씨 정보 조회",
+        operation_description="""
+        지역별 또는 지역구별 현재 날씨 및 예보 정보를 조회합니다.
+        
+        **기능:**
+        - 지역별 날씨 조회 (subregion_id 미제공시)
+        - 지역구별 상세 날씨 조회 (subregion_id 제공시)
+        - 현재 날씨, 내일 예보, 시간별 예보, 대기질 정보 포함
+        
+        **사용 예시:**
+        - 서울 전체 날씨: `/api/weather/1/`
+        - 강남구 날씨: `/api/weather/1/?subregion_id=5`
+        """,
         manual_parameters=[
+            openapi.Parameter(
+                "region_id",
+                openapi.IN_PATH,
+                description="지역 ID (필수)",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+                example=1
+            ),
             openapi.Parameter(
                 "subregion_id",
                 openapi.IN_QUERY,
-                description="지역구 ID (선택사항). 제공되면 해당 지역구의 날씨 조회, 없으면 지역 전체 날씨 조회",
+                description="지역구 ID (선택사항). 제공되면 해당 지역구의 상세 날씨 조회",
                 type=openapi.TYPE_INTEGER,
-                required=False
+                required=False,
+                example=5
             )
         ],
         responses={
-            200: WeatherResponseSerializer,
+            200: openapi.Response(
+                description="날씨 정보 조회 성공",
+                schema=WeatherResponseSerializer,
+                examples={
+                    "application/json": {
+                        "current_weather": {
+                            "current_date": "08.22",
+                            "temperature": 25.5,
+                            "weather_condition": "맑음",
+                            "temperature_change": "+2.1°",
+                            "min_temperature": 18.0,
+                            "max_temperature": 28.0
+                        },
+                        "tomorrow_weather": {
+                            "tomorrow_date": "08.23",
+                            "min_temperature": 19.0,
+                            "max_temperature": 29.0,
+                            "morning_condition": "흐림",
+                            "morning_precipitation": 10,
+                            "afternoon_condition": "맑음",
+                            "afternoon_precipitation": 0
+                        },
+                        "detail_info": {
+                            "feels_like": 27.0,
+                            "humidity": 65,
+                            "uv_index": 7,
+                            "uv_level": "높음",
+                            "wind_speed": 3.2,
+                            "sunrise": "06:05",
+                            "sunset": "19:25",
+                            "air_quality_status": "좋음"
+                        },
+                        "hourly_forecast": [
+                            {
+                                "time": "1시",
+                                "weather_condition": "맑음",
+                                "temperature": 25.5,
+                                "precipitation_probability": 0
+                            }
+                        ],
+                        "air_quality": {
+                            "pm25_value": 12,
+                            "pm25_grade": "좋음",
+                            "pm10_value": 25,
+                            "pm10_grade": "좋음"
+                        },
+                        "travel_tip": {
+                            "tip_message": "야외 활동하기 좋은 날씨입니다."
+                        },
+                        "location_name": "서울특별시",
+                        "latitude": 37.5665,
+                        "longitude": 126.9780,
+                        "last_updated": "2025-08-22T14:30:00"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="잘못된 요청 파라미터",
+                examples={
+                    "application/json": {
+                        "error": "잘못된 지역 ID입니다.",
+                        "details": "region_id는 양의 정수여야 합니다."
+                    }
+                }
+            ),
             404: openapi.Response(
                 description="지역 또는 날씨 데이터를 찾을 수 없음",
                 examples={
                     "application/json": {
-                        "error": "지역의 날씨 데이터가 없습니다.",
-                        "hint": "python manage.py sync_weather 명령어를 실행하세요."
+                        "error": "'서울특별시' 지역의 날씨 데이터가 없습니다. 날씨 동기화를 먼저 실행해주세요.",
+                        "hint": "python manage.py sync_weather --region_id=1 명령어를 실행하세요."
                     }
                 }
             ),
             500: openapi.Response(
-                description="서버 오류",
+                description="서버 내부 오류",
                 examples={
                     "application/json": {
-                        "error": "날씨 조회 중 오류가 발생했습니다."
+                        "error": "날씨 조회 중 오류가 발생했습니다.",
+                        "details": "Database connection timeout"
                     }
                 }
             )
-        }
+        },
+        tags=["날씨"]
     )
+
     def get(self, request, region_id):
         # subregion_id 쿼리 파라미터 확인
         subregion_id = request.GET.get("subregion_id")
