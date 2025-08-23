@@ -676,3 +676,141 @@ class PlacesByCategoryIdAPIView(APIView):
         return Response({
             "places": serializer.data
         }, status=status.HTTP_200_OK)
+
+
+class PlacesBySubCategoryIdAPIView(APIView):
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+
+    @swagger_auto_schema(
+        operation_summary="서브 카테고리별 명소 목록 조회",
+        operation_description="특정 서브 카테고리의 명소 목록을 즐겨찾기 높은 순으로 조회합니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                "subcategory_id",
+                openapi.IN_PATH,
+                description="서브 카테고리 ID",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            ),
+            openapi.Parameter(
+                "lang",
+                openapi.IN_QUERY,
+                description="언어 코드 (기본값: ko)",
+                type=openapi.TYPE_STRING,
+                default="ko",
+                enum=["ko", "en", "jp", "cn"]
+            ),
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="페이지 번호 (기본값: 1)",
+                type=openapi.TYPE_INTEGER,
+                default=1
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="페이지당 항목 수",
+                type=openapi.TYPE_INTEGER,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="서브 카테고리별 명소 목록 조회 성공",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "count": openapi.Schema(type=openapi.TYPE_INTEGER, description="총 명소 수"),
+                        "next": openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description="다음 페이지 URL"),
+                        "previous": openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description="이전 페이지 URL"),
+                        "places": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="명소 ID"),
+                                    "content_id": openapi.Schema(type=openapi.TYPE_STRING, nullable=True,
+                                                                 description="외부 컨텐츠 ID"),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING, description="명소명(요청 lang 기준)"),
+                                    "description": openapi.Schema(type=openapi.TYPE_STRING, nullable=True,
+                                                                  description="설명(요청 lang 기준)"),
+                                    "feature": openapi.Schema(type=openapi.TYPE_STRING, nullable=True,
+                                                              description="특징(요청 lang 기준)"),
+                                    "category_id": openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True,
+                                                                  description="카테고리 ID"),
+                                    "sub_category_id": openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True,
+                                                                      description="서브 카테고리 ID"),
+                                    "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID"),
+                                    "sub_region_id": openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True,
+                                                                    description="서브지역 ID"),
+                                    "latitude": openapi.Schema(type=openapi.TYPE_NUMBER, format="double", nullable=True,
+                                                               description="위도"),
+                                    "longitude": openapi.Schema(type=openapi.TYPE_NUMBER, format="double",
+                                                                nullable=True, description="경도"),
+                                    "favorite_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="즐겨찾기 수"),
+                                    "created_at": openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 format=openapi.FORMAT_DATETIME, description="생성일"),
+                                    "updated_at": openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 format=openapi.FORMAT_DATETIME, description="수정일"),
+                                }
+                            )
+                        )
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="서브 카테고리를 찾을 수 없음",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "detail": openapi.Schema(type=openapi.TYPE_STRING, description="오류 메시지")
+                    }
+                )
+            )
+        },
+        tags=["명소"]
+    )
+    def get(self, request, subcategory_id):
+        language = request.query_params.get("lang", "ko")
+
+        from categories.models import SubCategory
+        get_object_or_404(SubCategory, id=subcategory_id)
+
+        queryset = Place.objects.filter(
+            sub_category_id=subcategory_id
+        ).order_by("-favorite_count", "id").prefetch_related("translations")
+
+        # 빈 결과에 대한 처리
+        if not queryset.exists():
+            return Response({
+                "count": 0,
+                "next": None,
+                "previous": None,
+                "places": []
+            }, status=status.HTTP_200_OK)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+
+        if page is not None:
+            serializer = PlaceSerializer(
+                page,
+                many=True,
+                context={"language": language}
+            )
+
+            paginated_response = paginator.get_paginated_response(serializer.data)
+            if "results" in paginated_response.data:
+                paginated_response.data["places"] = paginated_response.data.pop("results")
+            return paginated_response
+
+        serializer = PlaceSerializer(
+            queryset,
+            many=True,
+            context={"language": language}
+        )
+
+        return Response({
+            "places": serializer.data
+        }, status=status.HTTP_200_OK)

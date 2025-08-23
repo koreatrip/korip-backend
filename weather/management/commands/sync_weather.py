@@ -15,6 +15,7 @@ class Command(BaseCommand):
         parser.add_argument("--region_id", type=int, help="특정 지역 ID만 업데이트")
         parser.add_argument("--force", action="store_true", help="강제로 업데이트")
         parser.add_argument("--dry_run", action="store_true", help="시뮬레이션만 실행")
+        parser.add_argument("--all", action="store_true", help="전체 지역 날씨 데이터 수집")
 
     def handle(self, *args, **options):
         self.stdout.write("날씨 데이터 동기화를 시작합니다...")
@@ -158,11 +159,15 @@ class Command(BaseCommand):
         with transaction.atomic():
             for forecast in weather_data:
                 try:
-                    forecast_time = timezone.datetime.strptime(
+                    import pytz
+                    from datetime import datetime
+
+                    kst = pytz.timezone("Asia/Seoul")
+                    forecast_time = datetime.strptime(
                         forecast["forecast_time"],
                         "%Y-%m-%d %H:%M:%S"
                     )
-                    forecast_time = timezone.make_aware(forecast_time)
+                    forecast_time = kst.localize(forecast_time)
 
                     weather, created = Weather.objects.update_or_create(
                         region=region,
