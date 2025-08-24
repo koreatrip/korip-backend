@@ -66,7 +66,7 @@ class Place(models.Model):
     )
 
     phone_number = models.CharField(
-        max_length=20,
+        max_length=100,
         blank=True,
         verbose_name="전화번호"
     )
