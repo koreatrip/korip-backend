@@ -6,16 +6,15 @@ from weather.models import Weather
 @admin.register(Weather)
 class WeatherAdmin(admin.ModelAdmin):
     list_display = [
+        "forecast_time_display",
         "get_location_name",
         "temperature_display",
         "humidity",
         "weather_condition_display",
         "pm_display",
-        "forecast_time",
         "created_at"
     ]
 
-    # 필터 옵션
     list_filter = [
         "region",
         "sub_region",
@@ -23,19 +22,17 @@ class WeatherAdmin(admin.ModelAdmin):
         "created_at"
     ]
 
-    # 검색 가능한 필드
     search_fields = [
         "region__regiontranslation__name",
         "sub_region__subregiontranslation__name"
     ]
 
-    # 날짜별
     date_hierarchy = "forecast_time"
 
-    # 페이지당 표시 개수
     list_per_page = 50
 
-    # 상세 화면
+    ordering = ["-forecast_time", "region", "sub_region"]
+
     fieldsets = (
         ("지역 정보", {
             "fields": ("region", "sub_region")
@@ -70,11 +67,64 @@ class WeatherAdmin(admin.ModelAdmin):
         }),
         ("시간 정보", {
             "fields": ("forecast_time",)
+        }),
+        ("시간별 예보", {
+            "fields": ("hourly_forecast_display",)
         })
     )
 
-    # 읽기 전용
-    readonly_fields = ["created_at", "updated_at"]
+    readonly_fields = ["created_at", "updated_at", "hourly_forecast_display"]
+
+    def hourly_forecast_display(self, obj):
+        if not obj.pk:
+            return "저장 후 시간별 예보가 표시됩니다."
+
+        related_forecasts = Weather.objects.filter(
+            region=obj.region,
+            sub_region=obj.sub_region
+        ).order_by("forecast_time")[:15]
+
+        html = "<table style='width:100%; border-collapse: collapse;'>"
+        html += "<tr style='background-color: #f0f0f0;'>"
+        html += "<th style='border: 1px solid #ccc; padding: 8px;'>시간</th>"
+        html += "<th style='border: 1px solid #ccc; padding: 8px;'>기온</th>"
+        html += "<th style='border: 1px solid #ccc; padding: 8px;'>습도</th>"
+        html += "<th style='border: 1px solid #ccc; padding: 8px;'>날씨</th>"
+        html += "</tr>"
+
+        sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
+
+        # 한국 시간대로 변환 추가
+        import pytz
+        kst = pytz.timezone("Asia/Seoul")
+
+        for forecast in related_forecasts:
+            style = "background-color: #ffffcc;" if forecast.pk == obj.pk else ""
+
+            # UTC 시간을 한국 시간으로 변환
+            kst_time = forecast.forecast_time.astimezone(kst)
+
+            html += f"<tr style='{style}'>"
+            html += f"<td style='border: 1px solid #ccc; padding: 8px;'>{kst_time.strftime('%m월 %d일 %H시')}</td>"
+            html += f"<td style='border: 1px solid #ccc; padding: 8px;'>{forecast.temperature}°C</td>"
+            html += f"<td style='border: 1px solid #ccc; padding: 8px;'>{forecast.humidity}%</td>"
+            html += f"<td style='border: 1px solid #ccc; padding: 8px;'>{sky_map.get(str(forecast.sky_code), '알수없음')}</td>"
+            html += "</tr>"
+
+        html += "</table>"
+        return format_html(html)
+
+    hourly_forecast_display.short_description = "같은 지역 시간별 예보 (15시간)"
+
+    def forecast_time_display(self, obj):
+        return format_html(
+            "<strong>{}</strong><br><small>{}</small>",
+            obj.forecast_time.strftime("%m월 %d일"),
+            obj.forecast_time.strftime("%H시")
+        )
+
+    forecast_time_display.short_description = "예보 시간"
+    forecast_time_display.admin_order_field = "forecast_time"
 
     def get_location_name(self, obj):
         if obj.sub_region:
@@ -85,7 +135,6 @@ class WeatherAdmin(admin.ModelAdmin):
     get_location_name.admin_order_field = "region__regiontranslation__name"
 
     def temperature_display(self, obj):
-        # 기온 (최저/최고 포함)
         temp_html = f"<strong>{obj.temperature}°C</strong>"
         if obj.min_temperature and obj.max_temperature:
             temp_html += f"<br><small>{obj.min_temperature}° / {obj.max_temperature}°</small>"
@@ -95,11 +144,9 @@ class WeatherAdmin(admin.ModelAdmin):
     temperature_display.admin_order_field = "temperature"
 
     def weather_condition_display(self, obj):
-        # 날씨 상태 표시(하늘상태 변환)
         sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
         sky_text = sky_map.get(str(obj.sky_code), "알수없음")
 
-        # 강수형태 변환
         precip_map = {
             "0": "", "1": "비", "2": "비/눈", "3": "눈",
             "5": "빗방울", "6": "빗방울눈날림", "7": "눈날림"
@@ -114,9 +161,7 @@ class WeatherAdmin(admin.ModelAdmin):
     weather_condition_display.short_description = "날씨 상태"
 
     def pm_display(self, obj):
-        # 미세먼지 표시
         if obj.pm25 and obj.pm10:
-            # 등급 계산
             pm25_grade = self._get_pm_grade(obj.pm25, "pm25")
             pm10_grade = self._get_pm_grade(obj.pm10, "pm10")
 
@@ -130,7 +175,6 @@ class WeatherAdmin(admin.ModelAdmin):
     pm_display.short_description = "미세먼지"
 
     def _get_pm_grade(self, value, pm_type):
-        # 미세먼지 등급 계산
         try:
             value = float(value)
             if pm_type == "pm25":
@@ -142,7 +186,7 @@ class WeatherAdmin(admin.ModelAdmin):
                     return "나쁨"
                 else:
                     return "매우나쁨"
-            else:  # pm10
+            else:
                 if value <= 30:
                     return "좋음"
                 elif value <= 80:
@@ -154,11 +198,9 @@ class WeatherAdmin(admin.ModelAdmin):
         except:
             return "알수없음"
 
-    # 액션 추가
     actions = ["delete_old_forecasts"]
 
     def delete_old_forecasts(self, request, queryset):
-        # 7일 이상 된 예보 데이터 삭제
         from datetime import timedelta
         from django.utils import timezone
 
