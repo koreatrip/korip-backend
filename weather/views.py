@@ -88,6 +88,23 @@ class WeatherBaseView:
         # 여행 팁 생성
         return "여행 팁 기능은 현재 비활성화 상태입니다."
 
+    def _calculate_temperature_change(self, current_weather):
+        # 아침 기온 대비 현재 기온 변화 계산
+        try:
+            if current_weather.temperature and current_weather.min_temperature:
+                temp_diff = float(current_weather.temperature) - float(current_weather.min_temperature)
+
+                if temp_diff > 0:
+                    return f"아침보다 {temp_diff:.1f}°↑"
+                elif temp_diff < 0:
+                    return f"아침보다 {abs(temp_diff):.1f}°↓"
+                else:
+                    return "아침과 같음"
+            else:
+                return "+0.0°"
+        except Exception as e:
+            return "+0.0°"
+
     def _get_hourly_forecast_from_db(self, region_id, sub_region_id=None, hours=15):
         # DB에서 현재 시간부터 15시간 예보 데이터 조회
         now = timezone.now()
@@ -415,12 +432,15 @@ class WeatherAPI(APIView, WeatherBaseView):
             pm10_grade = self._get_pm_grade(current_weather.pm10, pm_type="pm10")
             travel_tip = self._get_travel_tip(current_weather, region_name)
 
+            # 아침 기온 대비 계산
+            temperature_change = self._calculate_temperature_change(current_weather)
+
             return {
                 "current_weather": {
                     "current_date": now.strftime("%m.%d"),
                     "temperature": safe_get(current_weather, "temperature", 20.0),
                     "weather_condition": weather_condition,
-                    "temperature_change": "+0.0°",
+                    "temperature_change": temperature_change,
                     "min_temperature": safe_get(current_weather, "min_temperature", 15.0),
                     "max_temperature": safe_get(current_weather, "max_temperature", 25.0),
                 },
@@ -495,12 +515,15 @@ class WeatherAPI(APIView, WeatherBaseView):
             pm10_grade = self._get_pm_grade(current_weather.pm10, pm_type="pm10")
             travel_tip = self._get_travel_tip(current_weather, f"{region_name} {subregion_name}")
 
+            # 아침 기온 대비 계산
+            temperature_change = self._calculate_temperature_change(current_weather)
+
             return {
                 "current_weather": {
                     "current_date": now.strftime("%m.%d"),
                     "temperature": safe_get(current_weather, "temperature", 20.0),
                     "weather_condition": weather_condition,
-                    "temperature_change": "+0.0°",
+                    "temperature_change": temperature_change,
                     "min_temperature": safe_get(current_weather, "min_temperature", 15.0),
                     "max_temperature": safe_get(current_weather, "max_temperature", 25.0),
                 },

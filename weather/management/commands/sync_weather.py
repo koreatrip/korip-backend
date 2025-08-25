@@ -158,16 +158,16 @@ class Command(BaseCommand):
         saved_count = 0
         morning_temp = None
 
-        # 아침 6시 기온 찾기
-        today = datetime.now().date()
+        # 최저기온을 아침 기온으로 사용
         for forecast in weather_data:
-            try:
-                forecast_time = datetime.strptime(forecast["forecast_time"], "%Y-%m-%d %H:%M:%S")
-                if forecast_time.date() == today and forecast_time.hour == 6:
-                    morning_temp = forecast.get("temperature")
-                    break
-            except (ValueError, KeyError):
-                continue
+            min_temp = forecast.get("min_temperature")
+            if min_temp is not None:
+                morning_temp = min_temp
+                self.stdout.write(f"  아침 기준: 최저기온 {morning_temp}도")
+                break
+
+        if morning_temp is None:
+            self.stdout.write("  최저기온 데이터를 찾을 수 없습니다")
 
         kst = pytz.timezone("Asia/Seoul")
 
@@ -180,7 +180,7 @@ class Command(BaseCommand):
                     )
                     forecast_time = kst.localize(forecast_time)
 
-                    # 아침 기온 비교 계산
+                    # 아침 기온(최저기온) 대비 계산
                     current_temp = forecast.get("temperature")
                     temperature_change_text = None
 
