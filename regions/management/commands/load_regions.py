@@ -13,110 +13,113 @@ class Command(BaseCommand):
         regions_data = [
             # 특별시/광역시 (8개)
             {"id": 1, "tour_api_code": "1", "translations": {
-                "ko": {"name": "서울특별시", "description": "대한민국의 수도"},
-                "en": {"name": "Seoul", "description": "Capital of South Korea"},
-                "jp": {"name": "ソウル特別市", "description": "韓国の首都"},
-                "cn": {"name": "首尔特别市", "description": "韩国首都"}
+                "ko": {"name": "서울특별시", "description": "전통과 현대가 공존하는 도시", "feature": "대한민국의 수도이자, 문화·경제·정치의 중심지입니다. 고궁과 한옥마을, 현대적인 쇼핑몰과 마천루, 트렌디한 카페 골목과 전통시장까지 다양한 매력을 하루 안에 모두 경험할 수 있는 도시입니다."},
+                "en": {"name": "Seoul", "description": "A City Where Tradition and Modernity Coexist", "feature": "As the capital of South Korea, Seoul is the center of culture, economy, and politics. It's a city where you can experience a diverse range of attractions all in one day, from ancient palaces and traditional Hanok villages to modern shopping malls and skyscrapers."},
+                "jp": {"name": "ソウル特別市", "description": "伝統と現代が共存する都市", "feature": "大韓民国の首都であり、文化・経済・政治の中心地です。古宮や韓屋村、現代的なショッピングモールや高層ビル、トレンディなカフェ通りや伝統市場まで、多様な魅力を一日で体験できる都市です。"},
+                "cn": {"name": "首尔特别市", "description": "传统与现代共存的都市", "feature": "作为韩国的首都，是文化、经济、政治的中心。从古宫和韩屋村，到现代化的购物中心和摩天大楼，再到新潮的咖啡街和传统市场，这座城市让您能在一天之内体验其万千魅力。"}
             }},
             {"id": 2, "tour_api_code": "2", "translations": {
-                "ko": {"name": "인천광역시", "description": "서울과 인접한 항구도시"},
-                "en": {"name": "Incheon", "description": "Port city near Seoul"},
-                "jp": {"name": "仁川広域市", "description": "ソウル近郊の港湾都市"},
-                "cn": {"name": "仁川广域市", "description": "首尔附近的港口城市"}
+                "ko": {"name": "인천광역시", "description": "하늘과 바다가 만나는 관문 도시", "feature": "대한민국의 관문, 인천국제공항이 위치한 도시입니다. 아름다운 서해의 섬들과 개항기 역사가 살아있는 차이나타운, 송도 국제도시의 미래적인 스카이라인 등 과거와 미래가 공존하는 특별한 경험을 선사합니다."},
+                "en": {"name": "Incheon", "description": "Gateway City Where Sky Meets Sea", "feature": "Home to Incheon International Airport, the gateway to Korea. It offers unique experiences where past and future coexist, featuring beautiful islands of the West Sea, a historic Chinatown from the port's opening era, and the futuristic skyline of Songdo International City."},
+                "jp": {"name": "仁川広域市", "description": "空と海が出会う玄関都市", "feature": "大韓民国の玄関口、仁川国際空港が位置する都市です。美しい西海の島々や開港期の歴史が息づくチャイナタウン、松島国際都市の未来的なスカイラインなど、過去と未来が共存する特別な経験を提供します。"},
+                "cn": {"name": "仁川广域市", "description": "天空与大海交汇的门户城市", "feature": "这里是韩国的门户，仁川国际机场的所在地。美丽的西海诸岛、开港时期历史气息浓郁的唐人街、松岛国际城的未来派天际线等，为您呈现过去与未来共存的特别体验。"}
             }},
             {"id": 3, "tour_api_code": "3", "translations": {
-                "ko": {"name": "대전광역시", "description": "중부권의 과학기술 중심도시"},
-                "en": {"name": "Daejeon", "description": "Science and technology hub in central Korea"},
-                "jp": {"name": "大田広域市", "description": "中部圏の科学技術中心都市"},
-                "cn": {"name": "大田广域市", "description": "中部地区的科技中心城市"}
+                "ko": {"name": "대전광역시", "description": "대한민국의 미래를 여는 과학 도시", "feature": "대한민국 과학 기술의 심장부로, 대덕연구단지와 KAIST가 자리하고 있습니다. 국립중앙과학관에서 과학의 신비를 체험하고, 한밭수목원에서 도심 속 여유를 즐길 수 있는 지적인 매력의 도시입니다."},
+                "en": {"name": "Daejeon", "description": "Science and technology hub in central Korea", "feature": ""},
+                "jp": {"name": "大田広域市", "description": "大韓民国の未来を開く科学都市", "feature": "大韓民国科学技術の心臓部で、大徳研究団地とKAISTが位置しています。国立中央科学館で科学の神秘を体験し、ハンバッ樹木園で都心の中の余裕を楽しむことができる知的な魅力の都市です。"},
+                "cn": {"name": "大田广域市", "description": "开启韩国未来的科学之城", "feature": "作为韩国科学技术的心脏，大德研究园区和韩国科学技术院（KAIST）坐落于此。在国立中央科学馆体验科学的奥秘，在韩밭树木园享受都市中的闲暇，是一座充满知性魅力的城市。"}
             }},
             {"id": 4, "tour_api_code": "4", "translations": {
-                "ko": {"name": "대구광역시", "description": "영남권의 중심도시"},
-                "en": {"name": "Daegu", "description": "Central city of Yeongnam region"},
-                "jp": {"name": "大邱広域市", "description": "嶺南圏の中心都市"},
-                "cn": {"name": "大邱广域市", "description": "岭南地区中心城市"}
+                "ko": {"name": "대구광역시", "description": "열정과 젊음이 넘치는 패션 도시", "feature": "과거 섬유 산업의 중심지에서 이제는 대한민국 문화 트렌드를 이끄는 도시로 거듭났습니다. 동성로의 활기찬 거리, 김광석 거리의 감성, 팔공산의 아름다운 자연 속에서 대구의 뜨거운 에너지를 느껴보세요."},
+                "en": {"name": "Daegu", "description": "A Fashionable City Full of Passion and Youth", "feature": "Once the center of the textile industry, Daegu has transformed into a city leading Korea's cultural trends. Feel the vibrant energy of Daegu on the lively streets of Dongseongno, the nostalgic Kim Kwang-seok Street, and within the beautiful nature of Palgongsan Mountain."},
+                "jp": {"name": "大邱広域市", "description": "情熱と若さあふれるファッション都市", "feature": "過去の繊維産業の中心地から、今や大韓民国の文化トレンドをリードする都市へと生まれ変わりました。東城路の活気ある通り、キム・グァンソク通りの感性、八公山の美しい自然の中で、大邱の熱いエネルギーを感じてみてください。"},
+                "cn": {"name": "大邱广域市", "description": "充满热情与活力的时尚之都", "feature": "从过去的纺织工业中心，如今已蜕变为引领韩国文化潮流的城市。在东城路充满活力的街头、在金光石路的感性氛围中、在八公山美丽的自然风光里，感受大邱的火热能量吧。"}
             }},
             {"id": 5, "tour_api_code": "5", "translations": {
-                "ko": {"name": "광주광역시", "description": "호남권의 중심도시"},
-                "en": {"name": "Gwangju", "description": "Central city of Honam region"},
-                "jp": {"name": "光州広域市", "description": "湖南圏の中心都市"},
-                "cn": {"name": "光州广域市", "description": "湖南地区中心城市"}
+                "ko": {"name": "광주광역시", "description": "예술과 민주주의, 맛의 고장", "feature": "예로부터 예향(藝鄕)이라 불린 예술의 도시이자 대한민국 민주주의의 성지입니다. 세계적인 광주 비엔날레와 아시아문화전당에서 예술적 영감을 얻고, 풍요로운 남도 음식으로 미식 여행을 완성해보세요."},
+                "en": {"name": "Gwangju", "description": "The Home of Arts, Democracy, and Flavor", "feature": "Known as the 'Home of Arts' and a sacred site for Korean democracy. Gain artistic inspiration from the world-renowned Gwangju Biennale and the Asia Culture Center, and complete your culinary journey with rich Namdo cuisine."},
+                "jp": {"name": "光州広域市", "description": "芸術と民主主義、味の故郷", "feature": "古くから芸郷と呼ばれた芸術の都市であり、大韓民国民主主義の聖地です。世界的な光州ビエンナーレやアジア文化殿堂で芸術的なインスピレーションを得て、豊かな南道料理で美食の旅を完成させてみてください。"},
+                "cn": {"name": "光州广域市", "description": "艺术、民主与美食之乡", "feature": "自古便被称为“艺乡”的艺术之都，同时也是韩国民主主义的圣地。在世界性的光州双年展和亚洲文化殿堂获取艺术灵感，再以丰盛的南道美食为您的美食之旅画上圆满的句号。"}
             }},
             {"id": 6, "tour_api_code": "6", "translations": {
-                "ko": {"name": "부산광역시", "description": "대한민국 제2의 도시"},
-                "en": {"name": "Busan", "description": "Second largest city in South Korea"},
-                "jp": {"name": "釜山広域市", "description": "韓国第二の都市"},
-                "cn": {"name": "釜山广域市", "description": "韩国第二大城市"}
+                "ko": {"name": "부산광역시", "description": "바다와 영화, 낭만의 도시", "feature": "대한민국 제2의 도시이자 최대 항구도시입니다. 끝없이 펼쳐진 해운대와 광안리 해변, 신선한 해산물이 가득한 자갈치 시장, 세계적인 영화제가 열리는 영화의 전당까지, 부산의 낭만은 끝이 없습니다."},
+                "en": {"name": "Busan", "description": "City of Sea, Film, and Romance", "feature": "South Korea's second-largest city and largest port. From the vast Haeundae and Gwangalli beaches and Jagalchi Market full of fresh seafood to the Busan Cinema Center where international film festivals are held, the city's romance is endless."},
+                "jp": {"name": "釜山広域市", "description": "海と映画、ロマンの都市", "feature": "大韓民国第2の都市であり、最大の港町です。果てしなく広がる海雲台と広安里のビーチ、新鮮な海産物でいっぱいのチャガルチ市場、世界的な映画祭が開かれる映画の殿堂まで、釜山のロマンは尽きることがありません。"},
+                "cn": {"name": "釜山广域市", "description": "海洋、电影与浪漫之都", "feature": "韩国第二大城市及最大港口城市。从一望无际的海云台和广安里海滩，到满是新鲜海产的札嘎其市场，再到举办世界级电影节的电影殿堂，釜山的浪漫永不止息。"}
             }},
             {"id": 7, "tour_api_code": "7", "translations": {
-                "ko": {"name": "울산광역시", "description": "산업과 바다가 어우러진 도시"},
-                "en": {"name": "Ulsan", "description": "Industrial city by the sea"},
-                "jp": {"name": "蔚山広域市", "description": "産業と海が調和した都市"},
-                "cn": {"name": "蔚山广域市", "description": "工业与海洋和谐的城市"}
+                "ko": {"name": "울산광역시", "description": "산업의 심장, 자연과 함께 숨쉬다", "feature": "세계적인 자동차, 조선 산업의 중심지인 동시에 아름다운 생태 환경을 자랑합니다. 태화강 국가정원에서 십리대숲을 거닐고, 장생포에서 고래를 만나고, 간절곶에서 가장 먼저 떠오르는 해를 맞이해보세요."},
+                "en": {"name": "Ulsan", "description": "The Heart of Industry, Breathing with Nature", "feature": "A global hub for the automotive and shipbuilding industries that also boasts a beautiful ecological environment. Stroll through the bamboo forest at Taehwagang National Garden, meet whales at Jangsaengpo, and greet the earliest sunrise at Ganjeolgot Cape."},
+                "jp": {"name": "蔚山広域市", "description": "産業の心臓、自然と共に息づく", "feature": "世界的な自動車、造船産業の中心地であると同時に、美しい生態環境を誇ります。太和江国家庭園で十里竹林を散策し、長生浦でクジラに会い、艮絶岬で最も早く昇る太陽を迎えてみてください。"},
+                "cn": {"name": "蔚山广역市", "description": "产业心脏，与自然同呼吸", "feature": "这里是世界级的汽车、造船产业中心，同时拥有优美的生态环境。漫步于太和江国家花园的十里竹林，在长生浦邂逅鲸鱼，在艮绝岬迎接第一缕曙光。"}
             }},
             {"id": 8, "tour_api_code": "8", "translations": {
-                "ko": {"name": "세종특별자치시", "description": "행정중심복합도시"},
-                "en": {"name": "Sejong Special Self-Governing City", "description": "Administrative capital city"},
-                "jp": {"name": "世宗特別自治市", "description": "行政中心複合都市"},
-                "cn": {"name": "世宗特别自治市", "description": "行政中心复合城市"}
+                "ko": {"name": "세종특별자치시", "description": "스마트 행정수도, 여유로운 삶의 중심", "feature": "대한민국의 새로운 행정 중심지로, 젊고 계획된 스마트 도시입니다. 아시아 최대 규모의 인공호수인 세종호수공원을 중심으로 녹지 공간이 풍부하여, 쾌적하고 여유로운 도시 여행을 즐길 수 있습니다."},
+                "en": {"name": "Sejong Special Self-Governing City", "description": "The Smart Administrative Capital, Center of a Relaxed Life",
+                       "feature": "As the new administrative heart of South Korea, Sejong is a young and well-planned smart city. Centered around Sejong Lake Park, the largest man-made lake in Asia, it offers abundant green spaces for a pleasant and leisurely city trip."},
+                "jp": {"name": "世宗特別自治市", "description": "スマート行政首都、ゆとりのある生活の中心", "feature": "大韓民国の新しい行政中心地で、若くて計画的なスマート都市です。アジア最大規模の人工湖である世宗湖水公園を中心に緑地空間が豊富で、快適でゆとりのある都市旅行を楽しむことができます。"},
+                "cn": {"name": "世宗特别自治市", "description": "智能行政首都，悠闲生活的中心", "feature": "作为韩国新的行政中心，是一座年轻且规划完善的智能城市。以亚洲最大的人工湖世宗湖水公园为中心，绿地空间丰富，让您能享受到舒适惬意的城市之旅。"}
             }},
 
             # 도 지역 (9개)
             {"id": 9, "tour_api_code": "31", "translations": {
-                "ko": {"name": "경기도", "description": "서울을 둘러싼 수도권"},
-                "en": {"name": "Gyeonggi Province", "description": "Capital region surrounding Seoul"},
-                "jp": {"name": "京畿道", "description": "ソウルを囲む首都圏"},
-                "cn": {"name": "京畿道", "description": "环绕首尔的首都圈"}
+                "ko": {"name": "경기도", "description": "수도권을 아우르는 다채로운 매력", "feature": "서울을 감싸고 있는 경기도는 유네스코 세계문화유산인 수원화성부터 현대적인 도시, 아름다운 자연 휴양림까지 각양각색의 여행지를 품고 있습니다. 다이나믹한 도시 여행과 평화로운 자연 속 휴식을 동시에 즐겨보세요."},
+                "en": {"name": "Gyeonggi Province", "description": "Diverse Charms Embracing the Capital Area", "feature": "Surrounding Seoul, Gyeonggi Province offers a wide variety of destinations, from the UNESCO World Heritage Suwon Hwaseong Fortress to modern cities and beautiful natural recreation forests. Enjoy both dynamic city tours and peaceful relaxation in nature."},
+                "jp": {"name": "京畿道", "description": "首都圏を網羅する多彩な魅力", "feature": "ソウルを取り囲む京畿道は、ユネスコ世界文化遺産の水原華城から現代的な都市、美しい自然休養林まで、様々な旅行地を抱いています。ダイナミックな都市旅行と、平和な自然の中での休息を同時に楽しんでみてください。"},
+                "cn": {"name": "京畿道", "description": "环绕首都圈的多元魅力", "feature": "环绕着首尔的京畿道，拥有从联合国教科文组织世界文化遗产水原华城到现代化都市、美丽的自然休养林等各式各样的旅游景点。在这里，您可以同时享受到充满活力的城市旅游与宁静自然中的休憩。"}
             }},
             {"id": 10, "tour_api_code": "32", "translations": {
-                "ko": {"name": "강원특별자치도", "description": "산과 바다의 자연 휴양지"},
+                "ko": {"name": "강원특별자치도", "description": "산과 바다가 그린 청정 자연의 쉼터", "feature": "설악산, 오대산 등 웅장한 산맥과 푸른 동해바다가 어우러진 천혜의 자연을 자랑합니다. 사계절 내내 레저 스포츠를 즐길 수 있으며, 깨끗한 공기와 고요한 분위기 속에서 완벽한 힐링을 경험할 수 있습니다."},
                 "en": {"name": "Gangwon Special Self-Governing Province",
-                       "description": "Natural resort with mountains and sea"},
-                "jp": {"name": "江原特別自治道", "description": "山と海の自然休養地"},
-                "cn": {"name": "江原特别自治道", "description": "山海自然休养地"}
+                       "description": "A Haven of Clean Nature Painted by Mountains and Sea", "feature": "Boasting a natural paradise where majestic mountain ranges like Seoraksan and Odaesan meet the blue East Sea. You can enjoy leisure sports all year round and experience perfect healing amidst clean air and a tranquil atmosphere."},
+                "jp": {"name": "江原特別自治道", "description": "山と海が描く清浄な自然の休息地", "feature": "雪岳山、五台山などの壮大な山脈と青い東海が調和した天恵の自然を誇ります。四季を通じてレジャースポーツを楽しむことができ、きれいな空気と静かな雰囲気の中で完璧な癒しを体験できます。"},
+                "cn": {"name": "江原特别自治道", "description": "山海描绘的清净自然休憩地", "feature": "雪岳山、五台山等雄伟的山脉与蔚蓝的东海相映成趣，拥有得天独厚的自然风光。这里一年四季都可享受休闲运动，在清新的空气和宁静的氛围中体验完美的治愈之旅。"}
             }},
             {"id": 11, "tour_api_code": "33", "translations": {
-                "ko": {"name": "충청북도", "description": "내륙의 중심지"},
-                "en": {"name": "Chungcheongbuk-do", "description": "Central inland region"},
-                "jp": {"name": "忠清北道", "description": "内陸の中心地"},
-                "cn": {"name": "忠清北道", "description": "内陆中心地区"}
+                "ko": {"name": "충청북도", "description": "호수와 산이 어우러진 내륙의 보석", "feature": "바다가 없는 대신 충주호, 대청호 등 아름다운 호수가 마음을 사로잡는 곳입니다. 월악산, 속리산 국립공원의 절경을 감상하고, 고즈넉한 법주사에서 평화로운 시간을 보내기에 완벽한 여행지입니다."},
+                "en": {"name": "Chungcheongbuk-do", "description": "An Inland Jewel of Lakes and Mountains", "feature": "Though without a sea, its beautiful lakes like Chungjuho and Daecheongho captivate the heart. It's the perfect destination to admire the stunning scenery of Woraksan and Songnisan National Parks and to spend a peaceful time at the serene Beopjusa Temple."},
+                "jp": {"name": "忠清北道", "description": "湖と山が調和した内陸の宝石", "feature": "海がない代わりに、忠州湖、大清湖などの美しい湖が心を捉える場所です。月岳山、俗離山国立公園の絶景を鑑賞し、静かな法住寺で平和な時間を過ごすのに最適な旅行地です。"},
+                "cn": {"name": "忠清北道", "description": "湖光山色相映的内陆瑰宝", "feature": "这里虽然没有大海，但忠州湖、大清湖等美丽的湖泊却令人心醉。欣赏月岳山、俗离山国立公园的绝景，在宁静的法住寺度过平和的时光，是完美的旅游目的地。"}
             }},
             {"id": 12, "tour_api_code": "34", "translations": {
-                "ko": {"name": "충청남도", "description": "서해안의 풍부한 자연"},
-                "en": {"name": "Chungcheongnam-do", "description": "Rich nature of the west coast"},
-                "jp": {"name": "忠清南道", "description": "西海岸の豊かな自然"},
-                "cn": {"name": "忠清南道", "description": "西海岸丰富的自然"}
+                "ko": {"name": "충청남도", "description": "백제의 숨결과 서해의 낭만이 깃든 곳", "feature": "찬란했던 백제 문화의 중심지로 공주와 부여에 수많은 유적이 남아있습니다. 세계적인 보령머드축제를 즐기고, 태안의 아름다운 해변을 따라 드라이브하며 서해의 고즈넉한 낭만을 만끽할 수 있습니다."},
+                "en": {"name": "Chungcheongnam-do", "description": "Where the Spirit of Baekje and the Romance of the West Sea Reside", "feature": "As the center of the brilliant Baekje culture, numerous historical sites remain in Gongju and Buyeo. You can enjoy the world-famous Boryeong Mud Festival and savor the tranquil romance of the West Sea while driving along the beautiful coastline of Taean."},
+                "jp": {"name": "忠清南道", "description": "百済の息吹と西海のロマンが宿る場所", "feature": "輝かしい百済文化の中心地で、公州と扶余に数多くの遺跡が残っています。世界的な保寧マッドフェスティバルを楽しみ、泰安の美しいビーチに沿ってドライブしながら、西海の静かなロマンを満喫できます。"},
+                "cn": {"name": "忠清南道", "description": "百济气息与西海浪漫的栖息地", "feature": "作为灿烂百济文化的中心，公州和扶余留下了无数遗迹。您可以在世界性的保宁泥浆节尽情狂欢，也可以沿着泰安美丽的海岸线驱车，享受西海宁静的浪漫。"}
             }},
             {"id": 13, "tour_api_code": "35", "translations": {
-                "ko": {"name": "경상북도", "description": "신라 천년의 고도"},
-                "en": {"name": "Gyeongsangbuk-do", "description": "Ancient capital of millennium Silla"},
-                "jp": {"name": "慶尚北道", "description": "新羅千年の古都"},
-                "cn": {"name": "庆尚北道", "description": "新罗千年古都"}
+                "ko": {"name": "경상북도", "description": "신라의 역사와 유교 문화의 본고장", "feature": "천년고도 경주와 선비 정신이 살아있는 안동을 품은, 한국 정신문화의 뿌리입니다. 하회마을에서 전통을 체험하고, 동해안의 웅장한 해안 절경을 따라 낭만적인 드라이브를 즐겨보세요."},
+                "en": {"name": "Gyeongsangbuk-do", "description": "The Cradle of Silla History and Confucian Culture", "feature": "The root of Korean spiritual culture, embracing the ancient capital Gyeongju and Andong, where the spirit of the seonbi (scholar) lives on. Experience tradition at Hahoe Village and enjoy a romantic drive along the majestic coastline of the East Sea."},
+                "jp": {"name": "慶尚北道", "description": "新羅の歴史と儒教文化の本場", "feature": "千年古都の慶州と、ソンビの精神が生きる安東を抱いた、韓国精神文化の根源です。河回村で伝統を体験し、東海沿岸の壮大な海岸絶景に沿ってロマンチックなドライブを楽しんでみてください。"},
+                "cn": {"name": "庆尚北道", "description": "新罗历史与儒教文化的发源地", "feature": "怀抱千年古都庆州与儒生精神传承地安东，是韩国精神文化的根基。在河回村体验传统，沿着东海岸雄壮的海岸绝景享受浪漫的驾车之旅。"}
             }},
             {"id": 14, "tour_api_code": "36", "translations": {
-                "ko": {"name": "경상남도", "description": "가야문화와 남해의 보물"},
-                "en": {"name": "Gyeongsangnam-do", "description": "Gaya culture and treasures of South Sea"},
-                "jp": {"name": "慶尚南道", "description": "伽倻文化と南海の宝物"},
-                "cn": {"name": "庆尚南道", "description": "伽倻文化和南海宝藏"}
+                "ko": {"name": "경상남도", "description": "남해의 비경과 첨단 산업이 공존하는 곳", "feature": "한려해상국립공원의 그림 같은 풍경과 거제, 통영, 남해 등 아름다운 섬들이 가득합니다. 지리산의 웅장함을 느끼고, 창원의 계획된 도시미를 둘러보는 등 다채로운 매력을 가진 지역입니다."},
+                "en": {"name": "Gyeongsangnam-do", "description": "Where the Scenic Beauty of the South Sea Meets High-Tech Industry",
+                       "feature": "Filled with the picturesque scenery of Hallyeohaesang National Park and beautiful islands like Geoje, Tongyeong, and Namhae. It is a region of diverse charms, where you can feel the majesty of Jirisan Mountain and explore the planned urban beauty of Changwon."},
+                "jp": {"name": "慶尚南道", "description": "南海の秘境と先端産業が共存する場所", "feature": "閑麗海上国立公園の絵のような風景と、巨済、統営、南海などの美しい島々がいっぱいです。智異山の雄大さを感じ、昌原の計画的な都市美を巡るなど、多彩な魅力を持つ地域です。"},
+                "cn": {"name": "庆尚南道", "description": "南海秘境与尖端产业共存之地", "feature": "拥有闲丽海上国立公园如画的风景，以及巨济、统营、南海等美丽的岛屿。在这里可以感受智异山的雄伟，也可以领略昌原的规划城市之美，是一个充满多彩魅力的地区。"}
             }},
             {"id": 15, "tour_api_code": "37", "translations": {
-                "ko": {"name": "전북특별자치도", "description": "한국 전통문화의 본고장"},
+                "ko": {"name": "전북특별자치도", "description": "한국의 맛과 멋이 살아있는 풍요의 땅", "feature": "전주 한옥마을의 고풍스러운 멋과 풍성한 먹거리, 내장산의 황홀한 단풍까지. 한국의 전통과 자연의 아름다움이 가장 잘 보존된 곳 중 하나로, 오감을 만족시키는 풍요로운 여행을 약속합니다."},
                 "en": {"name": "Jeonbuk Special Self-Governing Province",
-                       "description": "Home of Korean traditional culture"},
-                "jp": {"name": "全北特別自治道", "description": "韓国伝統文化の本場"},
-                "cn": {"name": "全北特别自治道", "description": "韩国传统文化故乡"}
+                       "description": "A Land of Plenty Where Korean Flavor and Style Come Alive", "feature": "From the classic beauty and rich cuisine of Jeonju Hanok Village to the breathtaking autumn foliage of Naejangsan Mountain. It is one of the best-preserved places of Korean tradition and natural beauty, promising a fulfilling journey that satisfies all five senses."},
+                "jp": {"name": "全北特別自治道", "description": "韓国の味と趣が生きる豊饒の地", "feature": "全州韓屋村の古風な趣と豊かなグルメ、内蔵山の幻想的な紅葉まで。韓国の伝統と自然の美しさが最もよく保存されている場所の一つで、五感を満たす豊かな旅行を約束します。"},
+                "cn": {"name": "全北特别自治道", "description": "韩国风味与格调盎然的丰饶之地", "feature": "从全州韩屋村的古朴风情和丰富美食，到内藏山令人陶醉的枫叶。这里是韩国传统与自然之美保存最完好的地方之一，承诺为您带来一场满足五感的丰盛之旅。"}
             }},
             {"id": 16, "tour_api_code": "38", "translations": {
-                "ko": {"name": "전라남도", "description": "다도해의 아름다운 섬들"},
-                "en": {"name": "Jeollanam-do", "description": "Beautiful islands of the archipelago"},
-                "jp": {"name": "全羅南道", "description": "多島海の美しい島々"},
-                "cn": {"name": "全罗南道", "description": "多岛海的美丽岛屿"}
+                "ko": {"name": "전라남도", "description": "쪽빛 바다와 녹색 평야가 펼쳐진 남도의 땅", "feature": "다도해의 수많은 섬들이 보석처럼 박힌 남해안과 보성 녹차밭의 푸른 물결이 인상적인 곳입니다. 대한민국 최고의 맛을 자랑하는 남도 한정식을 맛보며 느림의 미학을 경험할 수 있는 최고의 힐링 여행지입니다."},
+                "en": {"name": "Jeollanam-do", "description": "The Southern Land of Indigo Seas and Green Plains", "feature": "A place of impressive scenery, featuring the jewel-like islands of the Dadohae archipelago and the green waves of the Boseong Green Tea Fields. It is the ultimate healing destination where you can experience the aesthetics of slowness while savoring the best of Korean cuisine."},
+                "jp": {"name": "全羅南道", "description": "藍色の海と緑の平野が広がる南道の地", "feature": "多島海の数多くの島々が宝石のように散りばめられた南海沿岸と、宝城緑茶畑の青い波が印象的な場所です。大韓民国最高の味を誇る南道韓定食を味わいながら、スローライフの美学を体験できる最高のヒーリング旅行地です。"},
+                "cn": {"name": "全罗南道", "description": "靛蓝大海与绿色平原展开的南道之地", "feature": "多岛海的无数岛屿如宝石般点缀在南海岸，宝城绿茶园的碧波荡漾，景象令人印象深刻。在这里品尝韩国最顶级的南道韩定食，体验慢生活的美学，是绝佳的治愈系旅游地。"}
             }},
             {"id": 17, "tour_api_code": "39", "translations": {
-                "ko": {"name": "제주특별자치도", "description": "아름다운 화산섬"},
-                "en": {"name": "Jeju Special Self-Governing Province", "description": "Beautiful volcanic island"},
-                "jp": {"name": "済州特別自治道", "description": "美しい火山島"},
-                "cn": {"name": "济州特别自治道", "description": "美丽的火山岛"}
+                "ko": {"name": "제주특별자치도", "description": "화산이 빚은 신비의 섬", "feature": "유네스코 세계자연유산에 빛나는 대한민국 최대의 섬. 한라산과 오름, 에메랄드빛 해변과 독특한 해안절경이 방문하는 모든 이들에게 잊지 못할 감동을 선사하는 최고의 휴양지입니다."},
+                "en": {"name": "Jeju Special Self-Governing Province", "description": "The Mysterious Island Forged by a Volcano",
+                       "feature": "South Korea's largest island and a shining UNESCO World Natural Heritage site. It is the ultimate vacation destination, offering unforgettable impressions to all visitors with Hallasan Mountain, numerous volcanic cones (oreum), and emerald beaches."},
+                "jp": {"name": "済州特別自治道", "description": "火山が創り出した神秘の島", "feature": "ユネスコ世界自然遺産に輝く大韓民国最大の島。漢拏山とオルム、エメラルド色のビーチと独特の海岸絶景が、訪れるすべての人々に忘れられない感動を与える最高の休養地です。"},
+                "cn": {"name": "济州特别自治道", "description": "火山塑造的神秘之岛", "feature": "作为联合国教科文组织世界自然遗产，是韩国最大的岛屿。汉拿山、岳麓、翡翠色的海滩和独特的海岸绝景，为所有到访者带来难忘的感动，是顶级的休养胜地。"}
             }},
         ]
 

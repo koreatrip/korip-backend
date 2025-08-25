@@ -5,6 +5,9 @@
 # Docker Compose 명령어 자동 감지 (docker-compose / docker compose 둘 다 지원)
 DC = $(shell command -v docker-compose >/dev/null 2>&1 && echo "docker-compose" || echo "docker compose")
 
+# logs 타겟을 phony로 선언
+.PHONY: logs
+
 # =============================================================================
 # 🚀 초기 설정 (git pull 받은 후 처음 할 일들)
 # =============================================================================
@@ -208,5 +211,16 @@ help:
 	@echo "  make up              # 서버 실행"
 	@echo "  make test            # 테스트 실행"
 
+# Celery 관련
+celery:
+	@echo "Celery 시작 중..."
+	$(DC) up -d celery celery-beat
+
+celery-logs:
+	$(DC) logs -f celery celery-beat
+
+test-weather-sync:
+	@echo "수동 날씨 동기화 테스트..."
+	$(DC) run web python manage.py shell -c "from weather.tasks import sync_weather_task; sync_weather_task.delay(1)"
 # 기본 명령어 (make만 입력 시)
 .DEFAULT_GOAL := help

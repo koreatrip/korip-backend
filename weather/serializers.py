@@ -9,7 +9,7 @@ class CurrentWeatherSerializer(serializers.Serializer):
     current_date = serializers.CharField(help_text="현재 날짜 (MM.DD)")
     temperature = serializers.FloatField(help_text="현재 기온 (°C)")
     weather_condition = serializers.CharField(help_text="날씨 상태 (맑음, 흐림, 비 등)")
-    temperature_change = serializers.CharField(help_text="어제 대비 기온 변화 (+2.3°, -0.8° 등)")
+    temperature_change = serializers.CharField(help_text="아침 대비 기온 변화 (아침보다 2.3°↑)")
     min_temperature = serializers.FloatField(help_text="오늘 최저 기온")
     max_temperature = serializers.FloatField(help_text="오늘 최고 기온")
 
@@ -101,6 +101,8 @@ class WeatherSerializer(serializers.ModelSerializer):
             "sunset_time",
             "pm25",
             "pm10",
+            "morning_temperature",
+            "temperature_change_text",
             "forecast_time",
             "created_at",
             "updated_at"

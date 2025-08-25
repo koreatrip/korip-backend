@@ -1,52 +1,84 @@
 version: '3.8'
 
 services:
-  # 로컬 PostgreSQL 서비스 주석처리 (AWS RDS 사용)
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_DB: korip_db
-  #     POSTGRES_USER: korip_user
-  #     POSTGRES_PASSWORD: K0r1p_S3cur3_P@ssw0rd2024!
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
+ # 로컬 PostgreSQL 서비스 주석처리 (AWS RDS 사용)
+ # db:
+ #   image: postgres:15
+ #   environment:
+ #     POSTGRES_DB: korip_db
+ #     POSTGRES_USER: korip_user
+ #     POSTGRES_PASSWORD: K0r1p_S3cur3_P@ssw0rd2024!
+ #   ports:
+ #     - "5432:5432"
+ #   volumes:
+ #     - postgres_data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7-alpine
-    container_name: korip-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - korip-network
-    restart: unless-stopped
+ redis:
+   image: redis:7-alpine
+   container_name: korip-redis
+   ports:
+     - "6379:6379"
+   networks:
+     - korip-network
+   restart: unless-stopped
 
-  web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "9000:8000"  # 외부 9000 포트로 접속
-    # AWS RDS 사용하므로 depends_on 제거
-    # depends_on:
-    #   - db
-    depends_on:
-      - redis
-    env_file:
-      - .env  # 운영환경 설정 사용
-    networks:
-      - korip-network
-    environment:
-      # 날씨 API 환경변수 추가
-      - WEATHER_API_KEY=${WEATHER_API_KEY}
-      - USE_HTTPS=${USE_HTTPS:-True}  # 기본값 True (운영환경)
+ web:
+   build: .
+   command: python manage.py runserver 0.0.0.0:8000
+   volumes:
+     - .:/app
+   ports:
+     - "9000:8000"  # 외부 9000 포트로 접속
+   # AWS RDS 사용하므로 depends_on 제거
+   # depends_on:
+   #   - db
+   depends_on:
+     - redis
+   env_file:
+     - .env  # 운영환경 설정 사용
+   networks:
+     - korip-network
+   environment:
+     # 날씨 API 환경변수 추가
+     - WEATHER_API_KEY=${WEATHER_API_KEY}
+     - USE_HTTPS=${USE_HTTPS:-True}  # 기본값 True (운영환경)
+
+ celery:
+   build: .
+   command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+   volumes:
+     - .:/app
+   depends_on:
+     - redis
+   env_file:
+     - .env
+   networks:
+     - korip-network
+   environment:
+     - WEATHER_API_KEY=${WEATHER_API_KEY}
+     - USE_HTTPS=${USE_HTTPS:-True}
+   restart: unless-stopped
+
+ celery-beat:
+   build: .
+   command: celery -A config beat --loglevel=info
+   volumes:
+     - .:/app
+   depends_on:
+     - redis
+   env_file:
+     - .env
+   networks:
+     - korip-network
+   environment:
+     - WEATHER_API_KEY=${WEATHER_API_KEY}
+     - USE_HTTPS=${USE_HTTPS:-True}
+   restart: unless-stopped
 
 # 로컬 PostgreSQL 볼륨도 주석처리
 # volumes:
 #   postgres_data:
 
 networks:
-  korip-network:
-    driver: bridge
+ korip-network:
+   driver: bridge
