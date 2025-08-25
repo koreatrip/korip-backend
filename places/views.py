@@ -302,19 +302,28 @@ class PlaceTourListAPIView(APIView):
         )
 
         request_subregion_id = request.query_params.get("subregion_id", "")
+        stay = Category.objects.filter(id=6).first()
         
         if request_subregion_id == "":
             first_subregion = most_favoriate_subregion_ids[0] if most_favoriate_subregion_ids else None
             request_subregion = first_subregion
             major_places = Place.objects.filter(sub_region=first_subregion).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+            stay_places = Place.objects.filter(sub_region=first_subregion, category=stay).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
         else:
-            major_places = Place.objects.filter(sub_region=int(request_subregion_id)).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]            
+            major_places = Place.objects.filter(sub_region=int(request_subregion_id)).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
             request_subregion = SubRegion.objects.filter(id=request_subregion_id).filter().first()
+            stay_places = Place.objects.filter(sub_region=int(request_subregion_id), category=stay).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
 
         request_subregion_serializer = SubRegionSerializer(request_subregion, context={"language": language})
 
         place_serializer = PlaceSerializer(
             major_places,
+            many=True,
+            context={"language": language}
+        )
+
+        stay_place_serializer = PlaceSerializer(
+            stay_places,
             many=True,
             context={"language": language}
         )
@@ -339,7 +348,8 @@ class PlaceTourListAPIView(APIView):
                     "subregion": request_subregion_serializer.data,
                     "popular_subregions": subregion_serializer.data,
                     "major_places": place_serializer.data,
-                    "user_recommended_places": user_recommended_serializer.data
+                    "user_recommended_places": user_recommended_serializer.data,
+                    "stay_places": stay_place_serializer.data
                 }, status=status.HTTP_200_OK
             )
 
@@ -349,6 +359,7 @@ class PlaceTourListAPIView(APIView):
                 "subregion": request_subregion_serializer.data,
                 "popular_subregions": subregion_serializer.data,
                 "major_places": place_serializer.data,
+                "stay_places": stay_place_serializer.data
             }, status=status.HTTP_200_OK
         )
 
