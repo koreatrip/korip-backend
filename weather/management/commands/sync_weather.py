@@ -5,7 +5,8 @@ from regions.models import Region, SubRegion
 from weather.models import Weather
 from weather.services.weather_api_client import WeatherAPIClient
 from weather.exceptions import WeatherAPIError
-import time
+from datetime import datetime, timedelta
+import pytz
 
 
 class Command(BaseCommand):
@@ -155,19 +156,43 @@ class Command(BaseCommand):
 
     def _save_weather_data(self, region, subregion, weather_data):
         saved_count = 0
+        morning_temp = None
+
+        # 아침 6시 기온 찾기
+        today = datetime.now().date()
+        for forecast in weather_data:
+            try:
+                forecast_time = datetime.strptime(forecast["forecast_time"], "%Y-%m-%d %H:%M:%S")
+                if forecast_time.date() == today and forecast_time.hour == 6:
+                    morning_temp = forecast.get("temperature")
+                    break
+            except (ValueError, KeyError):
+                continue
+
+        kst = pytz.timezone("Asia/Seoul")
 
         with transaction.atomic():
             for forecast in weather_data:
                 try:
-                    import pytz
-                    from datetime import datetime
-
-                    kst = pytz.timezone("Asia/Seoul")
                     forecast_time = datetime.strptime(
                         forecast["forecast_time"],
                         "%Y-%m-%d %H:%M:%S"
                     )
                     forecast_time = kst.localize(forecast_time)
+
+                    # 아침 기온 비교 계산
+                    current_temp = forecast.get("temperature")
+                    temperature_change_text = None
+
+                    if morning_temp is not None and current_temp is not None:
+                        temp_diff = current_temp - morning_temp
+                        if abs(temp_diff) >= 0.1:
+                            if temp_diff > 0:
+                                temperature_change_text = f"아침보다 {temp_diff:.1f}°↑"
+                            else:
+                                temperature_change_text = f"아침보다 {abs(temp_diff):.1f}°↓"
+                        else:
+                            temperature_change_text = "아침과 비슷"
 
                     weather, created = Weather.objects.update_or_create(
                         region=region,
@@ -189,6 +214,8 @@ class Command(BaseCommand):
                             "sunset_time": forecast.get("sunset_time"),
                             "min_temperature": forecast.get("min_temperature"),
                             "max_temperature": forecast.get("max_temperature"),
+                            "temperature_change_text": temperature_change_text,
+                            "morning_temperature": morning_temp,
                         }
                     )
                     saved_count += 1

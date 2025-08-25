@@ -46,6 +46,12 @@ class WeatherAdmin(admin.ModelAdmin):
                 "precipitation"
             )
         }),
+        ("아침 기온 비교", {
+            "fields": (
+                "morning_temperature",
+                "temperature_change_text"
+            )
+        }),
         ("날씨 상태", {
             "fields": (
                 "sky_code",
@@ -94,14 +100,12 @@ class WeatherAdmin(admin.ModelAdmin):
 
         sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
 
-        # 한국 시간대로 변환 추가
         import pytz
         kst = pytz.timezone("Asia/Seoul")
 
         for forecast in related_forecasts:
             style = "background-color: #ffffcc;" if forecast.pk == obj.pk else ""
 
-            # UTC 시간을 한국 시간으로 변환
             kst_time = forecast.forecast_time.astimezone(kst)
 
             html += f"<tr style='{style}'>"
@@ -138,6 +142,8 @@ class WeatherAdmin(admin.ModelAdmin):
         temp_html = f"<strong>{obj.temperature}°C</strong>"
         if obj.min_temperature and obj.max_temperature:
             temp_html += f"<br><small>{obj.min_temperature}° / {obj.max_temperature}°</small>"
+        if obj.temperature_change_text:
+            temp_html += f"<br><span style='color: #666;'>{obj.temperature_change_text}</span>"
         return format_html(temp_html)
 
     temperature_display.short_description = "기온"
