@@ -191,3 +191,8 @@ docker-compose.override.yml
 # 로그 파일들 (디렉토리는 추적, 파일은 제외)
 logs/*.log
 logs/*.out
+# Celery 파일들
+celerybeat-schedule
+celerybeat.pid
+celery.pid
+**/celery.py
