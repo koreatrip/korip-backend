@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "regions",
     "preferences",
     "weather",
+    "favoraites",
 ]
 
 MIDDLEWARE = [
