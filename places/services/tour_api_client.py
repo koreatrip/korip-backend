@@ -59,6 +59,7 @@ class TourAPIClient:
 
         # Rate Limit 관리
         self.last_request_time = 0
+        self.last_total_count = 0  # 페이지네이션용 전체 개수 저장
 
     def _make_request(self, endpoint: str, params: Dict, lang: str = "ko") -> Optional[Dict]:
         """
@@ -109,7 +110,13 @@ class TourAPIClient:
             if result_code != "0000":
                 return None
 
-            return data["response"].get("body", {})
+            body = data["response"].get("body", {})
+
+            # totalCount 저장 (페이지네이션용)
+            if "totalCount" in body:
+                self.last_total_count = body["totalCount"]
+
+            return body
 
         except Exception:
             return None

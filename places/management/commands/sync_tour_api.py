@@ -78,6 +78,17 @@ class Command(BaseCommand):
             default=1000,
             help="증분 모드 일일 수집 제한 (기본값: 1000)"
         )
+        parser.add_argument(
+            "--collect-all-pages",
+            action="store_true",
+            help="해당 지역의 모든 페이지 자동 수집 (페이지네이션)"
+        )
+        parser.add_argument(
+            "--max-total-items",
+            type=int,
+            default=10000,
+            help="전체 수집 제한 개수 (기본값: 10000)"
+        )
 
     def handle(self, *args, **options):
         limit = min(options["limit"], 1000)
@@ -91,6 +102,15 @@ class Command(BaseCommand):
         language = options["language"]
         incremental_all = options["incremental_all"]
         daily_limit = options["daily_limit"]
+
+        collect_all_pages = options["collect_all_pages"]
+        max_total_items = options["max_total_items"]
+
+        # 전체 페이지 수집 모드
+        if collect_all_pages:
+            return self.handle_collect_all_pages(
+                area_code, max_total_items, dry_run, collect_all, detail_delay, language
+            )
 
         # 증분 동기화 모드
         if incremental_all:
@@ -1114,6 +1134,89 @@ class Command(BaseCommand):
         self.stdout.write(f"\n지역 저장 결과:")
         self.stdout.write(f"   - 지역 매핑 성공: {stats['region_saved']}개")
         self.stdout.write(f"   - 지역 매핑 실패: {stats['region_failed']}개")
+
+    def handle_collect_all_pages(self, area_code, max_total_items, dry_run, collect_all, detail_delay, language):
+        self.stdout.write("투어 API 전체 페이지 수집 모드 시작")
+        self.stdout.write("=" * 60)
+
+        self.client = TourAPIClient()
+        self.mapper = CategoryMapper()
+        self.mapper.enable_all_regions()
+
+        if language == "all":
+            self.languages = ["ko", "en", "jp", "cn"]
+        else:
+            self.languages = [language]
+
+        try:
+            first_page_result = self.client.get_area_list_by_language(
+                area_code=area_code, page_no=1, num_of_rows=10, lang="ko"
+            )
+
+            if not first_page_result:
+                self.stdout.write("첫 페이지 데이터를 가져올 수 없습니다.")
+                return
+
+            total_count = getattr(self.client, 'last_total_count', 0)
+            if total_count == 0:
+                self.stdout.write("전체 데이터 개수를 확인할 수 없습니다.")
+                return
+
+            actual_limit = min(total_count, max_total_items)
+            per_page = 1000
+            total_pages = math.ceil(actual_limit / per_page)
+
+            self.stdout.write(f"전체 관광지: {total_count:,}개")
+            self.stdout.write(f"수집 예정: {actual_limit:,}개")
+            self.stdout.write(f"처리할 페이지: {total_pages}개")
+
+            if dry_run:
+                self.stdout.write("시뮬레이션 모드: 실제 저장하지 않음")
+                return
+
+            total_stats = {
+                "total_processed": 0, "created": 0, "updated": 0,
+                "skipped": 0, "errors": 0, "translations_created": 0, "translations_updated": 0
+            }
+
+            for page_no in range(1, total_pages + 1):
+                self.stdout.write(f"\n페이지 {page_no}/{total_pages} 처리 중...")
+
+                remaining_items = actual_limit - total_stats["total_processed"]
+                current_page_size = min(per_page, remaining_items)
+
+                try:
+                    page_stats = self.sync_places_multilang(
+                        limit=current_page_size, area_code=area_code, page=page_no,
+                        dry_run=dry_run, force_update=False,
+                        collect_all=collect_all, detail_delay=detail_delay
+                    )
+
+                    if page_stats:
+                        for key in total_stats:
+                            if key in page_stats:
+                                total_stats[key] += page_stats[key]
+
+                    self.stdout.write(f"페이지 {page_no}: 신규 {page_stats.get('created', 0)}개")
+
+                    if total_stats["total_processed"] >= actual_limit:
+                        self.stdout.write(f"목표 개수({actual_limit}개) 달성으로 수집 완료")
+                        break
+
+                    time.sleep(detail_delay)
+
+                except Exception as e:
+                    self.stdout.write(f"페이지 {page_no} 처리 실패: {e}")
+                    total_stats["errors"] += 1
+                    continue
+
+            self.stdout.write("\n" + "=" * 60)
+            self.stdout.write("전체 페이지 수집 완료")
+            self.print_summary(total_stats)
+
+        except Exception as e:
+            self.stdout.write(f"전체 페이지 수집 중 에러: {e}")
+            raise CommandError(f"수집 실패: {e}")
 
     def check_region_database_status(self):
         try:
