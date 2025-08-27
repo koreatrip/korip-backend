@@ -120,10 +120,6 @@ ipython_config.py
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
 # SageMath parsed files
 *.sage.py
 
@@ -191,8 +187,3 @@ docker-compose.override.yml
 # 로그 파일들 (디렉토리는 추적, 파일은 제외)
 logs/*.log
 logs/*.out
-# Celery 파일들
-celerybeat-schedule
-celerybeat.pid
-celery.pid
-**/celery.py

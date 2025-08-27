@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     "corsheaders",
     "drf_yasg",
-    # "django_celery_beat",
+    "django_celery_beat",
 
 
     "users",
@@ -146,7 +146,7 @@ TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # 지원 언어 설정 (다국어 서비스용)
 LANGUAGES = [
@@ -356,20 +356,30 @@ WEATHER_API_RATE_LIMITS = {
     "REQUESTS_PER_HOUR": 1000,  # 시간당 최대 요청 수
 }
 
-# # Celery Configuration
-# CELERY_BROKER_URL = "redis://redis:6379/0"
-# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
-# CELERY_ACCEPT_CONTENT = ["json"]
-# CELERY_TASK_SERIALIZER = "json"
-# CELERY_RESULT_SERIALIZER = "json"
-# CELERY_TIMEZONE = "Asia/Seoul"
-#
-# # 스케줄 설정 - 2시간마다 전국 날씨 수집
-# from celery.schedules import crontab
-# CELERY_BEAT_SCHEDULE = {
-#     "sync-weather-all-regions-every-2-hours": {
-#         "task": "weather.tasks.sync_weather_task",
-#         "schedule": crontab(minute=0, hour="*/2"),  # 2시간마다 정각 (0시, 2시, 4시, 6시, 8시, 10시, 12시, 14시, 16시, 18시, 20시, 22시)
-#         "args": (),  # 빈 튜플 = region_id=None = 전체 지역
-#     },
-# }
+# Celery Configuration
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Asia/Seoul"
+
+# 스케줄 설정 - 2시간마다 전국 날씨 수집
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    "sync-weather-all-regions-every-2-hours": {
+        "task": "weather.tasks.sync_weather_task",
+        "schedule": crontab(minute=0, hour="*/2"),  # 2시간마다 정각 (0시, 2시, 4시, 6시, 8시, 10시, 12시, 14시, 16시, 18시, 20시, 22시)
+        "args": (),  # 빈 튜플 = region_id=None = 전체 지역
+    },
+    "sync-tour-api-daily": {
+        "task": "places.tasks.sync_tour_api_daily",
+        "schedule": crontab(hour=3, minute=0),  # 매일 새벽 3시
+        "args": (),
+    },
+    "sync-tour-api-weekly": {
+        "task": "places.tasks.sync_tour_api_weekly",
+        "schedule": crontab(hour=1, minute=0, day_of_week=0),  # 매주 일요일 새벽 1시
+        "args": (),
+    },
+}

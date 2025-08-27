@@ -31,7 +31,7 @@ class WeatherAdmin(admin.ModelAdmin):
 
     list_per_page = 50
 
-    ordering = ["-forecast_time", "region", "sub_region"]
+    ordering = ["forecast_time", "region", "sub_region"]
 
     fieldsets = (
         ("지역 정보", {
@@ -121,10 +121,11 @@ class WeatherAdmin(admin.ModelAdmin):
     hourly_forecast_display.short_description = "같은 지역 시간별 예보 (15시간)"
 
     def forecast_time_display(self, obj):
+        display_time = obj.forecast_time
         return format_html(
             "<strong>{}</strong><br><small>{}</small>",
-            obj.forecast_time.strftime("%m월 %d일"),
-            obj.forecast_time.strftime("%H시")
+            display_time.strftime("%m월 %d일"),
+            display_time.strftime("%H시")
         )
 
     forecast_time_display.short_description = "예보 시간"
