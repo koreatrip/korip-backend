@@ -11,7 +11,7 @@ from regions.models import Region, SubRegion
 from regions.serializers import RegionSerializer, SubRegionSerializer
 from places.models import Place
 from places.serializers import PlaceSerializer
-from utils.pagination.custom_pagination import CustomPagination
+from utils.pagination.place_pagination import PlacePagination
 
 
 class PlacesListAPIView(APIView):
@@ -436,7 +436,7 @@ class PlaceDetailAPIView(APIView):
 
 class PlacesBySubRegionAPIView(APIView):
     permission_classes = [AllowAny]
-    pagination_class = CustomPagination
+    pagination_class = PlacePagination
 
     @swagger_auto_schema(
         operation_summary="서브지역별 명소 목록 조회",
@@ -539,32 +539,18 @@ class PlacesBySubRegionAPIView(APIView):
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
-        if page is not None:
-            serializer = PlaceSerializer(
-                page,
-                many=True,
-                context={"language": language}
-            )
-            # 페이지네이션 응답에서 results를 places로 변경
-            paginated_response = paginator.get_paginated_response(serializer.data)
-            if 'results' in paginated_response.data:
-                paginated_response.data['places'] = paginated_response.data.pop('results')
-            return paginated_response
-
         serializer = PlaceSerializer(
-            queryset,
+            page,
             many=True,
             context={"language": language}
         )
 
-        return Response({
-            "places": serializer.data
-        }, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class PlacesByCategoryIdAPIView(APIView):
     permission_classes = [AllowAny]
-    pagination_class = CustomPagination
+    pagination_class = PlacePagination
 
     @swagger_auto_schema(
         operation_summary="카테고리별 명소 목록 조회",
@@ -665,33 +651,19 @@ class PlacesByCategoryIdAPIView(APIView):
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
-
-        if page is not None:
-            serializer = PlaceSerializer(
-                page,
-                many=True,
-                context={"language": language}
-            )
-
-            paginated_response = paginator.get_paginated_response(serializer.data)
-            if 'results' in paginated_response.data:
-                paginated_response.data['places'] = paginated_response.data.pop('results')
-            return paginated_response
         
         serializer = PlaceSerializer(   
-            queryset,
+            page,
             many=True,
             context={"language": language}
         )
 
-        return Response({
-            "places": serializer.data
-        }, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class PlacesBySubCategoryIdAPIView(APIView):
     permission_classes = [AllowAny]
-    pagination_class = CustomPagination
+    pagination_class = PlacePagination
 
     @swagger_auto_schema(
         operation_summary="서브 카테고리별 명소 목록 조회",
@@ -804,24 +776,10 @@ class PlacesBySubCategoryIdAPIView(APIView):
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
-        if page is not None:
-            serializer = PlaceSerializer(
-                page,
-                many=True,
-                context={"language": language}
-            )
-
-            paginated_response = paginator.get_paginated_response(serializer.data)
-            if "results" in paginated_response.data:
-                paginated_response.data["places"] = paginated_response.data.pop("results")
-            return paginated_response
-
         serializer = PlaceSerializer(
-            queryset,
+            page,
             many=True,
             context={"language": language}
         )
 
-        return Response({
-            "places": serializer.data
-        }, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(serializer.data)

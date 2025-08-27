@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import FavoritePlace
+from favorites.models import FavoritePlace
 
 
 @admin.register(FavoritePlace)
