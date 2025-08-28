@@ -45,4 +45,5 @@ urlpatterns = [
     path("api/regions/", include("regions.urls")),
     path("api/places/", include("places.urls")),
     path("api/weather/", include("weather.urls")),
+    path("api/plans/", include("plans.urls")),
 ]
