@@ -26,7 +26,7 @@ class Command(BaseCommand):
             }},
             {"id": 3, "tour_api_code": "3", "translations": {
                 "ko": {"name": "대전광역시", "description": "대한민국의 미래를 여는 과학 도시", "feature": "대한민국 과학 기술의 심장부로, 대덕연구단지와 KAIST가 자리하고 있습니다. 국립중앙과학관에서 과학의 신비를 체험하고, 한밭수목원에서 도심 속 여유를 즐길 수 있는 지적인 매력의 도시입니다."},
-                "en": {"name": "Daejeon", "description": "Science and technology hub in central Korea", "feature": ""},
+                "en": {"name": "Daejeon", "description": "Science and technology hub in central Korea", "feature": "The heart of South Korea's science and technology, home to the Daedeok Innopolis and KAIST. It's a city of intellectual charm where you can explore the mysteries of science at the National Science Museum and enjoy urban leisure at Hanbat Arboretum."},
                 "jp": {"name": "大田広域市", "description": "大韓民国の未来を開く科学都市", "feature": "大韓民国科学技術の心臓部で、大徳研究団地とKAISTが位置しています。国立中央科学館で科学の神秘を体験し、ハンバッ樹木園で都心の中の余裕を楽しむことができる知的な魅力の都市です。"},
                 "cn": {"name": "大田广域市", "description": "开启韩国未来的科学之城", "feature": "作为韩国科学技术的心脏，大德研究园区和韩国科学技术院（KAIST）坐落于此。在国立中央科学馆体验科学的奥秘，在韩밭树木园享受都市中的闲暇，是一座充满知性魅力的城市。"}
             }},

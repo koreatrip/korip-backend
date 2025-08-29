@@ -222,5 +222,14 @@ celery-logs:
 test-weather-sync:
 	@echo "수동 날씨 동기화 테스트..."
 	$(DC) run web python manage.py shell -c "from weather.tasks import sync_weather_task; sync_weather_task.delay(1)"
+
+# 투어 API 수동 실행
+tour-sync:
+	docker-compose exec web python manage.py shell -c "from places.tasks import sync_tour_api_daily; sync_tour_api_daily()"
+
+# 매일 실행할 스크립트
+tour-sync-daily:
+	docker-compose exec web python manage.py shell -c "from places.tasks import sync_tour_api_daily; print('시작:', sync_tour_api_daily()); print('완료')"
+
 # 기본 명령어 (make만 입력 시)
 .DEFAULT_GOAL := help

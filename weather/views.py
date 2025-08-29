@@ -21,11 +21,11 @@ class WeatherBaseView:
     def _get_weather_condition(self, forecast):
         # 날씨 상태 텍스트 변환
         try:
-            if hasattr(forecast, 'sky_code'):
+            if hasattr(forecast, "sky_code"):
                 sky_code = forecast.sky_code
                 precipitation = forecast.precipitation_type
             else:
-                sky_code = forecast.get("sky_condition", 1)
+                sky_code = forecast.get("sky_code", 1)
                 precipitation = forecast.get("precipitation_type", 0)
 
             sky_code = int(sky_code) if sky_code is not None else 1

@@ -667,7 +667,7 @@ class PlacesBySubCategoryIdAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="서브 카테고리별 명소 목록 조회",
-        operation_description="특정 서브 카테고리의 명소 목록을 즐겨찾기 높은 순으로 조회합니다.",
+        operation_description="특정 서브 카테고리의 명소 목록을 즐겨찾기 높은 순으로 조회합니다. 지역 필터링이 가능합니다.",
         manual_parameters=[
             openapi.Parameter(
                 "subcategory_id",
@@ -683,6 +683,20 @@ class PlacesBySubCategoryIdAPIView(APIView):
                 type=openapi.TYPE_STRING,
                 default="ko",
                 enum=["ko", "en", "jp", "cn"]
+            ),
+            openapi.Parameter(
+                "region_id",
+                openapi.IN_QUERY,
+                description="지역 ID (선택사항)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                "subregion_id",
+                openapi.IN_QUERY,
+                description="서브지역 ID (선택사항)",
+                type=openapi.TYPE_INTEGER,
+                required=False
             ),
             openapi.Parameter(
                 "page",
@@ -757,12 +771,25 @@ class PlacesBySubCategoryIdAPIView(APIView):
     def get(self, request, subcategory_id):
         language = request.query_params.get("lang", "ko")
 
+        # 지역 필터링 파라미터 추가
+        region_id = request.query_params.get("region_id")
+        subregion_id = request.query_params.get("subregion_id")
+
         from categories.models import SubCategory
         get_object_or_404(SubCategory, id=subcategory_id)
 
-        queryset = Place.objects.filter(
-            sub_category_id=subcategory_id
-        ).order_by("-favorite_count", "id").prefetch_related("translations")
+        # 기본 쿼리: 서브카테고리별 필터링
+        queryset = Place.objects.filter(sub_category_id=subcategory_id)
+
+        # 지역 필터링 적용
+        if region_id:
+            queryset = queryset.filter(region_id=region_id)
+
+        if subregion_id:
+            queryset = queryset.filter(sub_region_id=subregion_id)
+
+        # 정렬 적용
+        queryset = queryset.order_by("-favorite_count", "id").prefetch_related("translations")
 
         # 빈 결과에 대한 처리
         if not queryset.exists():
@@ -781,5 +808,5 @@ class PlacesBySubCategoryIdAPIView(APIView):
             many=True,
             context={"language": language}
         )
-
+        
         return paginator.get_paginated_response(serializer.data)

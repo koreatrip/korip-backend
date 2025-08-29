@@ -125,33 +125,25 @@ class WeatherAPIClient:
         return complete_data
 
     def _filter_next_15_hours(self, forecast_data: List[Dict]) -> List[Dict]:
-        # 현재 시간부터 다음 15시간 데이터만 필터링
-
-        # 한국 시간대로 현재 시간 가져오기
         from django.utils import timezone
-        import pytz
 
-        kst = pytz.timezone('Asia/Seoul')
-        current_time = timezone.now().astimezone(kst)
-        current_hour = current_time.replace(minute=0, second=0, microsecond=0)
+        # USE_TZ = False이므로 naive datetime 사용
+        current_time = datetime.now().replace(minute=0, second=0, microsecond=0)
+        end_time = current_time + timedelta(hours=15)
 
-        # 15시간 후까지의 범위 계산
-        end_time = current_hour + timedelta(hours=15)
-
-        print(f"현재 시간 (KST): {current_time}")
-        print(f"필터링 시작: {current_hour}")
+        print(f"현재 시간: {current_time}")
+        print(f"필터링 시작: {current_time}")
         print(f"필터링 종료: {end_time}")
 
         filtered_data = []
 
         for forecast in forecast_data:
             try:
-                # 한국 시간대로 변환
+                # 시간대 정보 없이 파싱 (naive datetime)
                 forecast_datetime = datetime.strptime(forecast["forecast_time"], "%Y-%m-%d %H:%M:%S")
-                forecast_datetime = kst.localize(forecast_datetime)
 
-                # 현재 시간 이후이고 15시간 이내인 데이터만 포함
-                if current_hour < forecast_datetime <= end_time:
+                # naive datetime끼리 비교
+                if current_time < forecast_datetime <= end_time:
                     filtered_data.append(forecast)
                     print(f"포함: {forecast_datetime} -> {forecast.get('temperature')}°C")
                 else:
@@ -1362,47 +1354,50 @@ class WeatherAPIClient:
             )
 
     def _build_forecast_api_url(self, nx: int, ny: int) -> str:
-        # 단기예보 API 호출 URL 생성
         now = datetime.now()
 
         # 기상청 API 발표 시간: 02, 05, 08, 11, 14, 17, 20, 23시
         api_times = [2, 5, 8, 11, 14, 17, 20, 23]
 
-        # 현재 시간보다 이전의 가장 최근 발표 시간 찾기
         current_hour = now.hour
         base_time = None
+        base_date = now
 
+        # 현재 시간보다 이전의 가장 최근 발표 시간 찾기
         for time in reversed(api_times):
             if current_hour >= time:
                 base_time = time
                 break
 
-        # 발표 시간이 없으면 전날 23시 사용
+        # 새벽 0~1시면 전날 23시가 아니라 당일 02시를 기다리거나 현재 시간 기준 처리
         if base_time is None:
-            now = now - timedelta(days=1)
-            base_time = 23
+            if current_hour < 2:
+                # 새벽 0~1시면 전날 23시 사용하되, 현재 시간부터 필터링하도록 조정
+                base_date = now - timedelta(days=1)
+                base_time = 23
+            else:
+                base_time = 2
 
-        base_date = now.strftime("%Y%m%d")
+        base_date_str = base_date.strftime("%Y%m%d")
         base_time_str = f"{base_time:02d}00"
 
-        # API URL 생성
         url = f"{self.forecast_base_url}/getVilageFcst"
         params = {
             "serviceKey": self.api_key,
             "numOfRows": "1000",
             "pageNo": "1",
-            "base_date": base_date,
+            "base_date": base_date_str,
             "base_time": base_time_str,
             "nx": str(nx),
             "ny": str(ny),
             "dataType": "JSON"
         }
 
-        # URL에 파라미터 추가
         param_string = "&".join([f"{key}={value}" for key, value in params.items()])
         full_url = f"{url}?{param_string}"
 
         print(f"단기예보 API URL: {full_url}")
+        print(f"기준 시간: {base_date_str} {base_time_str}")
         return full_url
 
     def _call_api(self, url: str) -> Dict:
