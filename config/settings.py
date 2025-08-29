@@ -250,6 +250,18 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
 }
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT token을 "Bearer {token}" 형식으로 입력하세요'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
+
 # 개발 환경에서만 적용되는 설정들
 if DEBUG:
     # SQL 쿼리 로깅 (개발시 유용)
