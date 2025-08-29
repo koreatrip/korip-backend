@@ -33,6 +33,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    authentication_classes=[],
 )
 
 urlpatterns = [
@@ -45,5 +46,6 @@ urlpatterns = [
     path("api/regions/", include("regions.urls")),
     path("api/places/", include("places.urls")),
     path("api/weather/", include("weather.urls")),
+    path("api/favorites/", include("favorites.urls")),
     path("api/plans/", include("plans.urls")),
 ]

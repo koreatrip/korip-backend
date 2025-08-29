@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from regions.models import Region, SubRegion
 from regions.serializers import RegionSerializer, SubRegionSerializer
-from utils.pagination.custom_pagination import CustomPagination
+from utils.pagination.region_pagination import RegionPagination
 
 
 class RegionsListAPI(APIView):
@@ -131,7 +131,7 @@ class MajorRegionListAPI(APIView):
 
 class RegionDetailAPI(APIView):
    permission_classes = [AllowAny]
-   pagination_class = CustomPagination
+   pagination_class = RegionPagination
 
    @swagger_auto_schema(
        operation_summary="지역 상세 정보 조회",
