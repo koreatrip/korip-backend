@@ -1,5 +1,5 @@
 from django.contrib import admin
-from favorites.models import FavoritePlace
+from favorites.models import FavoritePlace, FavoriteSubRegion
 
 
 @admin.register(FavoritePlace)
@@ -82,6 +82,106 @@ class FavoritePlaceAdmin(admin.ModelAdmin):
             'user', 'place'
         ).prefetch_related(
             'place__category',  # 필요시 추가
+        )
+    
+    # 권한 관련 메소드들 (필요시 사용)
+    def has_add_permission(self, request):
+        """추가 권한"""
+        return request.user.is_superuser
+    
+    def has_change_permission(self, request, obj=None):
+        """수정 권한"""
+        return request.user.is_staff
+    
+    def has_delete_permission(self, request, obj=None):
+        """삭제 권한"""
+        return request.user.is_superuser
+    
+
+@admin.register(FavoriteSubRegion)
+class FavoriteSubRegionAdmin(admin.ModelAdmin):
+    """즐겨찾는 지역구 Admin 설정"""
+    
+    # 목록 페이지에 표시할 필드들
+    list_display = (
+        'id',
+        'get_user_nickname',
+        'get_region_name',
+        'get_subregion_name',
+        'get_favorite_count',
+        'created_at',
+    )
+    
+    # 필터링 옵션들
+    list_filter = (
+        'created_at',
+        'sub_region__region',
+    )
+    
+    # 검색 가능한 필드들
+    search_fields = (
+        'user__nickname',
+        'user__email',
+        'user__phone_number',
+        'sub_region__translations__name',
+        'sub_region__region__translations__name',
+    )
+    
+    # 상세 페이지 필드 순서
+    fields = ('user', 'sub_region', 'created_at')
+    
+    # 읽기 전용 필드
+    readonly_fields = ('created_at',)
+    
+    # 페이지당 표시할 항목 수
+    list_per_page = 25
+    
+    # 날짜별 계층구조 네비게이션
+    date_hierarchy = 'created_at'
+    
+    # 기본 정렬 순서
+    ordering = ('-created_at',)
+    
+    # 관련 객체를 미리 가져와서 쿼리 최적화
+    list_select_related = ('user', 'sub_region', 'sub_region__region')
+    
+    # 인라인에서 수정 가능한 필드들
+    autocomplete_fields = ['user', 'sub_region']  # 검색 가능한 드롭다운
+    
+    def get_user_nickname(self, obj):
+        """사용자 닉네임 표시"""
+        return obj.user.nickname
+    get_user_nickname.short_description = '사용자'
+    get_user_nickname.admin_order_field = 'user__nickname'
+    
+    def get_region_name(self, obj):
+        """지역명 표시"""
+        return obj.sub_region.region.get_name('ko') or f"Region {obj.sub_region.region.id}"
+    get_region_name.short_description = '지역'
+    get_region_name.admin_order_field = 'sub_region__region__translations__name'
+    
+    def get_subregion_name(self, obj):
+        """지역구명 표시"""
+        return obj.sub_region.get_name('ko') or f"SubRegion {obj.sub_region.id}"
+    get_subregion_name.short_description = '지역구'
+    get_subregion_name.admin_order_field = 'sub_region__translations__name'
+    
+    def get_favorite_count(self, obj):
+        """해당 지역구의 즐겨찾기 수 표시"""
+        return obj.sub_region.favorite_count
+    get_favorite_count.short_description = '즐겨찾기 수'
+    get_favorite_count.admin_order_field = 'sub_region__favorite_count'
+    
+    # 액션들
+    actions = ['delete_selected']
+    
+    def get_queryset(self, request):
+        """쿼리셋 최적화"""
+        return super().get_queryset(request).select_related(
+            'user', 'sub_region', 'sub_region__region'
+        ).prefetch_related(
+            'sub_region__translations',
+            'sub_region__region__translations',
         )
     
     # 권한 관련 메소드들 (필요시 사용)
