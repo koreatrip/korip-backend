@@ -288,3 +288,14 @@ class SyncProgress(models.Model):
         progress.total_collected += collected_count
         progress.save()
         return progress
+
+    @classmethod
+    def mark_completed(cls, area_code, language):
+        # 지역 완료 표시
+        progress, created = cls.objects.get_or_create(
+            area_code=area_code,
+            language=language
+        )
+        progress.is_completed = True
+        progress.save()
+        return progress

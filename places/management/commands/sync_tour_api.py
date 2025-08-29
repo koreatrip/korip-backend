@@ -288,8 +288,28 @@ class Command(BaseCommand):
                 if result:
                     # 진행 상태 업데이트
                     collected_count = result.get("created", 0) + result.get("updated", 0)
-                    if collected_count > 0:
-                        SyncProgress.update_progress(area_code, lang, next_page, collected_count)
+
+                    # 항상 페이지 진행 (중복이어도 다음 페이지로)
+                    SyncProgress.update_progress(area_code, lang, next_page, collected_count)
+
+                    # 연속 빈 페이지 체크
+                    if collected_count == 0:
+                        # 연속 빈 페이지 카운트 증가
+                        empty_key = f"empty_pages_{area_code}_{lang}"
+                        consecutive_empty = getattr(self, empty_key, 0) + 1
+                        setattr(self, empty_key, consecutive_empty)
+
+                        self.stdout.write(f"  [{lang.upper()}] 페이지 {next_page}: 중복 데이터만 ({consecutive_empty}회 연속)")
+
+                        # 5페이지 연속 중복이면 해당 지역-언어 중단
+                        if consecutive_empty >= 5:
+                            self.stdout.write(f"  [{lang.upper()}] 5페이지 연속 중복 → 지역 {area_code} 완료")
+                            SyncProgress.mark_completed(area_code, lang)
+                            continue  # break 대신 continue로 다음 언어 처리
+                    else:
+                        # 신규 데이터 있으면 연속 빈 페이지 리셋
+                        setattr(self, f"empty_pages_{area_code}_{lang}", 0)
+                        self.stdout.write(f"  [{lang.upper()}] 페이지 {next_page}: 신규 {collected_count}개 발견")
 
                     # 통계 합산
                     for key in area_stats:

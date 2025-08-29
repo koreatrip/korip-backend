@@ -42,6 +42,9 @@ from plans.serializers import (
                                 "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="계획 ID", example=1),
                                 "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID", example=1, x_nullable=True),
                                 "title": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 제목", example="성심당 뿌시기 여행"),
+                                "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="대전 맛집 탐방"),
+                                "destination": openapi.Schema(type=openapi.TYPE_STRING, description="선택한 여행지명", example="대전"),
+                                "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
                                 "start_date": openapi.Schema(type=openapi.TYPE_STRING, description="시작일", example="2025-07-05T10:00:00"),
                                 "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일", example="2025-07-07T10:00:00"),
                                 "created_at": openapi.Schema(type=openapi.TYPE_STRING, description="생성일", example="2025-07-05T10:00:00"),
@@ -63,7 +66,9 @@ from plans.serializers import (
         type=openapi.TYPE_OBJECT,
         required=["name", "subregion_id", "start_date", "end_date"],
         properties={
-            "name": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 이름", example="여행이름"),
+            "name": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 이름", example="하이라이스의 여행일기"),
+            "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="성심당 뿌시러 감"),
+            "destination": openapi.Schema(type=openapi.TYPE_STRING, description="선택한 여행지명", example="지역명을 검색해보세요 (예: 서울)"),
             "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
             "start_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE, description="시작일", example="2025-07-05"),
             "end_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE, description="종료일", example="2025-07-07"),
@@ -94,19 +99,9 @@ def plan_list_create(request):
     elif request.method == "POST":
         serializer = TravelPlanCreateSerializer(data=request.data)
         if serializer.is_valid():
-            travel_plan = TravelPlan.objects.create(
-                user_id=request.user.id,
-                start_date=serializer.validated_data["start_date"],
-                end_date=serializer.validated_data["end_date"]
-            )
-
-            TravelPlanTranslation.objects.create(
-                travel_plan=travel_plan,
-                lang="ko",
-                title=serializer.validated_data["name"]
-            )
-
-            return Response(status=status.HTTP_201_CREATED)
+            # serializer의 create 메소드를 사용 (subregion_id 포함)
+            travel_plan = serializer.save(user_id=request.user.id)
+            return Response({"id": travel_plan.id}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -132,7 +127,13 @@ def plan_list_create(request):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="계획 ID", example=1),
+                    "title": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 제목", example="하이라이스의 여행일기"),
+                    "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="대전 맛집 탐방"),
+                    "destination": openapi.Schema(type=openapi.TYPE_STRING, description="선택한 여행지명", example="대전"),
                     "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID", example=1, x_nullable=True),
+                    "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
+                    "start_date": openapi.Schema(type=openapi.TYPE_STRING, description="시작일", example="2025-07-05"),
+                    "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일", example="2025-07-07"),
                     "plan_places": openapi.Schema(
                         type=openapi.TYPE_ARRAY,
                         items=openapi.Schema(
@@ -165,7 +166,9 @@ def plan_list_create(request):
                                 "updated_at": openapi.Schema(type=openapi.TYPE_STRING, description="수정일", example="2025-07-05T10:00:00"),
                             }
                         )
-                    )
+                    ),
+                    "created_at": openapi.Schema(type=openapi.TYPE_STRING, description="생성일", example="2025-07-05T10:00:00"),
+                    "updated_at": openapi.Schema(type=openapi.TYPE_STRING, description="수정일", example="2025-07-05T10:00:00"),
                 }
             )
         )
