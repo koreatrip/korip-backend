@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.db import transaction, IntegrityError
 from places.models import Place
-from .models import FavoritePlace
+from regions.models import SubRegion
+from favorites.models import FavoritePlace, FavoriteSubRegion
 from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import RequestError, ServerError
 
@@ -142,3 +143,98 @@ class FavoritePlaceListSerializer(serializers.ModelSerializer):
             "id": obj.place.sub_region.id,
             "name": obj.place.get_sub_region_name(self.get_language())
         }
+
+
+class FavoriteSubRegionSerializer(serializers.Serializer):
+    """지역구 즐겨찾기 토글 시리얼라이저 (시그널 버전)"""
+    sub_region_id = serializers.IntegerField()
+    is_favorite = serializers.BooleanField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    
+    def validate_sub_region_id(self, value):
+        """지역구 존재 여부 확인"""
+        try:
+            SubRegion.objects.get(id=value)
+        except SubRegion.DoesNotExist:
+            raise RequestError(ErrorCode.INVALID_DATA, message="존재하지 않는 지역구입니다.")
+        return value
+    
+    @transaction.atomic
+    def toggle_favorite(self, user):
+        """즐겨찾기 토글 DB 로직 (시그널이 자동으로 favorite_count 업데이트)"""
+        try:
+            sub_region_id = self.validated_data['sub_region_id']
+            sub_region = SubRegion.objects.get(id=sub_region_id)
+            
+            favorite = FavoriteSubRegion.objects.filter(
+                user=user,
+                sub_region=sub_region
+            ).first()
+            
+            if favorite:
+                # 즐겨찾기 삭제 (post_delete 시그널이 자동으로 favorite_count 감소)
+                favorite.delete()
+                return {
+                    'is_favorite': False,
+                    'message': '지역구 즐겨찾기에서 제거했습니다.'
+                }
+            else:
+                # 즐겨찾기 추가 (post_save 시그널이 자동으로 favorite_count 증가)
+                try:
+                    FavoriteSubRegion.objects.create(user=user, sub_region=sub_region)
+                    return {
+                        'is_favorite': True,
+                        'message': '지역구 즐겨찾기에 추가했습니다.'
+                    }
+                except IntegrityError:
+                    # unique_together 제약 위반 (동시 요청 등)
+                    raise RequestError(ErrorCode.INVALID_DATA, message="이미 즐겨찾기에 추가된 지역구입니다.")
+                    
+        except SubRegion.DoesNotExist:
+            raise RequestError(ErrorCode.INVALID_DATA, message="존재하지 않는 지역구입니다.")
+        except Exception as e:
+            # 예상치 못한 에러
+            raise ServerError(ErrorCode.SERVER_ERROR)
+
+
+class FavoriteSubRegionListSerializer(serializers.ModelSerializer):
+    """FavoriteSubRegion 관계를 시리얼라이즈하는 방법"""
+
+    id = serializers.IntegerField(source='sub_region.id')
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    features = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    favorite_count = serializers.IntegerField(source='sub_region.favorite_count')
+    created_at = serializers.DateTimeField(source='sub_region.created_at')  # SubRegion 생성일
+    updated_at = serializers.DateTimeField(source='sub_region.updated_at')  # SubRegion 수정일
+    favorited_at = serializers.DateTimeField(source='created_at')  # 즐겨찾기 등록일
+
+    class Meta:
+        model = FavoriteSubRegion
+        fields = [
+            'id', 'name', 'description', 'features',
+            'latitude', 'longitude', 'favorite_count', 
+            'created_at', 'updated_at', 'favorited_at'
+        ]
+
+    def get_language(self):
+        return self.context.get("language", "ko")
+
+    def get_name(self, obj):
+        return obj.sub_region.get_name(self.get_language())
+
+    def get_description(self, obj):
+        return obj.sub_region.get_description(self.get_language())
+
+    def get_features(self, obj):
+        return obj.sub_region.get_features(self.get_language())
+
+    def get_latitude(self, obj):
+        """지역구의 위도 반환 (호환성 프로퍼티 사용)"""
+        return obj.sub_region.latitude
+
+    def get_longitude(self, obj):
+        """지역구의 경도 반환 (호환성 프로퍼티 사용)"""
+        return obj.sub_region.longitude
