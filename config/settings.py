@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "regions",
     "preferences",
     "weather",
+    "favorites",
 ]
 
 MIDDLEWARE = [
@@ -210,8 +211,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
-    "DEFAULT_PAGINATION_CLASS": "utils.pagination.custom_pagination.CustomPagination",
-    "PAGE_SIZE": 24
 }
 
 SIMPLE_JWT = {
@@ -249,6 +248,18 @@ SIMPLE_JWT = {
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT token을 "Bearer {token}" 형식으로 입력하세요'
+        }
+    },
+    'USE_SESSION_AUTH': False,
 }
 
 # 개발 환경에서만 적용되는 설정들
