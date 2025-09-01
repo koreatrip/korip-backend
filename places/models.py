@@ -145,10 +145,6 @@ class Place(models.Model):
             return self.sub_region.get_name(lang)
         return ""
 
-    def update_favorite_count(self):
-        # TODO: UserFavoritePlace 모델 구현 후 활성화
-        pass
-
     def get_name(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
