@@ -145,12 +145,6 @@ class Place(models.Model):
             return self.sub_region.get_name(lang)
         return ""
 
-    def update_favorite_count(self):
-        from favorites.models import FavoritePlace
-        count = FavoritePlace.objects.filter(place=self).count()
-        self.favorite_count = count
-        self.save(update_fields=['favorite_count'])
-
     def get_name(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
