@@ -146,8 +146,8 @@ class Place(models.Model):
         return ""
 
     def update_favorite_count(self):
-        from places.models import UserFavoritePlace
-        count = UserFavoritePlace.objects.filter(place_id=self.id).count()
+        from favorites.models import FavoritePlace
+        count = FavoritePlace.objects.filter(place=self).count()
         self.favorite_count = count
         self.save(update_fields=['favorite_count'])
 
@@ -301,17 +301,3 @@ class SyncProgress(models.Model):
         progress.is_completed = True
         progress.save()
         return progress
-
-class UserFavoritePlace(models.Model):
-    user_id = models.BigIntegerField(verbose_name="사용자 ID")
-    place_id = models.BigIntegerField(verbose_name="관광지 ID")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-
-    class Meta:
-        db_table = "user_favorite_place"
-        verbose_name = "사용자 즐겨찾기 관광지"
-        verbose_name_plural = "사용자 즐겨찾기 관광지들"
-        unique_together = ["user_id", "place_id"]  # 중복 방지
-
-    def __str__(self):
-        return f"User {self.user_id} → Place {self.place_id}"

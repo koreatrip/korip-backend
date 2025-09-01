@@ -17,42 +17,39 @@ from plans.serializers import (
 
 def get_user_favorite_places(user_id, lang="ko"):
     """사용자의 즐겨찾기 관광지 목록 가져오기"""
-    from places.models import UserFavoritePlace, Place, PlaceTranslation
+    from favorites.models import FavoritePlace
+    from places.models import Place, PlaceTranslation
 
     favorite_places = []
-    favorite_relations = UserFavoritePlace.objects.filter(user_id=user_id)
+    favorite_relations = FavoritePlace.objects.filter(user_id=user_id).select_related('place')
 
     for favorite in favorite_relations:
+        place = favorite.place
+
         try:
-            place = Place.objects.get(id=favorite.place_id)
+            translation = PlaceTranslation.objects.get(place=place, lang=lang)
+            place_name = translation.name
+            place_address = translation.address
+            place_description = translation.description
+        except PlaceTranslation.DoesNotExist:
+            place_name = ""
+            place_address = ""
+            place_description = ""
 
-            try:
-                translation = PlaceTranslation.objects.get(place=place, lang=lang)
-                place_name = translation.name
-                place_address = translation.address
-                place_description = translation.description
-            except PlaceTranslation.DoesNotExist:
-                place_name = ""
-                place_address = ""
-                place_description = ""
-
-            favorite_places.append({
-                "place_id": place.id,
-                "content_id": place.content_id,
-                "name": place_name,
-                "address": place_address,
-                "description": place_description,
-                "latitude": float(place.latitude) if place.latitude else None,
-                "longitude": float(place.longitude) if place.longitude else None,
-                "phone_number": place.phone_number,
-                "use_time": place.use_time,
-                "link_url": place.link_url,
-                "favorite_count": place.favorite_count,
-                "favorited_at": favorite.created_at
-            })
-
-        except Place.DoesNotExist:
-            continue
+        favorite_places.append({
+            "place_id": place.id,
+            "content_id": place.content_id,
+            "name": place_name,
+            "address": place_address,
+            "description": place_description,
+            "latitude": float(place.latitude) if place.latitude else None,
+            "longitude": float(place.longitude) if place.longitude else None,
+            "phone_number": place.phone_number,
+            "use_time": place.use_time,
+            "link_url": place.link_url,
+            "favorite_count": place.favorite_count,
+            "favorited_at": favorite.created_at
+        })
 
     favorite_places.sort(key=lambda x: x["favorited_at"], reverse=True)
     return favorite_places
@@ -60,64 +57,88 @@ def get_user_favorite_places(user_id, lang="ko"):
 
 def get_user_favorite_regions(user_id, lang="ko"):
     """사용자의 즐겨찾기 지역 목록 가져오기"""
-    from places.models import UserFavoritePlace, Place
+    from favorites.models import FavoritePlace, FavoriteSubRegion
     from regions.models import SubRegion, SubRegionTranslation
     from collections import defaultdict
 
-    favorite_relations = UserFavoritePlace.objects.filter(user_id=user_id)
+    # 방법 1: 즐겨찾기한 관광지를 기반으로 지역 그룹화
+    favorite_places = FavoritePlace.objects.filter(user_id=user_id).select_related('place')
     region_counts = defaultdict(int)
     region_info = {}
 
-    for favorite in favorite_relations:
-        try:
-            place = Place.objects.get(id=favorite.place_id)
+    for favorite in favorite_places:
+        place = favorite.place
 
-            if hasattr(place, 'region') and place.region:
-                region_id = place.region.id
-            elif hasattr(place, 'region_id') and place.region_id:
-                region_id = place.region_id
-            else:
-                continue
-
-            if hasattr(place, 'sub_region') and place.sub_region:
-                subregion_id = place.sub_region.id
-            elif hasattr(place, 'sub_region_id') and place.sub_region_id:
-                subregion_id = place.sub_region_id
-            else:
-                continue
-
-            region_counts[subregion_id] += 1
-
-            if subregion_id not in region_info:
-                try:
-                    subregion = SubRegion.objects.get(id=subregion_id)
-
-                    try:
-                        translation = SubRegionTranslation.objects.get(
-                            sub_region=subregion, lang=lang
-                        )
-                        region_name = translation.name
-                        region_description = translation.description
-                    except SubRegionTranslation.DoesNotExist:
-                        region_name = ""
-                        region_description = ""
-
-                    region_info[subregion_id] = {
-                        "subregion_id": subregion_id,
-                        "region_id": region_id,
-                        "name": region_name,
-                        "description": region_description,
-                        "favorite_places_count": 0
-                    }
-                except SubRegion.DoesNotExist:
-                    continue
-
-        except Place.DoesNotExist:
+        if hasattr(place, 'region') and place.region:
+            region_id = place.region.id
+        elif hasattr(place, 'region_id') and place.region_id:
+            region_id = place.region_id
+        else:
             continue
+
+        if hasattr(place, 'sub_region') and place.sub_region:
+            subregion_id = place.sub_region.id
+        elif hasattr(place, 'sub_region_id') and place.sub_region_id:
+            subregion_id = place.sub_region_id
+        else:
+            continue
+
+        region_counts[subregion_id] += 1
+
+        if subregion_id not in region_info:
+            try:
+                subregion = SubRegion.objects.get(id=subregion_id)
+
+                try:
+                    translation = SubRegionTranslation.objects.get(
+                        sub_region=subregion, lang=lang
+                    )
+                    region_name = translation.name
+                    region_description = translation.description
+                except SubRegionTranslation.DoesNotExist:
+                    region_name = ""
+                    region_description = ""
+
+                region_info[subregion_id] = {
+                    "subregion_id": subregion_id,
+                    "region_id": region_id,
+                    "name": region_name,
+                    "description": region_description,
+                    "favorite_places_count": 0
+                }
+            except SubRegion.DoesNotExist:
+                continue
 
     for subregion_id, count in region_counts.items():
         if subregion_id in region_info:
             region_info[subregion_id]["favorite_places_count"] = count
+
+    # 방법 2: 직접 즐겨찾기한 지역구들 추가 (FavoriteSubRegion 사용)
+    favorite_subregions = FavoriteSubRegion.objects.filter(user_id=user_id).select_related('sub_region')
+
+    for favorite in favorite_subregions:
+        subregion = favorite.sub_region
+        subregion_id = subregion.id
+
+        try:
+            translation = SubRegionTranslation.objects.get(
+                sub_region=subregion, lang=lang
+            )
+            region_name = translation.name
+            region_description = translation.description
+        except SubRegionTranslation.DoesNotExist:
+            region_name = ""
+            region_description = ""
+
+        # 기존에 관광지 기반으로 추가된 지역이 아니면 새로 추가
+        if subregion_id not in region_info:
+            region_info[subregion_id] = {
+                "subregion_id": subregion_id,
+                "region_id": subregion.region.id,
+                "name": region_name,
+                "description": region_description,
+                "favorite_places_count": 0  # 직접 즐겨찾기한 지역구는 0
+            }
 
     favorite_regions = list(region_info.values())
     favorite_regions.sort(key=lambda x: x["favorite_places_count"], reverse=True)
