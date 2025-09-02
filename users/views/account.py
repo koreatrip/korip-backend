@@ -303,16 +303,38 @@ class UserInfoAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        operation_summary="사용자 정보 조회",
-        operation_description="현재 인증된 사용자의 정보를 조회합니다. 이메일과 전화번호 등의 중요한 정보는 마스킹되어 반환됩니다.",
+        operation_summary="사용자 정보 수정",
+        operation_description="현재 인증된 사용자의 정보를 수정합니다. 이름, 전화번호, 관심사 등을 부분적으로 업데이트할 수 있습니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'name': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='사용자 이름',
+                    example='홍길동'
+                ),
+                'phone_number': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='전화번호 (국가코드 포함)',
+                    example='8201012345678'
+                ),
+                'preferences': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_INTEGER),
+                    description='관심사 ID 배열',
+                    example=[1, 2, 3, 7, 8, 9]
+                ),
+            },
+            required=[],  # 모든 필드가 선택적이므로 빈 배열
+        ),
         responses={
             200: openapi.Response(
-                description="사용자 정보 조회 성공",
+                description="사용자 정보 수정 성공",
                 examples={
                     "application/json": {
                         "id": 3,
                         "email": "test@test.com",
-                        "name": "testuser",
+                        "name": "홍길동",  # 수정된 이름
                         "phone_number": "8201012345678",
                         "login_type": "email",
                         "is_social": False,
@@ -327,6 +349,18 @@ class UserInfoAPIView(APIView):
                             {"id": 8, "name": "바다"},
                             {"id": 9, "name": "강"}
                         ]
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="잘못된 요청",
+                examples={
+                    "application/json": {
+                        "error_code": "VALIDATION_ERROR",
+                        "error_message": "입력값이 올바르지 않습니다.",
+                        "details": {
+                            "phone_number": ["올바른 전화번호 형식이 아닙니다."]
+                        }
                     }
                 }
             ),
