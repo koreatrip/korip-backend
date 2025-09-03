@@ -211,13 +211,14 @@ help:
 	@echo "  make up              # 서버 실행"
 	@echo "  make test            # 테스트 실행"
 
+
 # Celery 관련
 celery:
 	@echo "Celery 시작 중..."
-	$(DC) up -d celery celery-beat
+	$(DC) up -d celery-beat celery-worker
 
 celery-logs:
-	$(DC) logs -f celery celery-beat
+	$(DC) logs -f celery-beat celery-worker
 
 test-weather-sync:
 	@echo "수동 날씨 동기화 테스트..."

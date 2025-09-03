@@ -7,12 +7,11 @@ class TravelPlanListSerializer(serializers.ModelSerializer):
     """여행 계획 목록용 시리얼라이저"""
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    destination = serializers.SerializerMethodField()
     region_id = serializers.SerializerMethodField()
 
     class Meta:
         model = TravelPlan
-        fields = ["id", "region_id", "title", "description", "destination", "subregion_id", "start_date", "end_date",
+        fields = ["id", "region_id", "title", "description", "subregion_id",
                   "created_at", "updated_at"]
 
     def get_title(self, obj):
@@ -24,11 +23,6 @@ class TravelPlanListSerializer(serializers.ModelSerializer):
         """요청 언어에 맞는 설명 반환"""
         lang = self.context.get("lang", "ko")
         return obj.get_description(lang)
-
-    def get_destination(self, obj):
-        """요청 언어에 맞는 여행지 반환"""
-        lang = self.context.get("lang", "ko")
-        return obj.get_destination(lang)
 
     def get_region_id(self, obj):
         """첫 번째 관광지의 region_id 반환"""
@@ -109,13 +103,12 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
     """여행 계획 상세 시리얼라이저"""
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    destination = serializers.SerializerMethodField()
     region_id = serializers.SerializerMethodField()
     plan_places = PlanPlaceDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = TravelPlan
-        fields = ["id", "title", "description", "destination", "region_id", "subregion_id", "start_date", "end_date",
+        fields = ["id", "title", "description", "region_id", "subregion_id", "start_date", "end_date",
                   "plan_places", "created_at", "updated_at"]
 
     def get_title(self, obj):
@@ -127,11 +120,6 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
         """요청 언어에 맞는 설명 반환"""
         lang = self.context.get("lang", "ko")
         return obj.get_description(lang)
-
-    def get_destination(self, obj):
-        """요청 언어에 맞는 여행지 반환"""
-        lang = self.context.get("lang", "ko")
-        return obj.get_destination(lang)
 
     def get_region_id(self, obj):
         """첫 번째 관광지의 region_id 반환"""
@@ -150,20 +138,16 @@ class TravelPlanCreateSerializer(serializers.Serializer):
     """여행 계획 생성용 시리얼라이저"""
     name = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, required=False)
-    destination = serializers.CharField(max_length=200, allow_blank=True, required=False)
     subregion_id = serializers.IntegerField()
-    start_date = serializers.DateField()
-    end_date = serializers.DateField()
 
     def create(self, validated_data):
         """여행 계획 생성"""
         translation_data = {
             'title': validated_data.pop('name'),
             'description': validated_data.pop('description', ''),
-            'destination': validated_data.pop('destination', ''),
         }
 
-        # TravelPlan 생성 (user_id는 view에서 추가)
+        # TravelPlan 생성
         travel_plan = TravelPlan.objects.create(**validated_data)
 
         # 한국어 번역 생성
