@@ -43,7 +43,7 @@ services:
      - WEATHER_API_KEY=${WEATHER_API_KEY}
      - USE_HTTPS=${USE_HTTPS:-True}  # 기본값 True (운영환경)
 
- celery:
+ celery-beat:
    build: .
    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
    volumes:
@@ -59,9 +59,9 @@ services:
      - USE_HTTPS=${USE_HTTPS:-True}
    restart: unless-stopped
 
- celery-beat:
+ celery-worker:
    build: .
-   command: celery -A config beat --loglevel=info
+   command: celery -A config worker --loglevel=info
    volumes:
      - .:/app
    depends_on:
