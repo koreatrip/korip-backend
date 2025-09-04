@@ -20,8 +20,18 @@ class TravelPlan(models.Model):
         verbose_name="서브지역 ID"
     )
 
-    start_date = models.DateField(verbose_name="시작일")
-    end_date = models.DateField(verbose_name="종료일")
+    # 어드민용 날짜 필드
+    start_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="시작일"
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="종료일"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
@@ -50,14 +60,6 @@ class TravelPlan(models.Model):
         except TravelPlanTranslation.DoesNotExist:
             return ""
 
-    def get_destination(self, lang="ko"):
-        """언어별 여행지 조회"""
-        try:
-            translation = self.translations.get(lang=lang)
-            return translation.destination
-        except TravelPlanTranslation.DoesNotExist:
-            return ""
-
 
 class TravelPlanTranslation(models.Model):
     """여행 계획 다국어 번역"""
@@ -79,11 +81,6 @@ class TravelPlanTranslation(models.Model):
     description = models.TextField(
         blank=True,
         verbose_name="여행 설명"
-    )
-    destination = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="여행지"
     )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
