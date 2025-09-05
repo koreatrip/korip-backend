@@ -218,16 +218,21 @@ def get_user_favorite_regions(user_id, lang="ko"):
                             type=openapi.TYPE_OBJECT,
                             properties={
                                 "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID", example=1),
-                                "region_name": openapi.Schema(type=openapi.TYPE_STRING, description="지역명", example="서울"),
+                                "region_name": openapi.Schema(type=openapi.TYPE_STRING, description="지역명",
+                                                              example="서울"),
                                 "subregions": openapi.Schema(
                                     type=openapi.TYPE_ARRAY,
                                     description="해당 지역의 즐겨찾기 지역구 목록",
                                     items=openapi.Schema(
                                         type=openapi.TYPE_OBJECT,
                                         properties={
-                                            "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=695),
-                                            "name": openapi.Schema(type=openapi.TYPE_STRING, description="지역구명", example="종로구"),
-                                            "favorite_places_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="해당 지역구의 즐겨찾기 장소 수", example=3),
+                                            "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER,
+                                                                           description="서브지역 ID", example=695),
+                                            "name": openapi.Schema(type=openapi.TYPE_STRING, description="지역구명",
+                                                                   example="종로구"),
+                                            "favorite_places_count": openapi.Schema(type=openapi.TYPE_INTEGER,
+                                                                                    description="해당 지역구의 즐겨찾기 장소 수",
+                                                                                    example=3),
                                         }
                                     )
                                 )
@@ -243,7 +248,17 @@ def get_user_favorite_regions(user_id, lang="ko"):
 @swagger_auto_schema(
     method="post",
     operation_summary="여행 계획 생성",
-    operation_description="새로운 여행 계획을 생성합니다. 지역은 subregion_id로만 처리됩니다.",
+    operation_description="새로운 여행 계획을 생성합니다. lang 파라미터로 언어를 지정할 수 있습니다.",
+    manual_parameters=[
+        openapi.Parameter(
+            "lang",
+            openapi.IN_QUERY,
+            description="언어 코드 (기본값: ko)",
+            type=openapi.TYPE_STRING,
+            default="ko",
+            enum=["ko", "en", "jp", "cn"]
+        )
+    ],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         required=["name", "subregion_id"],
@@ -281,9 +296,13 @@ def plan_list_create(request):
         }, status=status.HTTP_200_OK)
 
     elif request.method == "POST":
+        # 언어 코드 가져오기 (생성할 언어 지정)
+        lang = request.GET.get("lang", "ko")
+
         serializer = TravelPlanCreateSerializer(data=request.data)
         if serializer.is_valid():
-            travel_plan = serializer.save(user_id=request.user.id)
+            # context에 lang 추가해서 다국어 지원
+            travel_plan = serializer.save(user_id=request.user.id, lang=lang)
             return Response({"id": travel_plan.id}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -315,8 +334,10 @@ def plan_list_create(request):
                     "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID", example=1,
                                                 x_nullable=True),
                     "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
-                    "start_date": openapi.Schema(type=openapi.TYPE_STRING, description="시작일 (어드민 전용)", example="2025-07-05", x_nullable=True),
-                    "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일 (어드민 전용)", example="2025-07-07", x_nullable=True),
+                    "start_date": openapi.Schema(type=openapi.TYPE_STRING, description="시작일 (어드민 전용)",
+                                                 example="2025-07-05", x_nullable=True),
+                    "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일 (어드민 전용)",
+                                               example="2025-07-07", x_nullable=True),
                     "plan_places": openapi.Schema(
                         type=openapi.TYPE_ARRAY,
                         items=openapi.Schema(
@@ -377,7 +398,8 @@ def plan_list_create(request):
                             properties={
                                 "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID", example=1),
                                 "name": openapi.Schema(type=openapi.TYPE_STRING, description="관광지명", example="가로수길"),
-                                "address": openapi.Schema(type=openapi.TYPE_STRING, description="주소", example="서울시 강남구"),
+                                "address": openapi.Schema(type=openapi.TYPE_STRING, description="주소",
+                                                          example="서울시 강남구"),
                             }
                         )
                     ),
@@ -460,3 +482,130 @@ def plan_detail(request, plan_id):
             return Response(status=status_code)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_summary="여행 계획 PDF 데이터 조회",
+    operation_description="PDF 생성에 필요한 여행 계획 데이터를 JSON으로 반환합니다. 프론트엔드에서 PDF 생성 시 사용됩니다.",
+    manual_parameters=[
+        openapi.Parameter(
+            "lang",
+            openapi.IN_QUERY,
+            description="언어 코드 (기본값: ko)",
+            type=openapi.TYPE_STRING,
+            default="ko",
+            enum=["ko", "en", "jp", "cn"]
+        )
+    ],
+    responses={
+        200: openapi.Response(
+            description="PDF 데이터 조회 성공",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "title": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 제목", example="하이라이스의 여행일기"),
+                    "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="성심당 뿌시러 감"),
+                    "schedule": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        description="일정 목록",
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "day": openapi.Schema(type=openapi.TYPE_INTEGER, description="일차", example=1),
+                                "date": openapi.Schema(type=openapi.TYPE_STRING, description="날짜",
+                                                       example="2025-09-06"),
+                                "places": openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    description="해당 날짜의 관광지 목록",
+                                    items=openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "time": openapi.Schema(type=openapi.TYPE_STRING, description="시간",
+                                                                   example="09:00"),
+                                            "place_name": openapi.Schema(type=openapi.TYPE_STRING, description="장소명",
+                                                                         example="마라도(마라해양도립공원)"),
+                                            "category": openapi.Schema(type=openapi.TYPE_STRING, description="카테고리",
+                                                                       example="관광지"),
+                                            "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID",
+                                                                       example=6939)
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                    ),
+                    "created_at": openapi.Schema(type=openapi.TYPE_STRING, description="생성일",
+                                                 example="2025-09-05T20:13:00"),
+                    "lang": openapi.Schema(type=openapi.TYPE_STRING, description="언어 코드", example="ko")
+                }
+            )
+        ),
+        404: openapi.Response(description="여행 계획을 찾을 수 없음")
+    },
+    tags=["여행계획"]
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def plan_pdf_data(request, plan_id):
+    """여행 계획 PDF 데이터 조회 - 프론트에서 PDF 생성용"""
+    travel_plan = get_object_or_404(TravelPlan, id=plan_id, user_id=request.user.id)
+    lang = request.GET.get("lang", "ko")
+
+    # 관광지 목록 가져오기
+    plan_places = travel_plan.plan_places.all().order_by("visit_date", "visit_time")
+
+    # 날짜별로 그룹화
+    from collections import defaultdict
+    places_by_date = defaultdict(list)
+
+    for plan_place in plan_places:
+        try:
+            from places.models import Place, PlaceTranslation
+            place = Place.objects.get(id=plan_place.place_id)
+
+            # 장소명 가져오기 (여러 언어 시도)
+            place_name = f"Place {place.id}"
+            languages_to_try = [lang, 'ko', 'cn', 'en', 'jp']
+
+            for try_lang in languages_to_try:
+                try:
+                    translation = PlaceTranslation.objects.get(place=place, lang=try_lang)
+                    place_name = translation.name
+                    break
+                except PlaceTranslation.DoesNotExist:
+                    continue
+
+            places_by_date[plan_place.visit_date.isoformat()].append({
+                "time": plan_place.visit_time.strftime("%H:%M") if plan_place.visit_time else "-",
+                "place_name": place_name,
+                "category": "관광지",  # 또는 실제 카테고리 데이터
+                "place_id": place.id
+            })
+
+        except Place.DoesNotExist:
+            places_by_date[plan_place.visit_date.isoformat()].append({
+                "time": plan_place.visit_time.strftime("%H:%M") if plan_place.visit_time else "-",
+                "place_name": f"Place ID: {plan_place.place_id}",
+                "category": "-",
+                "place_id": plan_place.place_id
+            })
+
+    # 일정 데이터 구성
+    schedule = []
+    day_counter = 1
+    for visit_date in sorted(places_by_date.keys()):
+        schedule.append({
+            "day": day_counter,
+            "date": visit_date,
+            "places": places_by_date[visit_date]
+        })
+        day_counter += 1
+
+    return Response({
+        "title": travel_plan.get_title(lang) or "여행 계획",
+        "description": travel_plan.get_description(lang),
+        "schedule": schedule,
+        "created_at": travel_plan.created_at.isoformat(),
+        "lang": lang
+    })
