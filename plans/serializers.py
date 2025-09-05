@@ -25,14 +25,13 @@ class TravelPlanListSerializer(serializers.ModelSerializer):
         return obj.get_description(lang)
 
     def get_region_id(self, obj):
-        """첫 번째 관광지의 region_id 반환"""
-        first_plan_place = obj.plan_places.first()
-        if first_plan_place:
+        """subregion_id로부터 region_id 동적 계산"""
+        if obj.subregion_id:
             try:
-                place = Place.objects.get(id=first_plan_place.place_id)
-                return place.region_id if hasattr(place, "region_id") else place.region.id if hasattr(place,
-                                                                                                      "region") else None
-            except Place.DoesNotExist:
+                from regions.models import SubRegion
+                subregion = SubRegion.objects.select_related("region").get(id=obj.subregion_id)
+                return subregion.region.id
+            except SubRegion.DoesNotExist:
                 pass
         return None
 
@@ -143,8 +142,8 @@ class TravelPlanCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         """여행 계획 생성"""
         translation_data = {
-            'title': validated_data.pop('name'),
-            'description': validated_data.pop('description', ''),
+            "title": validated_data.pop("name"),
+            "description": validated_data.pop("description", ""),
         }
 
         # TravelPlan 생성
@@ -153,12 +152,11 @@ class TravelPlanCreateSerializer(serializers.Serializer):
         # 한국어 번역 생성
         TravelPlanTranslation.objects.create(
             travel_plan=travel_plan,
-            lang='ko',
+            lang="ko",
             **translation_data
         )
 
         return travel_plan
-
 
 class PlanPlaceCreateSerializer(serializers.Serializer):
     """계획 관광지 생성용 시리얼라이저"""
