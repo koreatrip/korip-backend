@@ -21,7 +21,7 @@ def get_user_favorite_places(user_id, lang="ko"):
     from places.models import Place, PlaceTranslation
 
     favorite_places = []
-    favorite_relations = FavoritePlace.objects.filter(user_id=user_id).select_related('place')
+    favorite_relations = FavoritePlace.objects.filter(user_id=user_id).select_related("place")
 
     for favorite in favorite_relations:
         place = favorite.place
@@ -56,91 +56,116 @@ def get_user_favorite_places(user_id, lang="ko"):
 
 
 def get_user_favorite_regions(user_id, lang="ko"):
-    """사용자의 즐겨찾기 지역 목록 가져오기"""
+    """사용자의 즐겨찾기 지역 목록을 계층 구조로 가져오기"""
     from favorites.models import FavoritePlace, FavoriteSubRegion
-    from regions.models import SubRegion, SubRegionTranslation
+    from regions.models import Region, SubRegion, RegionTranslation, SubRegionTranslation
     from collections import defaultdict
 
-    # 즐겨찾기한 관광지를 기반으로 지역 그룹화
-    favorite_places = FavoritePlace.objects.filter(user_id=user_id).select_related('place')
-    region_counts = defaultdict(int)
-    region_info = {}
+    # 지역별 서브리전 그룹화를 위한 딕셔너리
+    region_hierarchy = defaultdict(lambda: {
+        "region_id": None,
+        "region_name": "",
+        "subregions": []
+    })
+
+    # 즐겨찾기한 관광지를 기반으로 지역 수집
+    favorite_places = FavoritePlace.objects.filter(user_id=user_id).select_related("place")
 
     for favorite in favorite_places:
         place = favorite.place
 
-        if hasattr(place, 'region') and place.region:
-            region_id = place.region.id
-        elif hasattr(place, 'region_id') and place.region_id:
-            region_id = place.region_id
-        else:
-            continue
-
-        if hasattr(place, 'sub_region') and place.sub_region:
+        # place의 subregion 정보 가져오기
+        subregion_id = None
+        if hasattr(place, "sub_region") and place.sub_region:
             subregion_id = place.sub_region.id
-        elif hasattr(place, 'sub_region_id') and place.sub_region_id:
+        elif hasattr(place, "sub_region_id") and place.sub_region_id:
             subregion_id = place.sub_region_id
-        else:
+
+        if not subregion_id:
             continue
 
-        region_counts[subregion_id] += 1
+        try:
+            subregion = SubRegion.objects.select_related("region").get(id=subregion_id)
+            region = subregion.region
 
-        if subregion_id not in region_info:
+            # 지역 번역 정보 가져오기
             try:
-                subregion = SubRegion.objects.get(id=subregion_id)
+                region_translation = RegionTranslation.objects.get(region=region, lang=lang)
+                region_name = region_translation.name
+            except RegionTranslation.DoesNotExist:
+                region_name = ""
 
-                try:
-                    translation = SubRegionTranslation.objects.get(
-                        sub_region=subregion, lang=lang
-                    )
-                    region_name = translation.name
-                    region_description = translation.description
-                except SubRegionTranslation.DoesNotExist:
-                    region_name = ""
-                    region_description = ""
+            # 서브리전 번역 정보 가져오기
+            try:
+                subregion_translation = SubRegionTranslation.objects.get(sub_region=subregion, lang=lang)
+                subregion_name = subregion_translation.name
+            except SubRegionTranslation.DoesNotExist:
+                subregion_name = ""
 
-                region_info[subregion_id] = {
-                    "subregion_id": subregion_id,
-                    "region_id": region_id,
-                    "name": region_name,
-                    "description": region_description,
-                    "favorite_places_count": 0
-                }
-            except SubRegion.DoesNotExist:
-                continue
+            # 지역 정보 설정
+            if region.id not in region_hierarchy:
+                region_hierarchy[region.id]["region_id"] = region.id
+                region_hierarchy[region.id]["region_name"] = region_name
 
-    for subregion_id, count in region_counts.items():
-        if subregion_id in region_info:
-            region_info[subregion_id]["favorite_places_count"] = count
+            # 서브리전이 이미 있는지 확인 후 추가
+            existing_subregions = [sr["subregion_id"] for sr in region_hierarchy[region.id]["subregions"]]
+            if subregion.id not in existing_subregions:
+                region_hierarchy[region.id]["subregions"].append({
+                    "subregion_id": subregion.id,
+                    "name": subregion_name,
+                    "favorite_places_count": 1
+                })
+            else:
+                for sr in region_hierarchy[region.id]["subregions"]:
+                    if sr["subregion_id"] == subregion.id:
+                        sr["favorite_places_count"] += 1
+                        break
+
+        except SubRegion.DoesNotExist:
+            continue
 
     # 직접 즐겨찾기한 지역구들 추가
-    favorite_subregions = FavoriteSubRegion.objects.filter(user_id=user_id).select_related('sub_region')
+    favorite_subregions = FavoriteSubRegion.objects.filter(user_id=user_id).select_related("sub_region__region")
 
     for favorite in favorite_subregions:
         subregion = favorite.sub_region
-        subregion_id = subregion.id
+        region = subregion.region
 
+        # 지역 번역 정보 가져오기
         try:
-            translation = SubRegionTranslation.objects.get(
-                sub_region=subregion, lang=lang
-            )
-            region_name = translation.name
-            region_description = translation.description
-        except SubRegionTranslation.DoesNotExist:
+            region_translation = RegionTranslation.objects.get(region=region, lang=lang)
+            region_name = region_translation.name
+        except RegionTranslation.DoesNotExist:
             region_name = ""
-            region_description = ""
 
-        if subregion_id not in region_info:
-            region_info[subregion_id] = {
-                "subregion_id": subregion_id,
-                "region_id": subregion.region.id,
-                "name": region_name,
-                "description": region_description,
-                "favorite_places_count": 0
-            }
+        # 서브리전 번역 정보 가져오기
+        try:
+            subregion_translation = SubRegionTranslation.objects.get(sub_region=subregion, lang=lang)
+            subregion_name = subregion_translation.name
+        except SubRegionTranslation.DoesNotExist:
+            subregion_name = ""
 
-    favorite_regions = list(region_info.values())
-    favorite_regions.sort(key=lambda x: x["favorite_places_count"], reverse=True)
+        # 지역 정보 설정
+        if region.id not in region_hierarchy:
+            region_hierarchy[region.id]["region_id"] = region.id
+            region_hierarchy[region.id]["region_name"] = region_name
+
+        # 서브리전이 이미 있는지 확인 후 추가
+        existing_subregions = [sr["subregion_id"] for sr in region_hierarchy[region.id]["subregions"]]
+        if subregion.id not in existing_subregions:
+            region_hierarchy[region.id]["subregions"].append({
+                "subregion_id": subregion.id,
+                "name": subregion_name,
+                "favorite_places_count": 0  # 직접 즐겨찾기한 지역구는 0
+            })
+
+    # 결과를 리스트로 변환하고 정렬
+    favorite_regions = []
+    for region_data in region_hierarchy.values():
+        region_data["subregions"].sort(key=lambda x: x["favorite_places_count"], reverse=True)
+        favorite_regions.append(region_data)
+
+    favorite_regions.sort(key=lambda x: len(x["subregions"]), reverse=True)
 
     return favorite_regions
 
@@ -188,13 +213,24 @@ def get_user_favorite_regions(user_id, lang="ko"):
                     ),
                     "favorite_regions": openapi.Schema(
                         type=openapi.TYPE_ARRAY,
-                        description="즐겨찾는 지역 목록 (여행 계획 생성 시 사용)",
+                        description="즐겨찾는 지역 목록 (계층 구조: 지역 > 지역구)",
                         items=openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
-                                "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
-                                "name": openapi.Schema(type=openapi.TYPE_STRING, description="지역명", example="강남구"),
-                                "favorite_places_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="즐겨찾기 장소 수", example=3),
+                                "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID", example=1),
+                                "region_name": openapi.Schema(type=openapi.TYPE_STRING, description="지역명", example="서울"),
+                                "subregions": openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    description="해당 지역의 즐겨찾기 지역구 목록",
+                                    items=openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=695),
+                                            "name": openapi.Schema(type=openapi.TYPE_STRING, description="지역구명", example="종로구"),
+                                            "favorite_places_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="해당 지역구의 즐겨찾기 장소 수", example=3),
+                                        }
+                                    )
+                                )
                             }
                         )
                     )
