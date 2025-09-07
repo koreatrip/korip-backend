@@ -43,12 +43,17 @@ class SocialLoginAPIView(APIView):
         ],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=["code"],
+            required=["code", "phone_number"],
             properties={
                 "code": openapi.Schema(
                     type=openapi.TYPE_STRING,
                     description="Google OAuth 인가 코드",
                     example="4/0AeaYSHBqFw8xQwN..."
+                ),
+                "phone_number": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="사용자 전화번호",
+                    example="010-1234-5678"
                 )
             }
         ),
@@ -58,6 +63,11 @@ class SocialLoginAPIView(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
+                        "first_login": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            description="첫 로그인 여부",
+                            example=True
+                        ),
                         "access_token": openapi.Schema(
                             type=openapi.TYPE_STRING,
                             description="JWT 액세스 토큰 (사용자 정보 포함)",
@@ -72,6 +82,7 @@ class SocialLoginAPIView(APIView):
                 ),
                 examples={
                     "application/json": {
+                        "first_login": True,
                         "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQwOTk5OTk5LCJpYXQiOjE2NDA5OTk5OTksImp0aSI6IjEyMzQ1Njc4OTAiLCJ1c2VyX2lkIjoxLCJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJuaWNrbmFtZSI6IuyCrOyaqeyekCIsImlzX3NvY2lhbCI6dHJ1ZX0...",
                         "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0MDk5OTk5OSwiaWF0IjoxNjQwOTk5OTk5LCJqdGkiOiIxMjM0NTY3ODkwIiwidXNlcl9pZCI6MX0..."
                     }
@@ -108,7 +119,8 @@ class SocialLoginAPIView(APIView):
                         "message": "유효하지 않은 인가 코드입니다"
                     },
                     "validation_error": {
-                        "code": ["이 필드는 필수입니다."]
+                        "code": ["이 필드는 필수입니다."],
+                        "phone_number": ["이 필드는 필수입니다."]
                     }
                 }
             ),
@@ -184,6 +196,8 @@ class SocialLoginAPIView(APIView):
             user.set_unusable_password()
             user.save()
 
+        is_first_login = user.last_login is None
+
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
         access["email"] = user.email
@@ -191,6 +205,7 @@ class SocialLoginAPIView(APIView):
         access["is_social"] = user.is_social
 
         return Response({
+            "first_login": is_first_login,
             "access_token": str(access),
             "refresh_token": str(refresh)
         }, status=status.HTTP_200_OK)
