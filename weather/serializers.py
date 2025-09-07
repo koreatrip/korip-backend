@@ -63,7 +63,7 @@ class WeatherResponseSerializer(serializers.Serializer):
     current_weather = CurrentWeatherSerializer(help_text="현재 날씨 정보")
     tomorrow_weather = TomorrowWeatherSerializer(help_text="내일 날씨 정보")
     detail_info = DetailInfoSerializer(help_text="상세 날씨 정보")
-    hourly_forecast = HourlyForecastItemSerializer(many=True, help_text="시간별 예보 (12시간)")
+    hourly_forecast = HourlyForecastItemSerializer(many=True, help_text="시간별 예보 (24시간)")
     air_quality = AirQualityDetailSerializer(help_text="대기질 상세 정보")
     travel_tip = TravelTipSerializer(help_text="여행 팁")
     location_name = serializers.CharField(help_text="지역명")
