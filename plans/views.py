@@ -11,7 +11,7 @@ from plans.serializers import (
     TravelPlanListSerializer,
     TravelPlanDetailSerializer,
     TravelPlanCreateSerializer,
-    PlanPlaceListCreateSerializer
+    PlanPlaceListCreateSerializer, TravelPlanUpdateSerializer
 )
 
 
@@ -411,37 +411,138 @@ def plan_list_create(request):
             )
         )
     },
-    tags=["여행계획"]
+    tags=["여행일정"]
+)
+
+@swagger_auto_schema(
+   method="post",
+   operation_summary="여행 일정 관광지 추가",
+   operation_description="여행 계획에 관광지들을 추가합니다.",
+   request_body=openapi.Schema(
+       type=openapi.TYPE_OBJECT,
+       required=["places"],
+       properties={
+           "places": openapi.Schema(
+               type=openapi.TYPE_ARRAY,
+               example=[
+                   # 9월 7일
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "23:00"},
+                   # 9월 8일
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "23:00"},
+                   # 9월 9일
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "23:00"}
+               ],
+               items=openapi.Schema(
+                   type=openapi.TYPE_OBJECT,
+                   required=["place_id", "visit_date", "visit_time"],
+                   properties={
+                       "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID", example=5690),
+                       "visit_date": openapi.Schema(type=openapi.TYPE_STRING, description="방문일", example="2025-09-07"),
+                       "visit_time": openapi.Schema(
+                           type=openapi.TYPE_STRING,
+                           description="방문시간",
+                           example="09:00",
+                           enum=["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00", "23:00"]
+                       ),
+                   }
+               )
+           )
+       }
+   ),
+   responses={
+       201: openapi.Response(description="추가 성공"),
+       400: openapi.Response(description="잘못된 요청")
+   },
+   tags=["여행일정"]
 )
 @swagger_auto_schema(
-    methods=["post", "patch"],
-    operation_summary="여행 일정 관광지 추가/수정",
-    operation_description="여행 계획에 관광지들을 추가하거나 수정합니다.",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=["places"],
-        properties={
-            "places": openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    required=["place_id", "visit_date", "visit_time"],
-                    properties={
-                        "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID", example=1),
-                        "visit_date": openapi.Schema(type=openapi.TYPE_STRING, description="방문일", example="2025-07-05"),
-                        "visit_time": openapi.Schema(type=openapi.TYPE_STRING, description="방문시간", example="09:00"),
-                    }
-                )
-            )
-        }
-    ),
-    responses={
-        200: openapi.Response(description="수정 성공"),
-        201: openapi.Response(description="추가 성공"),
-        400: openapi.Response(description="잘못된 요청")
-    },
-    tags=["여행계획"]
+   method="patch",
+   operation_summary="여행 계획 전체 수정",
+   operation_description="여행 계획의 제목, 설명, 날짜, 관광지 일정을 수정합니다. 모든 필드는 선택사항입니다.",
+   request_body=openapi.Schema(
+       type=openapi.TYPE_OBJECT,
+       properties={
+           "title": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 제목", example="새로운 여행 제목"),
+           "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="수정된 여행 설명"),
+           "start_date": openapi.Schema(type=openapi.TYPE_STRING, description="시작일", example="2025-09-07"),
+           "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일", example="2025-09-09"),
+           "places": openapi.Schema(
+               type=openapi.TYPE_ARRAY,
+               description="관광지 일정 (선택사항)",
+               example=[
+                   # 9월 7일
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "23:00"},
+                   # 9월 8일
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "23:00"},
+                   # 9월 9일
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "09:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "11:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "13:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "15:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "17:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "19:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "21:00"},
+                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "23:00"}
+               ],
+               items=openapi.Schema(
+                   type=openapi.TYPE_OBJECT,
+                   required=["place_id", "visit_date", "visit_time"],
+                   properties={
+                       "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID", example=5690),
+                       "visit_date": openapi.Schema(type=openapi.TYPE_STRING, description="방문일", example="2025-09-07"),
+                       "visit_time": openapi.Schema(
+                           type=openapi.TYPE_STRING,
+                           description="방문시간",
+                           example="11:00",
+                           enum=["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00", "23:00"]
+                       ),
+                   }
+               )
+           )
+       }
+   ),
+   responses={
+       200: openapi.Response(description="수정 성공"),
+       400: openapi.Response(description="잘못된 요청")
+   },
+   tags=["여행일정"]
 )
+
 @api_view(["GET", "POST", "PATCH"])
 @permission_classes([IsAuthenticated])
 def plan_detail(request, plan_id):
@@ -465,21 +566,78 @@ def plan_detail(request, plan_id):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-    elif request.method in ["POST", "PATCH"]:
+
+
+    elif request.method == "POST":
+
+        # 기존 관광지 추가 로직 (그대로 유지)
+
         serializer = PlanPlaceListCreateSerializer(data=request.data)
+
         if serializer.is_valid():
+
             PlanPlace.objects.filter(travel_plan=travel_plan).delete()
 
             for place_data in serializer.validated_data["places"]:
                 PlanPlace.objects.create(
+
                     travel_plan=travel_plan,
+
                     place_id=place_data["place_id"],
+
                     visit_date=place_data["visit_date"],
+
                     visit_time=place_data["visit_time"]
+
                 )
 
-            status_code = status.HTTP_201_CREATED if request.method == "POST" else status.HTTP_200_OK
-            return Response(status=status_code)
+            # 업데이트된 전체 데이터 반환
+
+            lang = request.GET.get("lang", "ko")
+
+            detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
+
+            favorite_places = get_user_favorite_places(request.user.id, lang)
+
+            response_data = detail_serializer.data.copy()
+
+            response_data.update({"favorite_places": favorite_places})
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    elif request.method == "PATCH":
+
+        # 새로운 전체 수정 로직
+
+        lang = request.GET.get("lang", "ko")
+
+        serializer = TravelPlanUpdateSerializer(
+
+            travel_plan,
+
+            data=request.data,
+
+            context={"lang": lang}
+
+        )
+
+        if serializer.is_valid():
+            updated_plan = serializer.save()
+
+            # 업데이트된 전체 데이터 반환
+
+            detail_serializer = TravelPlanDetailSerializer(updated_plan, context={"lang": lang})
+
+            favorite_places = get_user_favorite_places(request.user.id, lang)
+
+            response_data = detail_serializer.data.copy()
+
+            response_data.update({"favorite_places": favorite_places})
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -543,7 +701,7 @@ def plan_detail(request, plan_id):
         ),
         404: openapi.Response(description="여행 계획을 찾을 수 없음")
     },
-    tags=["여행계획"]
+    tags=["여행일정"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

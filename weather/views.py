@@ -105,7 +105,7 @@ class WeatherBaseView:
         except Exception as e:
             return "+0.0°"
 
-    def _get_hourly_forecast_from_db(self, region_id, sub_region_id=None, hours=15):
+    def _get_hourly_forecast_from_db(self, region_id, sub_region_id=None, hours=24):
         # DB에서 현재 시간부터 15시간 예보 데이터 조회
         now = timezone.now()
         # 현재 시간이 07:49라면 08:00부터 시작 (다음 정시)
@@ -312,7 +312,7 @@ class WeatherAPI(APIView, WeatherBaseView):
                 }, status=status.HTTP_404_NOT_FOUND)
 
             # 시간별 예보 데이터 조회 (현재 시간부터 15시간)
-            hourly_forecast = self._get_hourly_forecast_from_db(region_id, hours=15)
+            hourly_forecast = self._get_hourly_forecast_from_db(region_id, hours=24)
 
         except Region.DoesNotExist:
             return Response({
@@ -369,7 +369,7 @@ class WeatherAPI(APIView, WeatherBaseView):
                 }, status=status.HTTP_404_NOT_FOUND)
 
             # 시간별 예보 데이터 조회 (현재 시간부터 15시간)
-            hourly_forecast = self._get_hourly_forecast_from_db(region_id, subregion_id, hours=15)
+            hourly_forecast = self._get_hourly_forecast_from_db(region_id, subregion_id, hours=24)
 
         except Region.DoesNotExist:
             return Response({
