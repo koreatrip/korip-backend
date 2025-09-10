@@ -98,3 +98,61 @@ class PlaceSerializer(serializers.ModelSerializer):
             "id": obj.sub_region.id,
             "name": obj.get_sub_region_name(self.get_language())
         }
+
+class PlaceDetailSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    category_id = serializers.IntegerField()
+    subcategory_id = serializers.IntegerField()
+    region_id = serializers.IntegerField()
+    subregion_id = serializers.IntegerField()
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+    phone_number = serializers.CharField()
+    use_time = serializers.CharField()
+    image_url = serializers.URLField()
+    address = serializers.CharField()
+    description = serializers.CharField()
+    favorite_count = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+
+    def to_representation(self, instance):
+        if isinstance(instance, Place):
+            lang = self.context.get("lang", "ko")
+
+            # GIS PointField에서 위도/경도 추출
+            latitude = instance.latitude
+            longitude = instance.longitude
+
+            return {
+                "id": instance.id,
+                "category_id": getattr(instance, 'category_id', None),
+                "subcategory_id": getattr(instance, 'sub_category_id', None),
+                "region_id": self._get_region_id(instance),
+                "subregion_id": self._get_subregion_id(instance),
+                "latitude": latitude,
+                "longitude": longitude,
+                "phone_number": getattr(instance, 'phone_number', ""),
+                "use_time": getattr(instance, 'use_time', ""),
+                "image_url": getattr(instance, 'image_url', ""),
+                "address": instance.get_address(lang) if hasattr(instance, 'get_address') else "",
+                "description": instance.get_description(lang) if hasattr(instance, 'get_description') else "",
+                "favorite_count": getattr(instance, 'favorite_count', 0),
+                "created_at": instance.created_at,
+                "updated_at": instance.updated_at,
+            }
+        return super().to_representation(instance)
+
+    def _get_region_id(self, instance):
+        if hasattr(instance, 'region') and instance.region:
+            return instance.region.id
+        if hasattr(instance, 'region_id') and instance.region_id:
+            return instance.region_id
+        return None
+
+    def _get_subregion_id(self, instance):
+        if hasattr(instance, 'sub_region') and instance.sub_region:
+            return instance.sub_region.id
+        if hasattr(instance, 'sub_region_id') and instance.sub_region_id:
+            return instance.sub_region_id
+        return None
