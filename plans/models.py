@@ -104,8 +104,8 @@ class PlanPlace(models.Model):
         related_name="plan_places",
         verbose_name="여행 계획"
     )
-    place_id = models.BigIntegerField(verbose_name="관광지 ID")
-    visit_date = models.DateField(verbose_name="방문일")
+    place_id = models.BigIntegerField(null=True, blank=True, verbose_name="관광지 ID")
+    visit_date = models.DateField(null=True, blank=True, verbose_name="방문일")
     visit_time = models.TimeField(null=True, blank=True, verbose_name="방문 시간")
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")

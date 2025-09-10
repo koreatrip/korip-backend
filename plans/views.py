@@ -11,7 +11,8 @@ from plans.serializers import (
     TravelPlanListSerializer,
     TravelPlanDetailSerializer,
     TravelPlanCreateSerializer,
-    PlanPlaceListCreateSerializer, TravelPlanUpdateSerializer
+    PlanPlaceListCreateSerializer, TravelPlanUpdateSerializer,
+    SinglePlaceAddSerializer
 )
 
 
@@ -264,7 +265,6 @@ def get_user_favorite_regions(user_id, lang="ko"):
         required=["name", "subregion_id"],
         properties={
             "name": openapi.Schema(type=openapi.TYPE_STRING, description="여행 계획 이름", example="하이라이스의 여행일기"),
-            "description": openapi.Schema(type=openapi.TYPE_STRING, description="여행 설명", example="성심당 뿌시러 감"),
             "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="서브지역 ID", example=1),
         }
     ),
@@ -413,68 +413,26 @@ def plan_list_create(request):
     },
     tags=["여행일정"]
 )
-
 @swagger_auto_schema(
-   method="post",
-   operation_summary="여행 일정 관광지 추가",
-   operation_description="여행 계획에 관광지들을 추가합니다.",
-   request_body=openapi.Schema(
-       type=openapi.TYPE_OBJECT,
-       required=["places"],
-       properties={
-           "places": openapi.Schema(
-               type=openapi.TYPE_ARRAY,
-               example=[
-                   # 9월 7일
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "09:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "11:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "13:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "15:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "17:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "19:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "21:00"},
-                   {"place_id": None, "visit_date": "2025-09-07", "visit_time": "23:00"},
-                   # 9월 8일
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "09:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "11:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "13:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "15:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "17:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "19:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "21:00"},
-                   {"place_id": None, "visit_date": "2025-09-08", "visit_time": "23:00"},
-                   # 9월 9일
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "09:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "11:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "13:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "15:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "17:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "19:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "21:00"},
-                   {"place_id": None, "visit_date": "2025-09-09", "visit_time": "23:00"}
-               ],
-               items=openapi.Schema(
-                   type=openapi.TYPE_OBJECT,
-                   required=["place_id", "visit_date", "visit_time"],
-                   properties={
-                       "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID", example=5690),
-                       "visit_date": openapi.Schema(type=openapi.TYPE_STRING, description="방문일", example="2025-09-07"),
-                       "visit_time": openapi.Schema(
-                           type=openapi.TYPE_STRING,
-                           description="방문시간",
-                           example="09:00",
-                           enum=["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00", "23:00"]
-                       ),
-                   }
-               )
-           )
-       }
-   ),
-   responses={
-       201: openapi.Response(description="추가 성공"),
-       400: openapi.Response(description="잘못된 요청")
-   },
-   tags=["여행일정"]
+    method="post",
+    operation_summary="여행 계획에 관광지 추가",
+    operation_description="여행 계획에 관광지 하나를 추가합니다.",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=["place_id"],
+        properties={
+            "place_id": openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description="추가할 관광지 ID",
+                example=1234
+            )
+        }
+    ),
+    responses={
+        201: openapi.Response(description="관광지 추가 성공"),
+        400: openapi.Response(description="잘못된 요청")
+    },
+    tags=["여행일정"]
 )
 @swagger_auto_schema(
    method="patch",
@@ -542,11 +500,20 @@ def plan_list_create(request):
    },
    tags=["여행일정"]
 )
-
-@api_view(["GET", "POST", "PATCH"])
+@swagger_auto_schema(
+    method="delete",
+    operation_summary="여행 계획 삭제",
+    operation_description="특정 여행 계획을 삭제합니다.",
+    responses={
+        204: "삭제 성공",
+        404: "여행 계획을 찾을 수 없음"
+    },
+    tags=["여행일정"]
+)
+@api_view(["GET", "POST", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def plan_detail(request, plan_id):
-    """여행 계획 상세 조회, 관광지 추가 및 수정"""
+    """여행 계획 상세 조회, 관광지 추가, 수정 및 삭제"""
     travel_plan = get_object_or_404(TravelPlan, id=plan_id, user_id=request.user.id)
 
     if request.method == "GET":
@@ -566,80 +533,82 @@ def plan_detail(request, plan_id):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-
-
     elif request.method == "POST":
-
-        # 기존 관광지 추가 로직 (그대로 유지)
-
-        serializer = PlanPlaceListCreateSerializer(data=request.data)
+        # 관광지 하나만 추가하는 새로운 로직
+        serializer = SinglePlaceAddSerializer(data=request.data)
 
         if serializer.is_valid():
+            place_id = serializer.validated_data["place_id"]
 
-            PlanPlace.objects.filter(travel_plan=travel_plan).delete()
-
-            for place_data in serializer.validated_data["places"]:
-                PlanPlace.objects.create(
-
-                    travel_plan=travel_plan,
-
-                    place_id=place_data["place_id"],
-
-                    visit_date=place_data["visit_date"],
-
-                    visit_time=place_data["visit_time"]
-
+            # 이미 추가된 관광지인지 확인
+            if PlanPlace.objects.filter(travel_plan=travel_plan, place_id=place_id).exists():
+                return Response(
+                    {"error": "이미 일정에 추가된 관광지입니다."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # 새로운 관광지 추가 (날짜, 시간은 null로)
+            PlanPlace.objects.create(
+                travel_plan=travel_plan,
+                place_id=place_id,
+                visit_date=None,
+                visit_time=None
+            )
+
             # 업데이트된 전체 데이터 반환
-
             lang = request.GET.get("lang", "ko")
-
             detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
-
             favorite_places = get_user_favorite_places(request.user.id, lang)
 
             response_data = detail_serializer.data.copy()
-
             response_data.update({"favorite_places": favorite_places})
 
             return Response(response_data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     elif request.method == "PATCH":
-
-        # 새로운 전체 수정 로직
-
-        lang = request.GET.get("lang", "ko")
-
-        serializer = TravelPlanUpdateSerializer(
-
-            travel_plan,
-
-            data=request.data,
-
-            context={"lang": lang}
-
-        )
+        # 시간대별 장소 배치 업데이트
+        serializer = PlanPlaceListCreateSerializer(data=request.data)
 
         if serializer.is_valid():
-            updated_plan = serializer.save()
+            # 기존 모든 PlanPlace 삭제 (완전히 새로 생성)
+            PlanPlace.objects.filter(travel_plan=travel_plan).delete()
 
-            # 업데이트된 전체 데이터 반환
+            # 새로운 배치 생성 및 날짜 범위 계산
+            visit_dates = []
+            for place_data in serializer.validated_data["places"]:
+                if place_data["place_id"]:  # place_id가 null이 아닌 경우만 생성
+                    PlanPlace.objects.create(
+                        travel_plan=travel_plan,
+                        place_id=place_data["place_id"],
+                        visit_date=place_data["visit_date"],
+                        visit_time=place_data["visit_time"]
+                    )
+                    visit_dates.append(place_data["visit_date"])
 
-            detail_serializer = TravelPlanDetailSerializer(updated_plan, context={"lang": lang})
+            # TravelPlan의 start_date, end_date 업데이트
+            if visit_dates:
+                travel_plan.start_date = min(visit_dates)
+                travel_plan.end_date = max(visit_dates)
+                travel_plan.save()
 
+            # 업데이트된 데이터 반환
+            lang = request.GET.get("lang", "ko")
+            detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
             favorite_places = get_user_favorite_places(request.user.id, lang)
 
             response_data = detail_serializer.data.copy()
-
             response_data.update({"favorite_places": favorite_places})
 
             return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == "DELETE":
+        # 여행 계획 삭제
+        travel_plan.delete()  # CASCADE로 관련 PlanPlace, TravelPlanTranslation도 자동 삭제
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @swagger_auto_schema(
@@ -724,7 +693,7 @@ def plan_pdf_data(request, plan_id):
 
             # 장소명 가져오기 (여러 언어 시도)
             place_name = f"Place {place.id}"
-            languages_to_try = [lang, 'ko', 'cn', 'en', 'jp']
+            languages_to_try = [lang, "ko", "cn", "en", "jp"]
 
             for try_lang in languages_to_try:
                 try:
