@@ -228,7 +228,6 @@ class ChangePasswordAPIView(APIView):
                 }
             )
         },
-        manual_parameters=[authorization_header],
         tags=['비밀번호']
     )
     
@@ -259,6 +258,17 @@ class UserInfoAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="사용자 정보 조회",
         operation_description="현재 인증된 사용자의 정보를 조회합니다. 이메일과 전화번호 등의 중요한 정보는 마스킹되어 반환됩니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                'lang',
+                openapi.IN_QUERY,
+                description="언어 설정 (ko: 한국어, en: 영어)",
+                type=openapi.TYPE_STRING,
+                enum=['ko', 'en', 'jp', 'cn'],
+                default='ko',
+                required=False
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="사용자 정보 조회 성공",
@@ -294,7 +304,6 @@ class UserInfoAPIView(APIView):
                 }
             )
         },
-        manual_parameters=[authorization_header],
         tags=["사용자 계정"]
     )
 
@@ -374,7 +383,6 @@ class UserInfoAPIView(APIView):
                 }
             )
         },
-        manual_parameters=[authorization_header],
         tags=["사용자 계정"]
     )
 
@@ -391,27 +399,56 @@ class UserInfoAPIView(APIView):
     
     @swagger_auto_schema(
         operation_summary="사용자 삭제",
-        operation_description="현재 인증된 사용자의 계정을 삭제합니다. 계정 삭제 후에는 복구할 수 없습니다.",
+        operation_description="현재 인증된 사용자의 계정을 삭제합니다. 비밀번호 확인 후 계정이 삭제되며, 삭제 후에는 복구할 수 없습니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['password'],
+            properties={
+                'password': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='계정 삭제를 위한 현재 비밀번호',
+                    example='current_password123'
+                )
+            }
+        ),
         responses={
             200: openapi.Response(
                 description="사용자 삭제 성공",
-                examples={}
+                examples={
+                    "application/json": {}
+                }
             ),
-            404: openapi.Response(
-                description="사용자를 찾을 수 없음",
+            400: openapi.Response(
+                description="잘못된 요청 데이터 또는 비밀번호 불일치",
                 examples={
                     "application/json": {
-                        "error_code": "USER_NOT_FOUND",
-                        "error_message": "해당 사용자 정보를 찾을 수 없습니다."
+                        "error_code": "INVALID_DATA",
+                        "error_message": "비밀번호를 입력해주세요."
+                    }
+                }
+            ),
+            401: openapi.Response(
+                description="비밀번호 불일치",
+                examples={
+                    "application/json": {
+                        "error_code": "MISSMATCHED_PASSWORD", 
+                        "error_message": "비밀번호가 일치하지 않습니다."
                     }
                 }
             )
         },
-        manual_parameters=[authorization_header],
         tags=["사용자 계정"]
     )
     
     def delete(self, request):
         user = request.user
+        password = request.data.get('password')
+
+        if not password:
+            raise RequestError(ErrorCode.INVALID_DATA)
+
+        if not user.check_password(password):
+            raise RequestError(ErrorCode.MISSMATCHED_PASSWORD)
+
         user.delete()
         return Response(status=status.HTTP_200_OK)
