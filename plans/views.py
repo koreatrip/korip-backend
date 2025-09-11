@@ -508,7 +508,7 @@ def plan_list_create(request):
         204: "삭제 성공",
         404: "여행 계획을 찾을 수 없음"
     },
-    tags=["여행일정"]
+    tags=["여행계획"]
 )
 @api_view(["GET", "POST", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
@@ -736,3 +736,33 @@ def plan_pdf_data(request, plan_id):
         "created_at": travel_plan.created_at.isoformat(),
         "lang": lang
     })
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_summary="여행 일정에서 관광지 제거",
+    operation_description="여행 일정에서 특정 관광지를 제거합니다.",
+    responses={
+        204: "삭제 성공",
+        404: "관광지를 찾을 수 없음"
+    },
+    tags=["여행일정"]
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def remove_place_from_plan(request, plan_id, place_id):
+    """여행 계획에서 특정 관광지 제거"""
+    travel_plan = get_object_or_404(TravelPlan, id=plan_id, user_id=request.user.id)
+
+    deleted_count = PlanPlace.objects.filter(
+        travel_plan=travel_plan,
+        place_id=place_id
+    ).delete()
+
+    if deleted_count[0] == 0:
+        return Response(
+            {"error": "해당 관광지가 일정에 없습니다."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
