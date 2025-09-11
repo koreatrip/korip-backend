@@ -131,12 +131,6 @@ class PlaceTourListAPIView(APIView):
                 description="특정 시·군·구 ID (미지정 시 인기 1위 시·군·구 기준으로 주요 명소 반환)",
                 type=openapi.TYPE_INTEGER
             ),
-            openapi.Parameter(
-                'Authorization',
-                openapi.IN_HEADER,
-                description="Bearer <JWT> 형식으로 전달 시 user_recommended_places 포함",
-                type=openapi.TYPE_STRING
-            ),
         ],
         responses={
             200: openapi.Response(
