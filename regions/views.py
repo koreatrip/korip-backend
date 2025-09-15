@@ -8,6 +8,7 @@ from drf_yasg import openapi
 from regions.models import Region, SubRegion
 from regions.serializers import RegionSerializer, SubRegionSerializer
 from utils.pagination.region_pagination import RegionPagination
+from favorites.models import FavoriteSubRegion
 
 
 class RegionsListAPI(APIView):
@@ -228,13 +229,24 @@ class RegionDetailAPI(APIView):
        region = get_object_or_404(Region, id=region_id)
        subregions = SubRegion.objects.filter(region=region).order_by("id").prefetch_related("translations")
 
+       user_favorite_subregion_ids = set()
+
+       if request.user.is_authenticated:
+          user_favorite_subregion_ids = set(
+              FavoriteSubRegion.objects.filter(user=request.user)
+              .values_list('sub_region_id', flat=True)
+          )
+
        paginator = self.pagination_class()
        paginated_subregions = paginator.paginate_queryset(subregions, request)
 
        subregions_serializer = SubRegionSerializer(
            paginated_subregions,
            many=True,
-           context={"language": language}
+           context={
+              "language": language,
+              "user_favorite_subregion_ids": user_favorite_subregion_ids
+            }
        )
 
        region_serializer = RegionSerializer(

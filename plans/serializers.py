@@ -2,7 +2,7 @@ from rest_framework import serializers
 from plans.models import TravelPlan, TravelPlanTranslation, PlanPlace
 from places.models import Place
 from datetime import datetime, timedelta
-from places.serializers import PlaceDetailSerializer
+from places.serializers import PlaceSerializer
 
 
 class SinglePlaceAddSerializer(serializers.Serializer):
@@ -90,7 +90,7 @@ class PlanPlaceDetailSerializer(serializers.ModelSerializer):
     def get_place(self, obj):
         try:
             place = Place.objects.get(id=obj.place_id)
-            serializer = PlaceDetailSerializer(place, context=self.context)
+            serializer = PlaceSerializer(place, context=self.context)
             return serializer.data
         except Place.DoesNotExist:
             return None
@@ -162,7 +162,7 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
         for plan_place in plan_places:
             try:
                 place = Place.objects.get(id=plan_place.place_id)
-                place_serializer = PlaceDetailSerializer(place, context=self.context)
+                place_serializer = PlaceSerializer(place, context=self.context)
                 places_data.append(place_serializer.data)
             except Place.DoesNotExist:
                 continue
