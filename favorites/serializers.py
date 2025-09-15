@@ -60,7 +60,6 @@ class FavoritePlaceSerializer(serializers.Serializer):
 
 
 class FavoritePlaceListSerializer(serializers.ModelSerializer):
-    """FavoritePlace 관계를 시리얼라이즈하는 방법"""
 
     id = serializers.IntegerField(source='place.id')
     content_id = serializers.CharField(source='place.content_id')
@@ -78,6 +77,7 @@ class FavoritePlaceListSerializer(serializers.ModelSerializer):
     region = serializers.SerializerMethodField()
     sub_region = serializers.SerializerMethodField()
     favorite_count = serializers.IntegerField(source='place.favorite_count')
+    is_favorite = serializers.SerializerMethodField()  # 즐겨찾기 여부 추가
     created_at = serializers.DateTimeField(source='place.created_at')  # Place 생성일
     updated_at = serializers.DateTimeField(source='place.updated_at')  # Place 수정일
     favorited_at = serializers.DateTimeField(source='created_at')  # 즐겨찾기 등록일
@@ -88,7 +88,7 @@ class FavoritePlaceListSerializer(serializers.ModelSerializer):
             'id', 'content_id', 'name', 'description', 'address',
             'latitude', 'longitude', 'phone_number', 'use_time',
             'link_url', 'image_url', 'category', 'sub_category',
-            'region', 'sub_region', 'favorite_count', 'created_at',
+            'region', 'sub_region', 'favorite_count', 'is_favorite', 'created_at',
             'updated_at', 'favorited_at'
         ]
 
@@ -143,6 +143,18 @@ class FavoritePlaceListSerializer(serializers.ModelSerializer):
             "id": obj.place.sub_region.id,
             "name": obj.place.get_sub_region_name(self.get_language())
         }
+
+    def get_is_favorite(self, obj):
+        """
+        즐겨찾기 목록 조회이므로 항상 True
+        하지만 일관성을 위해 context의 데이터도 확인
+        """
+        user_favorite_place_ids = self.context.get('user_favorite_place_ids')
+        if user_favorite_place_ids is not None:
+            return obj.place.id in user_favorite_place_ids
+        
+        # 즐겨찾기 목록에서 조회되는 항목이므로 기본적으로 True
+        return True
 
 
 class FavoriteSubRegionSerializer(serializers.Serializer):
@@ -207,6 +219,7 @@ class FavoriteSubRegionListSerializer(serializers.ModelSerializer):
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
     favorite_count = serializers.IntegerField(source='sub_region.favorite_count')
+    is_favorite = serializers.SerializerMethodField()  # 즐겨찾기 여부 추가
     created_at = serializers.DateTimeField(source='sub_region.created_at')  # SubRegion 생성일
     updated_at = serializers.DateTimeField(source='sub_region.updated_at')  # SubRegion 수정일
     favorited_at = serializers.DateTimeField(source='created_at')  # 즐겨찾기 등록일
@@ -215,7 +228,7 @@ class FavoriteSubRegionListSerializer(serializers.ModelSerializer):
         model = FavoriteSubRegion
         fields = [
             'id', 'name', 'description', 'features',
-            'latitude', 'longitude', 'favorite_count', 
+            'latitude', 'longitude', 'favorite_count', 'is_favorite',
             'created_at', 'updated_at', 'favorited_at'
         ]
 
@@ -238,3 +251,15 @@ class FavoriteSubRegionListSerializer(serializers.ModelSerializer):
     def get_longitude(self, obj):
         """지역구의 경도 반환 (호환성 프로퍼티 사용)"""
         return obj.sub_region.longitude
+
+    def get_is_favorite(self, obj):
+        """
+        즐겨찾기 목록 조회이므로 항상 True
+        하지만 일관성을 위해 context의 데이터도 확인
+        """
+        user_favorite_subregion_ids = self.context.get('user_favorite_subregion_ids')
+        if user_favorite_subregion_ids is not None:
+            return obj.sub_region.id in user_favorite_subregion_ids
+        
+        # 즐겨찾기 목록에서 조회되는 항목이므로 기본적으로 True
+        return True
