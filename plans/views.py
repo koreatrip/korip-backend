@@ -14,7 +14,6 @@ from plans.serializers import (
     TravelPlanUpdateSerializer,
     SinglePlaceAddSerializer
 )
-from favorites.views import FavoritePlaceAPIView, FavoriteSubRegionAPIView
 
 
 class PlanListCreateAPIView(APIView):
@@ -23,7 +22,7 @@ class PlanListCreateAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="내 여행 일정 목록 조회",
-        operation_description="로그인한 사용자의 여행 계획 목록을 조회합니다. 여행 계획 생성에 필요한 즐겨찾기 지역 데이터도 함께 제공됩니다.",
+        operation_description="로그인한 사용자의 여행 계획 목록을 조회합니다.",
         manual_parameters=[
             openapi.Parameter(
                 "lang",
@@ -61,35 +60,6 @@ class PlanListCreateAPIView(APIView):
                                                                  example="2025-07-05T10:00:00"),
                                 }
                             )
-                        ),
-                        "favorite_regions": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            description="즐겨찾는 지역 목록 (계층 구조: 지역 > 지역구)",
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="지역 ID",
-                                                                example=1),
-                                    "region_name": openapi.Schema(type=openapi.TYPE_STRING, description="지역명",
-                                                                  example="서울"),
-                                    "subregions": openapi.Schema(
-                                        type=openapi.TYPE_ARRAY,
-                                        description="해당 지역의 즐겨찾기 지역구 목록",
-                                        items=openapi.Schema(
-                                            type=openapi.TYPE_OBJECT,
-                                            properties={
-                                                "subregion_id": openapi.Schema(type=openapi.TYPE_INTEGER,
-                                                                               description="서브지역 ID", example=695),
-                                                "name": openapi.Schema(type=openapi.TYPE_STRING, description="지역구명",
-                                                                       example="종로구"),
-                                                "favorite_places_count": openapi.Schema(type=openapi.TYPE_INTEGER,
-                                                                                        description="해당 지역구의 즐겨찾기 장소 수",
-                                                                                        example=3),
-                                            }
-                                        )
-                                    )
-                                }
-                            )
                         )
                     }
                 )
@@ -107,11 +77,8 @@ class PlanListCreateAPIView(APIView):
             context={"lang": lang}
         )
 
-        favorite_regions = get_user_favorite_regions_from_api(request.user, lang)
-
         return Response({
-            "plans": serializer.data,
-            "favorite_regions": favorite_regions
+            "plans": serializer.data
         }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -163,7 +130,7 @@ class PlanDetailAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="내 여행 일정 상세 조회",
-        operation_description="여행 계획의 상세 정보를 조회합니다. 일정 편집에 필요한 즐겨찾기 관광지 데이터도 함께 제공됩니다.",
+        operation_description="여행 계획의 상세 정보를 조회합니다.",
         manual_parameters=[
             openapi.Parameter(
                 "lang",
@@ -192,21 +159,6 @@ class PlanDetailAPIView(APIView):
                                                      example="2025-07-05", x_nullable=True),
                         "end_date": openapi.Schema(type=openapi.TYPE_STRING, description="종료일 (어드민 전용)",
                                                    example="2025-07-07", x_nullable=True),
-                        "favorite_places": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            description="즐겨찾는 관광지 목록 (일정 편집 시 사용)",
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "place_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="관광지 ID",
-                                                               example=1),
-                                    "name": openapi.Schema(type=openapi.TYPE_STRING, description="관광지명",
-                                                           example="가로수길"),
-                                    "address": openapi.Schema(type=openapi.TYPE_STRING, description="주소",
-                                                              example="서울시 강남구"),
-                                }
-                            )
-                        ),
                         "created_at": openapi.Schema(type=openapi.TYPE_STRING, description="생성일",
                                                      example="2025-07-05T10:00:00"),
                         "updated_at": openapi.Schema(type=openapi.TYPE_STRING, description="수정일",
@@ -227,14 +179,7 @@ class PlanDetailAPIView(APIView):
             context={"lang": lang}
         )
 
-        favorite_places = get_user_favorite_places_from_api(request.user, lang)
-
-        response_data = serializer.data.copy()
-        response_data.update({
-            "favorite_places": favorite_places
-        })
-
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_summary="여행 계획에 관광지 추가",
@@ -280,12 +225,8 @@ class PlanDetailAPIView(APIView):
 
             lang = request.GET.get("lang", "ko")
             detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
-            favorite_places = get_user_favorite_places_from_api(request.user, lang)
 
-            response_data = detail_serializer.data.copy()
-            response_data.update({"favorite_places": favorite_places})
-
-            return Response(response_data, status=status.HTTP_201_CREATED)
+            return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -344,7 +285,7 @@ class PlanDetailAPIView(APIView):
                                 description="방문시간",
                                 example="11:00",
                                 enum=["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00", "23:00"]
-                            ),
+                            )
                         }
                     )
                 )
@@ -384,12 +325,8 @@ class PlanDetailAPIView(APIView):
 
             lang = request.GET.get("lang", "ko")
             detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
-            favorite_places = get_user_favorite_places_from_api(request.user, lang)
 
-            response_data = detail_serializer.data.copy()
-            response_data.update({"favorite_places": favorite_places})
-
-            return Response(response_data, status=status.HTTP_200_OK)
+            return Response(detail_serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -438,60 +375,3 @@ class RemovePlaceFromPlanAPIView(APIView):
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-def get_user_favorite_regions_from_api(user, lang="ko"):
-    """DB에서 직접 사용자 즐겨찾기 지역 조회"""
-    from favorites.models import FavoriteSubRegion, FavoritePlace
-    from collections import defaultdict
-
-    favorites = FavoriteSubRegion.objects.filter(user=user).select_related(
-        'sub_region', 'sub_region__region'
-    )
-
-    region_hierarchy = defaultdict(lambda: {
-        "region_id": None,
-        "region_name": "",
-        "subregions": []
-    })
-
-    for favorite in favorites:
-        subregion = favorite.sub_region
-        region = subregion.region
-        region_id = region.id
-
-        if region_id not in region_hierarchy:
-            region_hierarchy[region_id]["region_id"] = region_id
-            region_hierarchy[region_id]["region_name"] = region.get_name(lang)
-
-        # 해당 지역구의 즐겨찾기 장소 수 계산 - 올바른 필드명 사용
-        favorite_places_count = FavoritePlace.objects.filter(
-            user=user,
-            place__sub_region=subregion  # Place 모델의 sub_region 필드 사용
-        ).count()
-
-        region_hierarchy[region_id]["subregions"].append({
-            "subregion_id": subregion.id,
-            "name": subregion.get_name(lang),
-            "favorite_places_count": favorite_places_count
-        })
-
-    return list(region_hierarchy.values())
-
-
-def get_user_favorite_places_from_api(user, lang="ko"):
-    """DB에서 직접 사용자 즐겨찾기 장소 조회"""
-    from favorites.models import FavoritePlace
-
-    favorites = FavoritePlace.objects.filter(user=user).select_related('place')
-    places_data = []
-
-    for favorite in favorites:
-        place = favorite.place
-        places_data.append({
-            "place_id": place.id,
-            "name": place.get_name(lang),
-            "address": place.get_address(lang)
-        })
-
-    return places_data
