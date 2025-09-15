@@ -9,6 +9,7 @@ from drf_yasg import openapi
 from categories.models import Category
 from regions.models import Region, SubRegion
 from regions.serializers import RegionSerializer, SubRegionSerializer
+from favorites.models import FavoritePlace, FavoriteSubRegion
 from places.models import Place
 from places.serializers import PlaceSerializer
 from utils.pagination.place_pagination import PlacePagination
@@ -90,10 +91,22 @@ class PlacesListAPIView(APIView):
         # TODO: 한국어 번역 기준 정렬 구현 예정, 현재는 created_at 순으로 임시 처리
         queryset = queryset.order_by("-favorite_count", "-created_at")
 
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            # 사용자 즐겨찾기 장소 ID 목록 미리 조회
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
         serializer = PlaceSerializer(
             queryset,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
 
         return Response({
@@ -283,79 +296,109 @@ class PlaceTourListAPIView(APIView):
     def get(self, request):
         language = request.query_params.get("lang", "ko")
         region_id = request.query_params.get("region_id", "1")
-        region = Region.objects.filter(id=region_id).first()
-
-        region_serializer = RegionSerializer(region, context={"language": language})
-
-        most_favoriate_subregion_ids = list(SubRegion.objects.filter(region=region).order_by('-favorite_count', 'id')[:4])
-
-        subregion_serializer = SubRegionSerializer(
-            most_favoriate_subregion_ids,
-            many=True,
-            context={"language": language}
-        )
-
         request_subregion_id = request.query_params.get("subregion_id", "")
-        stay = Category.objects.filter(id=6).first()
         
-        if request_subregion_id == "":
-            first_subregion = most_favoriate_subregion_ids[0] if most_favoriate_subregion_ids else None
-            request_subregion = first_subregion
-            major_places = Place.objects.filter(sub_region=first_subregion).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
-            stay_places = Place.objects.filter(sub_region=first_subregion, category=stay).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+        # 1. 기본 데이터 조회
+        region = Region.objects.filter(id=region_id).first()
+        if not region:
+            return Response({"error": "Region not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 2. 서브지역과 숙박 카테고리 조회 (한 번에)
+        most_favorite_subregions = list(
+            SubRegion.objects.filter(region=region)
+            .order_by('-favorite_count', 'id')[:4]
+        )
+        stay_category = Category.objects.filter(id=6).first()
+        
+        # 3. 요청된 서브지역 결정
+        if request_subregion_id:
+            request_subregion = SubRegion.objects.filter(id=request_subregion_id).first()
+            target_subregion_id = int(request_subregion_id)
         else:
-            major_places = Place.objects.filter(sub_region=int(request_subregion_id)).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
-            request_subregion = SubRegion.objects.filter(id=request_subregion_id).filter().first()
-            stay_places = Place.objects.filter(sub_region=int(request_subregion_id), category=stay).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
-
-        request_subregion_serializer = SubRegionSerializer(request_subregion, context={"language": language})
-
-        place_serializer = PlaceSerializer(
-            major_places,
-            many=True,
-            context={"language": language}
-        )
-
-        stay_place_serializer = PlaceSerializer(
-            stay_places,
-            many=True,
-            context={"language": language}
-        )
-
+            request_subregion = most_favorite_subregions[0] if most_favorite_subregions else None
+            target_subregion_id = request_subregion.id if request_subregion else None
+        
+        if not target_subregion_id:
+            return Response({"error": "No subregion found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 4. 인증된 사용자의 즐겨찾기 정보 미리 조회 (성능 최적화)
+        user_favorite_place_ids = set()
+        user_favorite_subregion_ids = set()
+        user_recommended_places = []
+        
         if request.user.is_authenticated:
+            # 사용자 즐겨찾기 장소 ID 목록 미리 조회
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
+            # 사용자 즐겨찾기 지역 ID 목록 미리 조회
+            user_favorite_subregion_ids = set(
+                FavoriteSubRegion.objects.filter(user=request.user)
+                .values_list('sub_region_id', flat=True)
+            )
+            
+            # 사용자 추천 장소 조회
             pref_ids = list(
                 request.user.preferences.values_list('subcategory_id', flat=True)
             )
-            user_recommended_places = Place.objects.filter(
-                sub_category_id__in=pref_ids,region_id=region_id
-                ).order_by('-favorite_count', 'id')[:3]
-            
+            if pref_ids:
+                user_recommended_places = Place.objects.filter(
+                    sub_category_id__in=pref_ids,
+                    region_id=region_id
+                ).order_by('-favorite_count', 'id').prefetch_related('translations')[:3]
+        
+        # 5. 장소 데이터 조회 (한 번에 여러 쿼리 실행)
+        major_places = Place.objects.filter(
+            sub_region_id=target_subregion_id
+        ).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+        
+        stay_places = Place.objects.filter(
+            sub_region_id=target_subregion_id,
+            category=stay_category
+        ).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+        
+        # 6. 공통 context 생성
+        base_place_context = {
+            "language": language,
+            "request": request,
+            "user_favorite_place_ids": user_favorite_place_ids
+        }
+
+        base_region_context = {
+            "language": language,
+            "request": request,
+            "user_favorite_subregion_ids": user_favorite_subregion_ids
+        }
+        
+        # 7. 시리얼라이저 실행
+        region_serializer = RegionSerializer(region, context=base_region_context)
+        request_subregion_serializer = SubRegionSerializer(request_subregion, context=base_region_context)
+        subregion_serializer = SubRegionSerializer(most_favorite_subregions, many=True, context=base_region_context)
+        
+        major_places_serializer = PlaceSerializer(major_places, many=True, context=base_place_context)
+        stay_places_serializer = PlaceSerializer(stay_places, many=True, context=base_place_context)
+        
+        # 8. 응답 데이터 구성
+        response_data = {
+            "region": region_serializer.data,
+            "subregion": request_subregion_serializer.data,
+            "popular_subregions": subregion_serializer.data,
+            "major_places": major_places_serializer.data,
+            "stay_places": stay_places_serializer.data
+        }
+        
+        # 9. 인증된 사용자에게만 추천 장소 추가
+        if request.user.is_authenticated and user_recommended_places:
             user_recommended_serializer = PlaceSerializer(
-                user_recommended_places,
-                many=True,
-                context={"language": language}
+                user_recommended_places, 
+                many=True, 
+                context=base_place_context
             )
-
-            return Response(
-                {
-                    "region": region_serializer.data,
-                    "subregion": request_subregion_serializer.data,
-                    "popular_subregions": subregion_serializer.data,
-                    "major_places": place_serializer.data,
-                    "user_recommended_places": user_recommended_serializer.data,
-                    "stay_places": stay_place_serializer.data
-                }, status=status.HTTP_200_OK
-            )
-
-        return Response(
-            {
-                "region": region_serializer.data,
-                "subregion": request_subregion_serializer.data,
-                "popular_subregions": subregion_serializer.data,
-                "major_places": place_serializer.data,
-                "stay_places": stay_place_serializer.data
-            }, status=status.HTTP_200_OK
-        )
+            response_data["user_recommended_places"] = user_recommended_serializer.data
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class PlaceDetailAPIView(APIView):
@@ -418,9 +461,20 @@ class PlaceDetailAPIView(APIView):
         language = request.query_params.get("lang", "ko")
         place = get_object_or_404(Place, id=place_id)
 
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
         serializer = PlaceSerializer(
             place,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
 
         return Response({
@@ -530,13 +584,24 @@ class PlacesBySubRegionAPIView(APIView):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
         serializer = PlaceSerializer(
             page,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
 
         return paginator.get_paginated_response(serializer.data)
@@ -643,13 +708,24 @@ class PlacesByCategoryIdAPIView(APIView):
                 'places': []
             }, status=status.HTTP_200_OK)
 
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
         
         serializer = PlaceSerializer(   
             page,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
 
         return paginator.get_paginated_response(serializer.data)
@@ -794,13 +870,24 @@ class PlacesBySubCategoryIdAPIView(APIView):
                 "places": []
             }, status=status.HTTP_200_OK)
 
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
         serializer = PlaceSerializer(
             page,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
         
         return paginator.get_paginated_response(serializer.data)

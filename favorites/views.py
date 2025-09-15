@@ -152,7 +152,15 @@ class FavoritePlaceAPIView(APIView):
     def get(self, request):
         language = request.query_params.get("lang", "ko")
 
-        favorite_relations = FavoritePlace.objects.filter(user=request.user).select_related('place').order_by('-created_at')
+        favorite_relations = FavoritePlace.objects.filter(user=request.user).select_related('place').prefetch_related('place__translations').order_by('-created_at')
+
+        user_favorite_place_ids = set()
+        
+        if request.user.is_authenticated:
+            user_favorite_place_ids = set(
+                FavoritePlace.objects.filter(user=request.user)
+                .values_list('place_id', flat=True)
+            )
 
         paginator = self.pagination_class()
         paginator.results_field_name = "favorite_places"
@@ -161,7 +169,10 @@ class FavoritePlaceAPIView(APIView):
         favorite_place_serializer = FavoritePlaceListSerializer(
             page,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_place_ids": user_favorite_place_ids
+            }
         )
 
         return paginator.get_paginated_response(favorite_place_serializer.data)
@@ -269,7 +280,15 @@ class FavoriteSubRegionAPIView(APIView):
     def get(self, request):
         language = request.query_params.get("lang", "ko")
 
-        favorite_relations = FavoriteSubRegion.objects.filter(user=request.user).select_related('sub_region').order_by('-created_at')
+        favorite_relations = FavoriteSubRegion.objects.filter(user=request.user).select_related('sub_region').prefetch_related('sub_region__translations').order_by('-created_at')
+
+        user_favorite_subregion_ids = set()
+
+        if request.user.is_authenticated:
+            user_favorite_subregion_ids = set(
+                FavoriteSubRegion.objects.filter(user=request.user)
+                .values_list('sub_region_id', flat=True)
+            )
 
         paginator = self.pagination_class()
         paginator.results_field_name = "favorite_subregions"
@@ -278,7 +297,10 @@ class FavoriteSubRegionAPIView(APIView):
         favorite_subregion_serializer = FavoriteSubRegionListSerializer(
             page,
             many=True,
-            context={"language": language}
+            context={
+                "language": language,
+                "user_favorite_subregion_ids": user_favorite_subregion_ids
+            }
         )
 
         return paginator.get_paginated_response(favorite_subregion_serializer.data)
