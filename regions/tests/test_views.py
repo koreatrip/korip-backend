@@ -113,21 +113,21 @@ class RegionsAPITest(APITestCase):
     def test_region_detail_api_success_shape_and_data(self):
         response = self.client.get(f"/api/regions/{self.seoul_region.id}/?lang=ko")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("region", response.data)
+        self.assertIn("regions", response.data)  # "region" -> "regions"로 수정
 
-        region_data = response.data["region"]
+        region_data = response.data["regions"]
         self.assertIn("subregions", region_data)
 
         sub_block = region_data["subregions"]
-        # CustomPagination 스키마 키 확인
-        for key in ["count", "total_pages", "page", "page_size", "results"]:
+        # CustomPagination 스키마 키 확인 - "results" 대신 "regions" 사용
+        for key in ["count", "total_pages", "page", "page_size", "regions"]:
             self.assertIn(key, sub_block)
 
         self.assertEqual(region_data["name"], "서울")
         self.assertEqual(region_data["description"], "대한민국의 수도")
 
         self.assertEqual(sub_block["count"], 2)
-        results = sub_block["results"]
+        results = sub_block["regions"]  # "results" -> "regions"
         self.assertEqual(len(results), 2)
 
         # 구현은 id 오름차순
@@ -137,22 +137,22 @@ class RegionsAPITest(APITestCase):
     def test_region_detail_api_pagination(self):
         resp1 = self.client.get(f"/api/regions/{self.seoul_region.id}/?lang=ko&page=1&page_size=1")
         self.assertEqual(resp1.status_code, status.HTTP_200_OK)
-        block1 = resp1.data["region"]["subregions"]
+        block1 = resp1.data["regions"]["subregions"]
         self.assertEqual(block1["count"], 2)
-        self.assertEqual(len(block1["results"]), 1)
+        self.assertEqual(len(block1["regions"]), 1)  # "results" -> "regions"
 
         resp2 = self.client.get(f"/api/regions/{self.seoul_region.id}/?lang=ko&page=2&page_size=1")
         self.assertEqual(resp2.status_code, status.HTTP_200_OK)
-        block2 = resp2.data["region"]["subregions"]
-        self.assertEqual(len(block2["results"]), 1)
+        block2 = resp2.data["regions"]["subregions"]
+        self.assertEqual(len(block2["regions"]), 1)  # "results" -> "regions"
 
-        names = [block1["results"][0]["name"], block2["results"][0]["name"]]
+        names = [block1["regions"][0]["name"], block2["regions"][0]["name"]]  # "results" -> "regions"
         self.assertCountEqual(names, ["강남구", "종로구"])
 
     def test_region_detail_api_subregion_data_fields(self):
         response = self.client.get(f"/api/regions/{self.seoul_region.id}/?lang=ko")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data["region"]["subregions"]["results"]
+        results = response.data["regions"]["subregions"]["regions"]  # "results" -> "regions"
 
         gangnam = next((s for s in results if s["name"] == "강남구"), None)
         self.assertIsNotNone(gangnam)
@@ -168,7 +168,7 @@ class RegionsAPITest(APITestCase):
     def test_region_detail_missing_translation(self):
         response = self.client.get(f"/api/regions/{self.seoul_region.id}/?lang=jp")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        region_data = response.data["region"]
+        region_data = response.data["regions"]
         self.assertEqual(region_data.get("name"), "")
         self.assertEqual(region_data.get("description"), "")
 
