@@ -21,6 +21,9 @@ celery = "^5.3.1"
 django-celery-beat = "^2.5.0"
 redis = "^4.6.0"
 reportlab = "^4.0.4"
+google-auth-oauthlib = "^1.2.2"
+google-api-python-client = "^2.181.0"
+gunicorn = "^23.0.0"
 
 [build-system]
 requires = ["poetry-core"]
