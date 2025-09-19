@@ -5,8 +5,8 @@ from favorites.models import FavoritePlace, FavoriteSubRegion
 
 
 @receiver(post_save, sender=FavoritePlace)
-def increment_favorite_count(sender, instance, created, **kwargs):
-    """즐겨찾기 추가 시 favorite_count 증가"""
+def increment_place_favorite_count(sender, instance, created, **kwargs):
+    """장소 즐겨찾기 추가 시 favorite_count 증가"""
     if created:  # 새로 생성된 경우에만
         with transaction.atomic():
             place = instance.place
@@ -17,8 +17,8 @@ def increment_favorite_count(sender, instance, created, **kwargs):
 
 
 @receiver(post_delete, sender=FavoritePlace)
-def decrement_favorite_count(sender, instance, **kwargs):
-    """즐겨찾기 삭제 시 favorite_count 감소"""
+def decrement_place_favorite_count(sender, instance, **kwargs):
+    """장소 즐겨찾기 삭제 시 favorite_count 감소"""
     with transaction.atomic():
         place = instance.place
         # select_for_update로 동시성 문제 방지
@@ -28,8 +28,8 @@ def decrement_favorite_count(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=FavoriteSubRegion)
-def increment_favorite_count(sender, instance, created, **kwargs):
-    """즐겨찾기 추가 시 favorite_count 증가"""
+def increment_subregion_favorite_count(sender, instance, created, **kwargs):
+    """서브지역 즐겨찾기 추가 시 favorite_count 증가"""
     if created:  # 새로 생성된 경우에만
         with transaction.atomic():
             sub_region = instance.sub_region
@@ -40,8 +40,8 @@ def increment_favorite_count(sender, instance, created, **kwargs):
 
 
 @receiver(post_delete, sender=FavoriteSubRegion)
-def decrement_favorite_count(sender, instance, **kwargs):
-    """즐겨찾기 삭제 시 favorite_count 감소"""
+def decrement_subregion_favorite_count(sender, instance, **kwargs):
+    """서브지역 즐겨찾기 삭제 시 favorite_count 감소"""
     with transaction.atomic():
         sub_region = instance.sub_region
         # select_for_update로 동시성 문제 방지
