@@ -181,21 +181,22 @@ CORS_ALLOWED_ORIGINS = [
     # 로컬 개발용
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-
-    # 운영 환경용
-    "https://korip.me",  # 프론트엔드 (S3)
-    "https://api.korip.me",  # API 자체 테스트용
-
-    # 추가 로컬 개발용
     "http://localhost:3000",
+
+    # 운영 환경용 - S3 프론트엔드
+    "https://korip.me",
+    "https://www.korip.me",
+
+    # API 자체 테스트용
+    "https://api.korip.me",
 ]
 
-# CSRF 설정
 CSRF_TRUSTED_ORIGINS = [
-    "https://korip.me",      # 운영 도메인
-    "https://api.korip.me",  # API 도메인
-    "http://localhost:9000", # 로컬 개발용
-    "http://127.0.0.1:9000", # 로컬 개발용
+    "https://korip.me",
+    "https://www.korip.me",
+    "https://api.korip.me",
+    "http://localhost:9000",
+    "http://127.0.0.1:9000",
 ]
 
 ALLOWED_HOSTS = [
