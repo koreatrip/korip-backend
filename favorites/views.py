@@ -60,7 +60,7 @@ class FavoritePlaceAPIView(APIView):
         
         result = serializer.toggle_favorite(request.user)
         
-        return Response(status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_200_OK)
     
     @swagger_auto_schema(
         operation_summary="즐겨찾기 장소 목록 조회",
@@ -154,14 +154,8 @@ class FavoritePlaceAPIView(APIView):
         language = request.query_params.get("lang", "ko")
 
         favorite_relations = FavoritePlace.objects.filter(user=request.user).select_related('place').prefetch_related('place__translations').order_by('-created_at')
-
-        user_favorite_place_ids = set()
         
-        if request.user.is_authenticated:
-            user_favorite_place_ids = set(
-                FavoritePlace.objects.filter(user=request.user)
-                .values_list('place_id', flat=True)
-            )
+        user_favorite_place_ids = set(rel.place.id for rel in favorite_relations)
 
         paginator = self.pagination_class()
         paginator.results_field_name = "favorite_places"
@@ -222,7 +216,7 @@ class FavoriteSubRegionAPIView(APIView):
         
         result = serializer.toggle_favorite(request.user)
         
-        return Response(status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_200_OK)
     
     @swagger_auto_schema(
         operation_summary="즐겨찾기 지역구 목록 조회",
@@ -284,13 +278,7 @@ class FavoriteSubRegionAPIView(APIView):
 
         favorite_relations = FavoriteSubRegion.objects.filter(user=request.user).select_related('sub_region').prefetch_related('sub_region__translations').order_by('-created_at')
 
-        user_favorite_subregion_ids = set()
-
-        if request.user.is_authenticated:
-            user_favorite_subregion_ids = set(
-                FavoriteSubRegion.objects.filter(user=request.user)
-                .values_list('sub_region_id', flat=True)
-            )
+        user_favorite_subregion_ids = set(rel.sub_region.id for rel in favorite_relations)
 
         paginator = self.pagination_class()
         paginator.results_field_name = "favorite_subregions"

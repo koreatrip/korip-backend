@@ -414,12 +414,11 @@ class PlaceTourListAPIView(APIView):
             "subregion": request_subregion_serializer.data,
             "popular_subregions": subregion_serializer.data,
             "major_places": major_places_serializer.data,
-            "user_recommended_places": None,
             "stay_places": stay_places_serializer.data
         }
         
         # 9. 인증된 사용자에게만 추천 장소 추가
-        if request.user.is_authenticated and user_recommended_places.exists():
+        if request.user.is_authenticated and user_recommended_places:
             user_recommended_serializer = PlaceSerializer(
                 user_recommended_places, 
                 many=True, 
