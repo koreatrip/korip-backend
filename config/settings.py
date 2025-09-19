@@ -177,21 +177,29 @@ STATICFILES_DIRS = []
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS 설정
 CORS_ALLOWED_ORIGINS = [
+    # 로컬 개발용
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+
+    # 운영 환경용
+    "https://korip.me",  # 프론트엔드 (S3)
+    "https://api.korip.me",  # API 자체 테스트용
+
+    # 추가 로컬 개발용
+    "http://localhost:3000",
 ]
 
 # CSRF 설정
 CSRF_TRUSTED_ORIGINS = [
     "https://korip.me",      # 운영 도메인
+    "https://api.korip.me",  # API 도메인
     "http://localhost:9000", # 로컬 개발용
     "http://127.0.0.1:9000", # 로컬 개발용
 ]
 
 ALLOWED_HOSTS = [
-    "korip.me",
+    "api.korip.me",
     "localhost",
     "127.0.0.1",
     "43.201.253.255",
@@ -393,3 +401,19 @@ CELERY_BEAT_SCHEDULE = {
         "args": (),
     },
 }
+
+# Google Calendar API 설정
+GOOGLE_OAUTH2_CLIENT_ID = config("GOOGLE_OAUTH2_CLIENT_ID")
+GOOGLE_OAUTH2_CLIENT_SECRET = config("GOOGLE_OAUTH2_CLIENT_SECRET")
+
+# OAuth 리디렉션 URL (개발용)
+GOOGLE_OAUTH2_REDIRECT_URI = "http://localhost:9000/api/exports/auth/google/callback/"
+
+# 운영 환경에서는 이걸로 변경
+# GOOGLE_OAUTH2_REDIRECT_URI = "https://korip.me/api/exports/auth/google/callback/"
+
+# Google Calendar API 스코프 (권한)
+GOOGLE_CALENDAR_SCOPES = [
+    "https://www.googleapis.com/auth/calendar",  # 캘린더 읽기/쓰기
+    "https://www.googleapis.com/auth/userinfo.email",  # 사용자 이메일
+]
