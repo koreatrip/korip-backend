@@ -197,6 +197,7 @@ class PlaceTourListAPIView(APIView):
                                     'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                     'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                     'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                     'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                                 }
@@ -220,6 +221,7 @@ class PlaceTourListAPIView(APIView):
                                     'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                     'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                     'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                     'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                                 }
@@ -243,6 +245,31 @@ class PlaceTourListAPIView(APIView):
                                     'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                     'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                     'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
+                                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
+                                    'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
+                                }
+                            )
+                        ),
+                        'stay_places': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            description='근처 추천 숙소',
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='명소 ID'),
+                                    'content_id': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='외부 컨텐츠 ID'),
+                                    'name': openapi.Schema(type=openapi.TYPE_STRING, description='명소명(요청 lang 기준)'),
+                                    'description': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='설명(요청 lang 기준)'),
+                                    'feature': openapi.Schema(type=openapi.TYPE_STRING, nullable=True, description='특징(요청 lang 기준)'),
+                                    'category_id': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True, description='카테고리 ID'),
+                                    'sub_category_id': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True, description='서브 카테고리 ID'),
+                                    'region_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='지역 ID'),
+                                    'sub_region_id': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True, description='서브지역 ID'),
+                                    'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
+                                    'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
+                                    'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                     'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                                 }
@@ -343,6 +370,7 @@ class PlaceTourListAPIView(APIView):
             pref_ids = list(
                 request.user.preferences.values_list('subcategory_id', flat=True)
             )
+
             if pref_ids:
                 user_recommended_places = Place.objects.filter(
                     sub_category_id__in=pref_ids,
@@ -386,11 +414,12 @@ class PlaceTourListAPIView(APIView):
             "subregion": request_subregion_serializer.data,
             "popular_subregions": subregion_serializer.data,
             "major_places": major_places_serializer.data,
+            "user_recommended_places": None,
             "stay_places": stay_places_serializer.data
         }
         
         # 9. 인증된 사용자에게만 추천 장소 추가
-        if request.user.is_authenticated and user_recommended_places:
+        if request.user.is_authenticated and user_recommended_places.exists():
             user_recommended_serializer = PlaceSerializer(
                 user_recommended_places, 
                 many=True, 
@@ -445,6 +474,7 @@ class PlaceDetailAPIView(APIView):
                                 'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                 'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                 'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                 'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                 'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                             }
@@ -552,6 +582,7 @@ class PlacesBySubRegionAPIView(APIView):
                                     'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                     'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                     'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                     'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                                 }
@@ -670,6 +701,7 @@ class PlacesByCategoryIdAPIView(APIView):
                                     'latitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='위도'),
                                     'longitude': openapi.Schema(type=openapi.TYPE_NUMBER, format='double', nullable=True, description='경도'),
                                     'favorite_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='즐겨찾기 수'),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='생성일'),
                                     'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description='수정일'),
                                 }
@@ -816,6 +848,7 @@ class PlacesBySubCategoryIdAPIView(APIView):
                                     "longitude": openapi.Schema(type=openapi.TYPE_NUMBER, format="double",
                                                                 nullable=True, description="경도"),
                                     "favorite_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="즐겨찾기 수"),
+                                    'is_favorite': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='즐겨찾기 여부'),
                                     "created_at": openapi.Schema(type=openapi.TYPE_STRING,
                                                                  format=openapi.FORMAT_DATETIME, description="생성일"),
                                     "updated_at": openapi.Schema(type=openapi.TYPE_STRING,

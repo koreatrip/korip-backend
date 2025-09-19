@@ -91,7 +91,7 @@ class FavoritePlaceAPIView(APIView):
                         "count": openapi.Schema(type=openapi.TYPE_INTEGER, description="전체 개수"),
                         "next": openapi.Schema(type=openapi.TYPE_STRING, description="다음 페이지 URL"),
                         "previous": openapi.Schema(type=openapi.TYPE_STRING, description="이전 페이지 URL"),
-                        "results": openapi.Schema(
+                        "favorite_places": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Schema(
                                 type=openapi.TYPE_OBJECT,
@@ -136,6 +136,7 @@ class FavoritePlaceAPIView(APIView):
                                         }
                                     ),
                                     "favorite_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="즐겨찾기 수"),
+                                    "is_favorite": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="즐겨찾기 여부"),
                                     "created_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="장소 생성일"),
                                     "updated_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="장소 수정일"),
                                     "favorited_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="즐겨찾기 등록일")
@@ -252,7 +253,7 @@ class FavoriteSubRegionAPIView(APIView):
                         "count": openapi.Schema(type=openapi.TYPE_INTEGER, description="전체 개수"),
                         "next": openapi.Schema(type=openapi.TYPE_STRING, description="다음 페이지 URL"),
                         "previous": openapi.Schema(type=openapi.TYPE_STRING, description="이전 페이지 URL"),
-                        "results": openapi.Schema(
+                        "favorite_subregions": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Schema(
                                 type=openapi.TYPE_OBJECT,
@@ -264,6 +265,7 @@ class FavoriteSubRegionAPIView(APIView):
                                     "latitude": openapi.Schema(type=openapi.TYPE_NUMBER, description="위도"),
                                     "longitude": openapi.Schema(type=openapi.TYPE_NUMBER, description="경도"),
                                     "favorite_count": openapi.Schema(type=openapi.TYPE_INTEGER, description="즐겨찾기 수"),
+                                    "is_favorite": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="즐겨찾기 여부"),
                                     "created_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="지역구 생성일"),
                                     "updated_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="지역구 수정일"),
                                     "favorited_at": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME, description="즐겨찾기 등록일")
