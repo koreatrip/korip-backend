@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.gis.db import models as gis_models  # 🔥 GIS 모델 import 추가!
+from django.contrib.gis.db import models as gis_models  # GIS 모델 import 추가!
 
 LANGUAGE_CHOICES = [
     ("ko", "한국어"),
@@ -13,6 +13,14 @@ LANGUAGE_CHOICES = [
 class Region(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
+
+    image = models.ImageField(
+        upload_to="regions/",
+        blank=True,
+        null=True,
+        verbose_name="지역 이미지",
+        help_text="지역을 대표하는 이미지 파일"
+    )
 
     class Meta:
         db_table = "region"

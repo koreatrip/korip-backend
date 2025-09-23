@@ -1,5 +1,8 @@
 from django.contrib import admin
 from regions.models import Region, RegionTranslation, SubRegion, SubRegionTranslation
+from django.utils.html import format_html
+from django import forms
+from storages.backends.s3boto3 import S3Boto3Storage
 
 
 class RegionTranslationInline(admin.TabularInline):
@@ -30,11 +33,34 @@ class SubRegionInline(admin.TabularInline):
     get_coordinate_display.short_description = "좌표 (위도, 경도)"
 
 
+class RegionAdminForm(forms.ModelForm):
+    class Meta:
+        model = Region
+        fields = '__all__'
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # 이미지 파일이 있으면 강제로 S3에 저장
+        if self.cleaned_data.get('image'):
+            image_file = self.cleaned_data['image']
+            s3_storage = S3Boto3Storage()
+
+            saved_name = s3_storage.save(f"regions/{image_file.name}", image_file)
+            instance.image.name = saved_name
+
+        if commit:
+            instance.save()
+        return instance
+
+
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
+    form = RegionAdminForm
     list_display = [
         "id",  # 지역 ID
         "get_korean_name",  # 한국어 지역명
+        "get_image_preview",
         "get_korean_description",  # 한국어 설명
         "get_korean_features",  # 한국어 특징
         "created_at"  # 생성일시
@@ -43,6 +69,13 @@ class RegionAdmin(admin.ModelAdmin):
     list_filter = ["created_at"]
     search_fields = ["translations__name", "translations__description", "translations__features"]
     readonly_fields = ["created_at", "updated_at"]
+
+    fields = [
+        "image",  # 이미지 필드
+        "created_at",
+        "updated_at"
+    ]
+
     inlines = [RegionTranslationInline, SubRegionInline]
 
     def get_korean_name(self, obj):
@@ -66,6 +99,16 @@ class RegionAdmin(admin.ModelAdmin):
         return "-"
 
     get_korean_features.short_description = "특징"
+
+    def get_image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" width="50" height="50" style="object-fit: cover; border-radius: 4px;" />',
+                obj.image.url
+            )
+        return "-"
+
+    get_image_preview.short_description = "이미지"
 
 
 @admin.register(SubRegion)
