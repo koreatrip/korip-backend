@@ -15,6 +15,7 @@ from favorites.serializers import (
 )
 from favorites.models import FavoritePlace, FavoriteSubRegion   
 from utils.pagination.favorite_pagination import FavoritePagination
+from utils.helper.lang_helper import normalize_lang
 
 
 class FavoritePlaceAPIView(APIView):
@@ -151,7 +152,7 @@ class FavoritePlaceAPIView(APIView):
         tags=["즐겨찾기 - 장소"]
     )
     def get(self, request):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
 
         favorite_relations = FavoritePlace.objects.filter(user=request.user).select_related('place').prefetch_related('place__translations').order_by('-created_at')
         
@@ -274,7 +275,7 @@ class FavoriteSubRegionAPIView(APIView):
         tags=["즐겨찾기 - 지역구"]
     )
     def get(self, request):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
 
         favorite_relations = FavoriteSubRegion.objects.filter(user=request.user).select_related('sub_region').prefetch_related('sub_region__translations').order_by('-created_at')
 

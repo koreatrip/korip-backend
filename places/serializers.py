@@ -1,5 +1,7 @@
+from django.conf import settings
 from rest_framework import serializers
 from places.models import Place
+from utils.helper.lang_helper import SUPPORTED_LANGS
 
 
 class PlaceSerializer(serializers.ModelSerializer):
@@ -41,7 +43,10 @@ class PlaceSerializer(serializers.ModelSerializer):
         ]
 
     def get_language(self):
-        return self.context.get("language", "ko")
+        raw = self.context.get("language")
+        if raw and raw.lower() in SUPPORTED_LANGS:
+            return raw.lower()
+        return settings.DEFAULT_LANG
 
     def get_latitude(self, obj):
         return obj.latitude

@@ -14,6 +14,7 @@ from plans.serializers import (
     TravelPlanUpdateSerializer,
     SinglePlaceAddSerializer
 )
+from utils.helper.lang_helper import normalize_lang
 
 
 class PlanListCreateAPIView(APIView):
@@ -69,7 +70,7 @@ class PlanListCreateAPIView(APIView):
     )
     def get(self, request):
         """여행 계획 목록 조회"""
-        lang = request.GET.get("lang", "ko")
+        lang = normalize_lang(request.query_params.get("lang"))
         travel_plans = TravelPlan.objects.filter(user_id=request.user.id)
         serializer = TravelPlanListSerializer(
             travel_plans,
@@ -110,7 +111,7 @@ class PlanListCreateAPIView(APIView):
     )
     def post(self, request):
         """여행 계획 생성"""
-        lang = request.GET.get("lang", "ko")
+        lang = normalize_lang(request.query_params.get("lang"))
 
         serializer = TravelPlanCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -172,7 +173,7 @@ class PlanDetailAPIView(APIView):
     def get(self, request, plan_id):
         """여행 계획 상세 조회"""
         travel_plan = self.get_object(plan_id, request.user.id)
-        lang = request.GET.get("lang", "ko")
+        lang = normalize_lang(request.query_params.get("lang"))
 
         serializer = TravelPlanDetailSerializer(
             travel_plan,
@@ -223,7 +224,7 @@ class PlanDetailAPIView(APIView):
                 visit_time=None
             )
 
-            lang = request.GET.get("lang", "ko")
+            lang = normalize_lang(request.query_params.get("lang"))
             detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
 
             return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
@@ -323,7 +324,7 @@ class PlanDetailAPIView(APIView):
                 travel_plan.end_date = max(visit_dates)
                 travel_plan.save()
 
-            lang = request.GET.get("lang", "ko")
+            lang = normalize_lang(request.query_params.get("lang"))
             detail_serializer = TravelPlanDetailSerializer(travel_plan, context={"lang": lang})
 
             return Response(detail_serializer.data, status=status.HTTP_200_OK)
