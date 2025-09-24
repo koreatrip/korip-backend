@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class GoogleOAuth(OAuthProvider):
     client_id = config("GOOGLE_CLIENT_ID")
     client_secret = config("GOOGLE_CLIENT_SECRET")
-    redirect_uri = "http://localhost:8000/oauth2/callback/google"
+    redirect_uri = config("GOOGLE_REDIRECT_URI")
 
     def get_token(self, code: str) -> str:
         url = "https://oauth2.googleapis.com/token"
