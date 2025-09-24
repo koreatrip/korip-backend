@@ -10,7 +10,7 @@ class RegionSerializer(serializers.ModelSerializer):
 
    class Meta:
        model = Region
-       fields = ["id", "name", "description", "feature"]
+       fields = ["id", "name", "description", "feature", "image"]
 
    def get_name(self, obj):
        language = self.context.get("language", "ko")
