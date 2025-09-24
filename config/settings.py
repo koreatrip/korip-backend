@@ -201,10 +201,14 @@ CSRF_TRUSTED_ORIGINS = [
 
 ALLOWED_HOSTS = [
     "api.korip.me",
+    "korip.me",
+    "www.korip.me",
     "localhost",
     "127.0.0.1",
     "43.201.253.255",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework 설정
 REST_FRAMEWORK = {

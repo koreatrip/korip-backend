@@ -24,7 +24,7 @@ services:
 
  web:
    build: .
-   command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+   command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --log-level info --access-logfile - --error-logfile - --access-logformat "%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s'"
    volumes:
      - .:/app
    ports:
