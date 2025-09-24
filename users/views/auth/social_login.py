@@ -196,7 +196,7 @@ class SocialLoginAPIView(APIView):
             user.set_unusable_password()
             user.save()
 
-        is_first_login = user.last_login is None
+        is_first_login = created
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
