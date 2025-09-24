@@ -13,6 +13,7 @@ from favorites.models import FavoritePlace, FavoriteSubRegion
 from places.models import Place
 from places.serializers import PlaceSerializer
 from utils.pagination.place_pagination import PlacePagination
+from utils.helper.lang_helper import normalize_lang
 
 
 class PlacesListAPIView(APIView):
@@ -79,7 +80,7 @@ class PlacesListAPIView(APIView):
     )
 
     def get(self, request):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
         queryset = Place.objects.all()
         category_id = request.query_params.get("category_id")
         if category_id:
@@ -321,7 +322,7 @@ class PlaceTourListAPIView(APIView):
     )
 
     def get(self, request):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
         region_id = request.query_params.get("region_id", "1")
         request_subregion_id = request.query_params.get("subregion_id", "")
         
@@ -487,7 +488,7 @@ class PlaceDetailAPIView(APIView):
     )
 
     def get(self, request, place_id):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
         place = get_object_or_404(Place, id=place_id)
 
         user_favorite_place_ids = set()
@@ -605,7 +606,7 @@ class PlacesBySubRegionAPIView(APIView):
 
     def get(self, request, subregion_id):
         category_id = request.query_params.get("category_id", "")
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
         
         queryset = Place.objects.filter(
             sub_region_id=subregion_id
@@ -723,7 +724,7 @@ class PlacesByCategoryIdAPIView(APIView):
     )
 
     def get(self, request, category_id):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
         
         # 카테고리 존재 여부 확인 (선택사항 - 필요에 따라 추가)
         get_object_or_404(Category, id=category_id)
@@ -871,7 +872,7 @@ class PlacesBySubCategoryIdAPIView(APIView):
         tags=["명소"]
     )
     def get(self, request, subcategory_id):
-        language = request.query_params.get("lang", "ko")
+        language = normalize_lang(request.query_params.get("lang"))
 
         # 지역 필터링 파라미터 추가
         region_id = request.query_params.get("region_id")

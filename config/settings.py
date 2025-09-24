@@ -157,6 +157,8 @@ LANGUAGES = [
     ("cn", "中文"),
 ]
 
+DEFAULT_LANG = "ko"
+
 # 국제화 파일 경로
 LOCALE_PATHS = [
     BASE_DIR / "locale",

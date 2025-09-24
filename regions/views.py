@@ -9,6 +9,7 @@ from regions.models import Region, SubRegion
 from regions.serializers import RegionSerializer, SubRegionSerializer
 from utils.pagination.region_pagination import RegionPagination
 from favorites.models import FavoriteSubRegion
+from utils.helper.lang_helper import normalize_lang
 
 
 class RegionsListAPI(APIView):
@@ -55,7 +56,7 @@ class RegionsListAPI(APIView):
    )
 
    def get(self, request):
-       language = request.query_params.get("lang", "ko")
+       language = normalize_lang(request.query_params.get("lang"))
 
        regions = Region.objects.all().order_by("id")
 
@@ -114,7 +115,7 @@ class MajorRegionListAPI(APIView):
    )
 
    def get(self, request):
-       language = request.query_params.get("lang", "ko")
+       language = normalize_lang(request.query_params.get("lang"))
 
        major_region_ids = [1, 9, 6, 17]
        majorregions = Region.objects.filter(id__in=major_region_ids)
@@ -225,7 +226,7 @@ class RegionDetailAPI(APIView):
    )
 
    def get(self, request, region_id):
-       language = request.query_params.get("lang", "ko")
+       language = normalize_lang(request.query_params.get("lang"))
        region = get_object_or_404(Region, id=region_id)
        subregions = SubRegion.objects.filter(region=region).order_by("id").prefetch_related("translations")
 
