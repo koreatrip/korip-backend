@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -228,7 +229,9 @@ class RegionDetailAPI(APIView):
    def get(self, request, region_id):
        language = normalize_lang(request.query_params.get("lang"))
        region = get_object_or_404(Region, id=region_id)
-       subregions = SubRegion.objects.filter(region=region).order_by("id").prefetch_related("translations")
+       subregions = SubRegion.objects.filter(region=region).order_by("id").prefetch_related("translations").annotate(
+          place_count=Count('places')
+       )
 
        user_favorite_subregion_ids = set()
 

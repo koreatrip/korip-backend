@@ -46,11 +46,12 @@ class SubRegionSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     feature = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()  # 즐겨찾기 여부 추가
+    place_count = serializers.SerializerMethodField()  # 명소 개수
 
     class Meta:
         model = SubRegion
         fields = [
-            "id", "name", "description", "feature",
+            "id", "name", "description", "feature", "place_count",
             "favorite_count", "is_favorite", "latitude", "longitude"
         ]
 
@@ -91,3 +92,10 @@ class SubRegionSerializer(serializers.ModelSerializer):
             return obj.id in user_favorite_subregion_ids
         
         return False
+    
+    def get_place_count(self, obj):
+        """
+        해당 서브지역(지역구)에 속한 관광지 개수 반환
+        annotate로 미리 계산된 값 사용
+        """
+        return getattr(obj, 'place_count', 0)
