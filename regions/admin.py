@@ -46,7 +46,7 @@ class RegionAdminForm(forms.ModelForm):
             image_file = self.cleaned_data['image']
             s3_storage = S3Boto3Storage()
 
-            saved_name = s3_storage.save(f"regions/{image_file.name}", image_file)
+            saved_name = s3_storage.save(image_file.name, image_file)
             instance.image.name = saved_name
 
         if commit:
