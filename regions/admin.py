@@ -36,18 +36,23 @@ class SubRegionInline(admin.TabularInline):
 class RegionAdminForm(forms.ModelForm):
     class Meta:
         model = Region
-        fields = '__all__'
+        fields = "__all__"
 
     def save(self, commit=True):
         instance = super().save(commit=False)
 
         # 이미지 파일이 있으면 강제로 S3에 저장
-        if self.cleaned_data.get('image'):
-            image_file = self.cleaned_data['image']
+        if self.cleaned_data.get("image"):
+            image_file = self.cleaned_data["image"]
             s3_storage = S3Boto3Storage()
 
-            saved_name = s3_storage.save(image_file.name, image_file)
-            instance.image.name = saved_name
+            # S3에 저장
+            file_path = f"regions/{image_file.name}"
+            saved_name = s3_storage.save(file_path, image_file)
+
+            # DB에는 중복 경로 제거해서 저장
+            clean_path = saved_name.replace("regions/regions/", "regions/")
+            instance.image.name = clean_path
 
         if commit:
             instance.save()
