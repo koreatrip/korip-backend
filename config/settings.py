@@ -413,14 +413,12 @@ CELERY_BEAT_SCHEDULE = {
 GOOGLE_OAUTH2_CLIENT_ID = config("GOOGLE_OAUTH2_CLIENT_ID")
 GOOGLE_OAUTH2_CLIENT_SECRET = config("GOOGLE_OAUTH2_CLIENT_SECRET")
 
-# OAuth 리디렉션 URL (개발용)
-GOOGLE_OAUTH2_REDIRECT_URI = "http://localhost:9000/api/exports/auth/google/callback/"
-
-# 운영 환경에서는 이걸로 변경
-# GOOGLE_OAUTH2_REDIRECT_URI = "https://korip.me/api/exports/auth/google/callback/"
+# OAuth 리디렉션 URL
+GOOGLE_OAUTH2_REDIRECT_URI = config("GOOGLE_OAUTH2_REDIRECT_URI")
 
 # Google Calendar API 스코프 (권한)
 GOOGLE_CALENDAR_SCOPES = [
+    "openid",
     "https://www.googleapis.com/auth/calendar",  # 캘린더 읽기/쓰기
     "https://www.googleapis.com/auth/userinfo.email",  # 사용자 이메일
 ]
