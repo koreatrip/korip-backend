@@ -290,7 +290,10 @@ class UserInfoAPIView(APIView):
                             {"id": 7, "name": "산"},
                             {"id": 8, "name": "바다"},
                             {"id": 9, "name": "강"}
-                        ]
+                        ],
+                        "my_total_plans": 5,
+                        "my_total_favorites": 12,
+                        "visited_places": 23
                     }
                 }
             ),
