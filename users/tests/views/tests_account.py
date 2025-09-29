@@ -250,9 +250,23 @@ class UserInfoAPITestCase(APITestCase):
     def test_delete_user_success(self):
         """삭제: 200 & 실제 삭제됨"""
         self.client.force_authenticate(user=self.user)
-        res = self.client.delete(self.url)
+        res = self.client.delete(self.url, {"password": "Passw0rd!"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertFalse(CustomUser.objects.filter(id=self.user.id).exists())
+
+    def test_delete_user_wrong_password(self):
+        """삭제: 잘못된 비밀번호 400"""
+        self.client.force_authenticate(user=self.user)
+        res = self.client.delete(self.url, {"password": "WrongPass!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["error_code"], ErrorCode.MISSMATCHED_PASSWORD.code)
+
+    def test_delete_user_missing_password(self):
+        """삭제: 비밀번호 누락 400"""
+        self.client.force_authenticate(user=self.user)
+        res = self.client.delete(self.url, {}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["error_code"], ErrorCode.INVALID_DATA.code)
 
     def test_delete_user_unauthenticated(self):
         """삭제: 미인증 401"""

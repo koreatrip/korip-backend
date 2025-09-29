@@ -39,6 +39,10 @@ class TravelPlan(models.Model):
         db_table = "travel_plan"
         verbose_name = "여행 계획"
         verbose_name_plural = "여행 계획들"
+        indexes = [
+            models.Index(fields=['user_id'], name='idx_travel_plan_user_id'),
+            models.Index(fields=['user_id', 'end_date'], name='idx_travel_plan_user_end'),
+        ]
 
     def __str__(self):
         korean_title = self.get_title("ko")
@@ -115,6 +119,9 @@ class PlanPlace(models.Model):
         db_table = "plan_place"
         verbose_name = "계획 관광지"
         verbose_name_plural = "계획 관광지들"
+        indexes = [
+            models.Index(fields=['travel_plan'], name='idx_plan_place_travel_plan'),
+        ]
 
     def __str__(self):
         return f"Plan {self.travel_plan_id} - Place {self.place_id}"
