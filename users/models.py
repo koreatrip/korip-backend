@@ -49,6 +49,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # 구글 캘린더 연동용 필드 (선택사항)
+    google_calendar_token = models.TextField(blank=True, null=True)
+    google_calendar_refresh_token = models.TextField(blank=True, null=True)
+    google_calendar_email = models.EmailField(blank=True, null=True)
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"

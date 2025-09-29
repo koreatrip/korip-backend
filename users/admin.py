@@ -28,11 +28,16 @@ class CustomUserAdmin(UserAdmin):
         "nickname", 
         "phone_number",
         "is_social",
+        "google_calendar_connected",
         "is_active",
         "is_staff",
         "is_superuser",
         "created_at",
     )
+
+    def google_calendar_connected(self, obj):
+        return "연동됨" if obj.google_calendar_token else "미연동"
+    google_calendar_connected.short_description = "구글 캘린더"
     
     list_filter = (
         "is_active",
@@ -41,10 +46,11 @@ class CustomUserAdmin(UserAdmin):
         "is_social",
         "created_at",
     )
-    
+
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         (_("개인 정보"), {"fields": ("nickname", "phone_number")}),
+        (_("구글 캘린더"), {"fields": ("google_calendar_email", "google_calendar_token")}),  # 여기로 이동
         (
             _("권한"),
             {
@@ -60,7 +66,7 @@ class CustomUserAdmin(UserAdmin):
         ),
         (_("중요한 일정"), {"fields": ("last_login", "created_at", "updated_at")}),
     )
-    
+
     add_fieldsets = (
         (
             None,
@@ -73,7 +79,7 @@ class CustomUserAdmin(UserAdmin):
     
     search_fields = ("email", "nickname", "phone_number")
     ordering = ("email",)
-    readonly_fields = ("created_at", "updated_at", "last_login")
+    readonly_fields = ("created_at", "updated_at", "last_login", "google_calendar_token")
     
     # 사용자 추가 시 필요한 필드들
     filter_horizontal = ("groups", "user_permissions")
