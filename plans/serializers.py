@@ -82,6 +82,7 @@ class TravelPlanListSerializer(serializers.ModelSerializer):
 
 class PlanPlaceDetailSerializer(serializers.ModelSerializer):
     place = serializers.SerializerMethodField()
+    visit_time = serializers.TimeField(format="%H:%M")
 
     class Meta:
         model = PlanPlace
@@ -219,7 +220,7 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
                     "id": None,
                     "place": None,
                     "visit_date": slot["visit_date"],
-                    "visit_time": slot["visit_time"].strftime("%H:%M:%S"),
+                    "visit_time": slot["visit_time"].strftime("%H:%M"),
                     "created_at": None,
                     "updated_at": None
                 })
