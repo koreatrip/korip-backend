@@ -52,17 +52,34 @@ class TravelPlan(models.Model):
         """언어별 제목 조회"""
         try:
             translation = self.translations.get(lang=lang)
+            if translation.title.startswith("["):
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.title
             return translation.title
         except TravelPlanTranslation.DoesNotExist:
-            return ""
+            # 번역 없으면 한국어로 fallback
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.title
+            except TravelPlanTranslation.DoesNotExist:
+                return ""
 
     def get_description(self, lang="ko"):
         """언어별 설명 조회"""
         try:
             translation = self.translations.get(lang=lang)
+            # 임시 데이터면 한국어로 fallback
+            if translation.title.startswith("["):
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.description
             return translation.description
         except TravelPlanTranslation.DoesNotExist:
-            return ""
+            # 번역 없으면 한국어로 fallback
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.description
+            except TravelPlanTranslation.DoesNotExist:
+                return ""
 
 
 class TravelPlanTranslation(models.Model):
