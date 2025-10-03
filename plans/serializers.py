@@ -261,7 +261,7 @@ class TravelPlanCreateSerializer(serializers.Serializer):
                 TravelPlanTranslation.objects.create(
                     travel_plan=travel_plan,
                     lang=lang,
-                    title=f"[{lang.upper()}] {translation_data['title']}",  # 임시 표시
+                    title=translation_data["title"],
                     description=""
                 )
 

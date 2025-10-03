@@ -43,7 +43,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         ]
 
     def get_language(self):
-        raw = self.context.get("language")
+        raw = self.context.get("lang") or self.context.get("language")
         if raw and raw.lower() in SUPPORTED_LANGS:
             return raw.lower()
         return settings.DEFAULT_LANG

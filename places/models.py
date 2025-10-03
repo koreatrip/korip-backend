@@ -148,23 +148,47 @@ class Place(models.Model):
     def get_name(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
-            return translation.name
+            # 번역 데이터가 있으면 반환
+            if translation.name:
+                return translation.name
+            # 비어있으면 한국어로 fallback
+            ko_translation = self.translations.get(lang="ko")
+            return ko_translation.name
         except PlaceTranslation.DoesNotExist:
-            return ""
+            # 번역 없으면 한국어로 fallback
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.name
+            except PlaceTranslation.DoesNotExist:
+                return ""
 
     def get_description(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
-            return translation.description
+            if translation.description:
+                return translation.description
+            ko_translation = self.translations.get(lang="ko")
+            return ko_translation.description
         except PlaceTranslation.DoesNotExist:
-            return ""
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.description
+            except PlaceTranslation.DoesNotExist:
+                return ""
 
     def get_address(self, lang="ko"):
         try:
             translation = self.translations.get(lang=lang)
-            return translation.address
+            if translation.address:
+                return translation.address
+            ko_translation = self.translations.get(lang="ko")
+            return ko_translation.address
         except PlaceTranslation.DoesNotExist:
-            return ""
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.address
+            except PlaceTranslation.DoesNotExist:
+                return ""
 
     def get_tour_api_content_id(self, lang="ko"):
         try:
