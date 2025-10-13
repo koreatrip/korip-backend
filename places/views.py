@@ -14,7 +14,36 @@ from places.models import Place
 from places.serializers import PlaceSerializer
 from utils.pagination.place_pagination import PlacePagination
 from utils.helper.lang_helper import normalize_lang
+from django.conf import settings
 
+
+# K-POP 관심사 확인 헬퍼 함수
+def user_has_kpop_interest(user):
+    """
+    사용자가 K-POP 관심사를 가지고 있는지 확인
+
+    Args:
+        user: 현재 요청한 사용자 객체
+
+    Returns:
+        bool: K-POP 관심사 있으면 True, 없으면 False
+    """
+    # 비로그인 사용자는 False
+    if not user.is_authenticated:
+        return False
+
+    kpop_category = Category.objects.filter(id=settings.KPOP_CATEGORY_ID).first()
+
+    if not kpop_category:
+        return False
+
+    kpop_subcategory_ids = list(
+        kpop_category.subcategories.values_list("id", flat=True)
+    )
+
+    return user.preferences.filter(
+        subcategory_id__in=kpop_subcategory_ids
+    ).exists()
 
 class PlacesListAPIView(APIView):
     permission_classes = [AllowAny]
@@ -91,6 +120,8 @@ class PlacesListAPIView(APIView):
 
         # TODO: 한국어 번역 기준 정렬 구현 예정, 현재는 created_at 순으로 임시 처리
         queryset = queryset.order_by("-favorite_count", "-created_at")
+        # idol_visits 미리 로딩
+        queryset = queryset.prefetch_related("idol_visits")
 
         user_favorite_place_ids = set()
         
@@ -101,12 +132,16 @@ class PlacesListAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         serializer = PlaceSerializer(
             queryset,
             many=True,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_info": has_kpop_interest,  # 목록용 아이돌 정보
             }
         )
 
@@ -376,23 +411,26 @@ class PlaceTourListAPIView(APIView):
                 user_recommended_places = Place.objects.filter(
                     sub_category_id__in=pref_ids,
                     region_id=region_id
-                ).order_by('-favorite_count', 'id').prefetch_related('translations')[:3]
-        
+                ).order_by('-favorite_count', 'id').prefetch_related('translations', "idol_visits" )[:3]
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         # 5. 장소 데이터 조회 (한 번에 여러 쿼리 실행)
         major_places = Place.objects.filter(
             sub_region_id=target_subregion_id
-        ).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+        ).order_by('-favorite_count', 'id').prefetch_related('translations', "idol_visits")[:4]
         
         stay_places = Place.objects.filter(
             sub_region_id=target_subregion_id,
             category=stay_category
-        ).order_by('-favorite_count', 'id').prefetch_related('translations')[:4]
+        ).order_by('-favorite_count', 'id').prefetch_related('translations', "idol_visits")[:4]
         
         # 6. 공통 context 생성
         base_place_context = {
             "language": language,
             "request": request,
-            "user_favorite_place_ids": user_favorite_place_ids
+            "user_favorite_place_ids": user_favorite_place_ids,
+            "include_idol_info": has_kpop_interest,
         }
 
         base_region_context = {
@@ -489,7 +527,13 @@ class PlaceDetailAPIView(APIView):
 
     def get(self, request, place_id):
         language = normalize_lang(request.query_params.get("lang"))
-        place = get_object_or_404(Place, id=place_id)
+        # idol_visits와 translations 미리 로딩
+        place = get_object_or_404(
+            Place.objects.prefetch_related(
+                "idol_visits__translations"  # 번역까지
+            ),
+            id=place_id
+        )
 
         user_favorite_place_ids = set()
         
@@ -499,11 +543,15 @@ class PlaceDetailAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         serializer = PlaceSerializer(
             place,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_details": has_kpop_interest,  # 상세 정보
             }
         )
 
@@ -610,7 +658,7 @@ class PlacesBySubRegionAPIView(APIView):
         
         queryset = Place.objects.filter(
             sub_region_id=subregion_id
-        ).order_by('-favorite_count', 'id').prefetch_related('translations')
+        ).order_by('-favorite_count', 'id').prefetch_related('translations', "idol_visits")
         
         if category_id:
             queryset = queryset.filter(category_id=category_id)
@@ -623,6 +671,9 @@ class PlacesBySubRegionAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
@@ -631,7 +682,8 @@ class PlacesBySubRegionAPIView(APIView):
             many=True,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_info": has_kpop_interest,
             }
         )
 
@@ -727,9 +779,28 @@ class PlacesByCategoryIdAPIView(APIView):
         language = normalize_lang(request.query_params.get("lang"))
         
         # 카테고리 존재 여부 확인 (선택사항 - 필요에 따라 추가)
-        get_object_or_404(Category, id=category_id)
-        
-        queryset = Place.objects.filter(category_id=category_id).order_by('-favorite_count', 'id').prefetch_related('translations')
+        category = get_object_or_404(Category, id=category_id)
+
+        # K-POP 카테고리인지 확인
+        is_kpop_category = (category_id == settings.KPOP_CATEGORY_ID)
+
+        # K-POP이면 다른 방식으로 필터링
+        if is_kpop_category:
+            # K-POP은 is_kpop_spot=True인 모든 장소 (카테고리 무관)
+            queryset = Place.objects.filter(is_kpop_spot=True)
+        else:
+            # 다른 카테고리는 category_id로 필터링
+            queryset = Place.objects.filter(category_id=category_id)
+
+        queryset = queryset.order_by("-favorite_count", "id").prefetch_related(
+            "translations",
+            "idol_visits"
+        )
+
+        queryset = queryset.order_by("-favorite_count", "id").prefetch_related(
+            "translations",
+            "idol_visits"
+        )
         
         # 빈 결과에 대한 처리
         if not queryset.exists():
@@ -748,6 +819,9 @@ class PlacesByCategoryIdAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
         
@@ -756,7 +830,8 @@ class PlacesByCategoryIdAPIView(APIView):
             many=True,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_info": has_kpop_interest,
             }
         )
 
@@ -892,7 +967,7 @@ class PlacesBySubCategoryIdAPIView(APIView):
             queryset = queryset.filter(sub_region_id=subregion_id)
 
         # 정렬 적용
-        queryset = queryset.order_by("-favorite_count", "id").prefetch_related("translations")
+        queryset = queryset.order_by("-favorite_count", "id").prefetch_related("translations", "idol_visits")
 
         # 빈 결과에 대한 처리
         if not queryset.exists():
@@ -911,6 +986,9 @@ class PlacesBySubCategoryIdAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
@@ -919,7 +997,8 @@ class PlacesBySubCategoryIdAPIView(APIView):
             many=True,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_info": has_kpop_interest,
             }
         )
         
@@ -1029,7 +1108,7 @@ class PlacesByStayAPIView(APIView):
         stay_places = Place.objects.filter(
             sub_region_id=subregion_id,
             category=stay_category
-        ).order_by('-favorite_count', 'id').prefetch_related('translations')
+        ).order_by('-favorite_count', 'id').prefetch_related('translations', "idol_visits")
 
         user_favorite_place_ids = set()
         
@@ -1039,6 +1118,9 @@ class PlacesByStayAPIView(APIView):
                 .values_list('place_id', flat=True)
             )
 
+        # K-POP 관심사 확인
+        has_kpop_interest = user_has_kpop_interest(request.user)
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(stay_places, request)
         
@@ -1047,7 +1129,8 @@ class PlacesByStayAPIView(APIView):
             many=True,
             context={
                 "language": language,
-                "user_favorite_place_ids": user_favorite_place_ids
+                "user_favorite_place_ids": user_favorite_place_ids,
+                "include_idol_info": has_kpop_interest,
             }
         )
 

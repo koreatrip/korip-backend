@@ -440,3 +440,5 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 # MEDIA 설정
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+KPOP_CATEGORY_ID = 7
