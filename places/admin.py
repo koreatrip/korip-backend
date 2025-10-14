@@ -8,7 +8,7 @@ except ImportError:
     except ImportError:
         OSMGeoAdmin = admin.ModelAdmin
 
-from places.models import Place, PlaceTranslation
+from places.models import Place, PlaceTranslation, IdolVisit, IdolVisitTranslation
 
 
 class PlaceTranslationInline(admin.TabularInline):
@@ -17,8 +17,133 @@ class PlaceTranslationInline(admin.TabularInline):
     fields = ("lang", "name", "description", "address")
 
 
+# IdolVisitTranslation Inline (아이돌 방문 기록의 번역)
+class IdolVisitTranslationInline(admin.TabularInline):
+    model = IdolVisitTranslation
+    extra = 1  # 기본으로 1개 빈 폼 표시
+    fields = ("lang", "description")
+    verbose_name = "아이돌 방문 설명 (언어별)"
+    verbose_name_plural = "아이돌 방문 설명 (언어별)"
+
+
+# IdolVisit Admin
+@admin.register(IdolVisit)
+class IdolVisitAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "get_place_name",
+        "idol_name",
+        "idol_group",
+        "visit_date",
+        "get_description_preview",
+        "created_at"
+    ]
+
+    list_filter = ["idol_group", "visit_date", "created_at"]
+    search_fields = [
+        "idol_name",
+        "idol_group",
+        "place__translations__name",  # 장소명으로 검색
+    ]
+
+    fieldsets = (
+        ("기본 정보", {
+            "fields": ("place", "idol_name", "idol_group"),
+            "description": "어떤 장소에 어떤 아이돌이 방문했는지 입력하세요."
+        }),
+        ("방문 상세", {
+            "fields": ("visit_date", "source_url"),
+            "description": "방문 날짜와 출처 링크를 입력하세요. (선택사항)"
+        }),
+        ("날짜", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        })
+    )
+
+    readonly_fields = ["created_at", "updated_at"]
+    inlines = [IdolVisitTranslationInline]
+
+    # 자동완성
+    autocomplete_fields = ["place"]
+
+    def get_place_name(self, obj):
+        """장소 한국어명 표시"""
+        return obj.place.get_name("ko") or "-"
+
+    get_place_name.short_description = "방문 장소"
+
+    def get_description_preview(self, obj):
+        """한국어 설명 미리보기"""
+        desc = obj.get_description("ko")
+        if desc:
+            return desc[:50] + "..." if len(desc) > 50 else desc
+        return "-"
+
+    get_description_preview.short_description = "설명 미리보기"
+
+    # 저장 후 메시지
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:  # 새로 생성된 경우
+            self.message_user(
+                request,
+                f"'{obj.place.get_name('ko')}'이(가) 자동으로 K-POP 명소로 표시되었습니다.",
+                level="SUCCESS"
+            )
+
+
+# IdolVisitTranslation Admin (필요시 직접 수정용)
+@admin.register(IdolVisitTranslation)
+class IdolVisitTranslationAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "get_idol_info",
+        "lang",
+        "get_description_preview",
+        "created_at"
+    ]
+
+    list_filter = ["lang", "created_at"]
+    search_fields = [
+        "idol_visit__idol_name",
+        "idol_visit__idol_group",
+        "description"
+    ]
+
+    fieldsets = (
+        ("기본 정보", {
+            "fields": ("idol_visit", "lang")
+        }),
+        ("번역 내용", {
+            "fields": ("description",)
+        }),
+        ("날짜", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        })
+    )
+
+    readonly_fields = ["created_at", "updated_at"]
+
+    def get_idol_info(self, obj):
+        """아이돌 정보 표시"""
+        if obj.idol_visit.idol_group:
+            return f"{obj.idol_visit.idol_group} {obj.idol_visit.idol_name}"
+        return obj.idol_visit.idol_name
+
+    get_idol_info.short_description = "아이돌"
+
+    def get_description_preview(self, obj):
+        """설명 미리보기"""
+        if obj.description:
+            return obj.description[:50] + "..." if len(obj.description) > 50 else obj.description
+        return "-"
+
+    get_description_preview.short_description = "설명 미리보기"
+
 @admin.register(Place)
-class PlaceAdmin(OSMGeoAdmin):
+class PlaceAdmin(admin.ModelAdmin):
     list_display = [
         "id",
         "content_id",
@@ -27,6 +152,7 @@ class PlaceAdmin(OSMGeoAdmin):
         "sub_category",
         "region",
         "sub_region",
+        "is_kpop_spot",
         "favorite_count",
         "get_coordinates",
         "image_url",
@@ -34,14 +160,20 @@ class PlaceAdmin(OSMGeoAdmin):
     ]
 
     search_fields = ["content_id", "translations__name"]
-    list_filter = ["region", "sub_region", "category", "created_at"]
+    list_filter = [
+        "region",
+        "sub_region",
+        "category",
+        "is_kpop_spot",
+        "created_at"
+    ]
     fieldsets = (
         ("기본 정보", {
-            "fields": ("content_id",)
+            "fields": ("content_id", "is_kpop_spot"),
+            "description": "is_kpop_spot은 자동으로 설정됩니다. (IdolVisit 추가 시)"
         }),
         ("위치 설정", {
-            "fields": ("location", "get_coordinates_display"),
-            "description": "지도에서 클릭하거나 드래그하여 위치를 설정할 수 있습니다."
+            "fields": ["get_coordinates_display"],
         }),
         ("카테고리", {
             "fields": ("category", "sub_category")
@@ -61,7 +193,12 @@ class PlaceAdmin(OSMGeoAdmin):
         })
     )
 
-    readonly_fields = ["created_at", "updated_at", "get_coordinates_display"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+        "get_coordinates_display",
+        "is_kpop_spot"
+    ]
     inlines = [PlaceTranslationInline]
 
     # GIS 맵 설정 - 한국 전체 지역 표시

@@ -87,6 +87,11 @@ class Place(models.Model):
         verbose_name="즐겨찾기 수"
     )
 
+    is_kpop_spot = models.BooleanField(
+        default=False,
+        verbose_name="K-POP 명소 여부"
+    )
+
     last_synced_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -265,6 +270,130 @@ class PlaceTranslation(models.Model):
             return f"{self.name} ({self.lang}) API:{self.tour_api_content_id}"
         return f"{self.name} ({self.lang})"
 
+# 🆕 IdolVisit 모델 (메인 정보만 저장)
+class IdolVisit(models.Model):
+    # 어떤 장소에 대한 방문인지 연결
+    place = models.ForeignKey(
+        Place,
+        on_delete=models.CASCADE,
+        related_name="idol_visits",
+        verbose_name="방문 장소"
+    )
+
+    # 아이돌 정보
+    idol_name = models.CharField(
+        max_length=100,
+        verbose_name="아이돌 이름"
+    )
+
+    idol_group = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="그룹명"
+    )
+
+    # 방문 날짜 (정확한 날짜 모르면 비워둘 수 있음)
+    visit_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="방문 날짜"
+    )
+
+    # 출처 링크 (뉴스 기사, 유튜브 등)
+    source_url = models.URLField(
+        blank=True,
+        verbose_name="출처 URL"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="생성일시"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="수정일시"
+    )
+
+    class Meta:
+        db_table = "idol_visit"
+        verbose_name = "아이돌 방문 기록"
+        verbose_name_plural = "아이돌 방문 기록들"
+        # 같은 장소에 같은 아이돌 중복 저장 방지
+        unique_together = ["place", "idol_name"]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        place_name = self.place.get_name("ko")
+        if self.idol_group:
+            return f"{place_name} - {self.idol_group} {self.idol_name}"
+        return f"{place_name} - {self.idol_name}"
+
+    # 저장할 때 자동으로 해당 장소를 K-POP 명소로 표시
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # 이 아이돌 방문 기록이 저장되면, 연결된 장소의 is_kpop_spot을 True로 변경
+        if not self.place.is_kpop_spot:
+            self.place.is_kpop_spot = True
+            self.place.save(update_fields=["is_kpop_spot"])
+
+    # 언어에 맞는 설명 가져오기 (PlaceTranslation이랑 똑같은 패턴!)
+    def get_description(self, lang="ko"):
+        try:
+            translation = self.translations.get(lang=lang)
+            # 번역 데이터가 있으면 반환
+            if translation.description:
+                return translation.description
+            # 비어있으면 한국어로 fallback
+            ko_translation = self.translations.get(lang="ko")
+            return ko_translation.description
+        except IdolVisitTranslation.DoesNotExist:
+            # 번역 없으면 한국어로 fallback
+            try:
+                ko_translation = self.translations.get(lang="ko")
+                return ko_translation.description
+            except IdolVisitTranslation.DoesNotExist:
+                return ""
+
+class IdolVisitTranslation(models.Model):
+    idol_visit = models.ForeignKey(
+        IdolVisit,
+        on_delete=models.CASCADE,
+        related_name="translations",
+        verbose_name="아이돌 방문 기록"
+    )
+
+    lang = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        verbose_name="언어 코드"
+    )
+
+    description = models.TextField(
+        blank=True,
+        verbose_name="설명"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="생성일시"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="수정일시"
+    )
+
+    class Meta:
+        db_table = "idol_visit_translation"
+        verbose_name = "아이돌 방문 기록 번역"
+        verbose_name_plural = "아이돌 방문 기록 번역들"
+        unique_together = ["idol_visit", "lang"]
+        ordering = ["idol_visit_id", "lang"]
+
+    def __str__(self):
+        idol_name = self.idol_visit.idol_name
+        return f"{idol_name} 설명 ({self.lang})"
 
 class SyncProgress(models.Model):
     # 동기화 진행 상태 관리
