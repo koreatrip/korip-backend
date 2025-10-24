@@ -49,4 +49,5 @@ urlpatterns = [
     path("api/favorites/", include("favorites.urls")),
     path("api/plans/", include("plans.urls")),
     path("api/exports/", include("exports.urls")),
+    path("api/idols/", include("idols.urls")),
 ]

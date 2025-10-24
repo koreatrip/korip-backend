@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "preferences",
     "weather",
     "favorites",
+    "idols",
 ]
 
 MIDDLEWARE = [
