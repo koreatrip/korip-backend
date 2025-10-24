@@ -954,11 +954,18 @@ class PlacesBySubCategoryIdAPIView(APIView):
         subregion_id = request.query_params.get("subregion_id")
 
         from categories.models import SubCategory
-        get_object_or_404(SubCategory, id=subcategory_id)
+        subcategory = get_object_or_404(SubCategory, id=subcategory_id)
 
-        # 기본 쿼리: 서브카테고리별 필터링
-        queryset = Place.objects.filter(sub_category_id=subcategory_id)
+        # K-POP 서브카테고리인지 확인
+        is_kpop_subcategory = (subcategory.category.id == settings.KPOP_CATEGORY_ID)
 
+        # K-POP 서브카테고리면 is_kpop_spot으로 검색
+        if is_kpop_subcategory:
+            # K-POP은 is_kpop_spot=True인 모든 장소 (원래 카테고리 유지)
+            queryset = Place.objects.filter(is_kpop_spot=True)
+        else:
+            # 다른 카테고리는 기존대로 sub_category_id로 검색
+            queryset = Place.objects.filter(sub_category_id=subcategory_id)
         # 지역 필터링 적용
         if region_id:
             queryset = queryset.filter(region_id=region_id)
