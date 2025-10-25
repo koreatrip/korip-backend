@@ -10,6 +10,9 @@ from exceptions.error_code import ErrorCode
 from exceptions.custom_exception_handler import RequestError
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SocialLoginAPIView(APIView):
@@ -21,7 +24,7 @@ class SocialLoginAPIView(APIView):
         operation_summary="소셜 로그인",
         operation_description="""
         Google OAuth 인가 코드를 사용하여 소셜 로그인을 수행합니다.
-        
+
         **프로세스:**
         1. 프론트엔드에서 Google OAuth 인가 코드를 받습니다
         2. 백엔드에서 인가 코드를 사용해 액세스 토큰을 받습니다
@@ -158,7 +161,6 @@ class SocialLoginAPIView(APIView):
             )
         }
     )
-
     def post(self, request):
         provider_name = request.query_params.get("provider")
         if provider_name != "google":
@@ -169,7 +171,25 @@ class SocialLoginAPIView(APIView):
         code = serializer.validated_data["code"]
         phone_number = serializer.validated_data["phone_number"]
 
+        # 요청이 어디서 왔는지 확인 (로컬 개발 환경 vs 운영 환경)
+        referer = request.META.get("HTTP_REFERER", "")
+
+        # localhost나 127.0.0.1에서 온 요청이면 로컬 callback 사용
+        if "localhost" in referer or "127.0.0.1" in referer:
+            redirect_uri = "http://localhost:5173/callback"
+        else:
+            redirect_uri = "https://korip.me/callback"
+
+        logger.info(f"요청 출처 (Referer): {referer}")
+        logger.info(f"사용할 redirect_uri: {redirect_uri}")
+
+        # provider 가져오기
         provider = get_provider(provider_name)
+
+        # redirect_uri 동적으로 설정
+        provider.redirect_uri = redirect_uri
+
+        # 토큰 받기
         access_token = provider.get_token(code)
         user_info = provider.get_user_info(access_token)
 
@@ -177,9 +197,9 @@ class SocialLoginAPIView(APIView):
         name = user_info.get("name")
         login_type = user_info.get("login_type")
         nickname = (
-            name
-            or user_info.get("nickname")
-            or f"소셜유저{user_info.get('sub')}"
+                name
+                or user_info.get("nickname")
+                or f"소셜유저{user_info.get('sub')}"
         )
 
         user, created = CustomUser.objects.get_or_create(
