@@ -445,3 +445,5 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 
 KPOP_CATEGORY_ID = 7
+
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173")

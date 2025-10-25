@@ -1,5 +1,7 @@
 # exports/views.py - 여행 계획 내보내기 기능들
-
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework import status
 from rest_framework.views import APIView
@@ -9,6 +11,8 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from collections import defaultdict
 from django.http import JsonResponse
+
+from config import settings
 from exports.services.google_calendar import GoogleCalendarService
 from users.models import CustomUser
 
@@ -219,25 +223,56 @@ class PlanPdfDataView(APIView):
 
 class GoogleCalendarAuthView(APIView):
     """구글 캘린더 OAuth 인증 시작"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(
         operation_summary="구글 캘린더 OAuth 인증 시작",
         operation_description="구글 계정으로 로그인하여 캘린더 권한을 받습니다. 이 URL로 접속하면 구글 로그인 페이지로 리디렉션됩니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                "token",
+                openapi.IN_QUERY,
+                description="JWT 액세스 토큰",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
         responses={
             302: openapi.Response(description="구글 OAuth 페이지로 리디렉션"),
+            401: openapi.Response(description="인증 실패"),
             500: openapi.Response(description="인증 URL 생성 실패")
         },
         tags=["내보내기"]
     )
     def get(self, request):
+        # 쿼리 파라미터에서 토큰 가져오기
+        token = request.GET.get("token")
+
+        if not token:
+            return Response({
+                "error": "액세스 토큰이 필요합니다."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
+            # JWT 토큰 검증 및 사용자 정보 추출
+            from rest_framework_simplejwt.authentication import JWTAuthentication
+            from rest_framework.exceptions import AuthenticationFailed
+
+            jwt_auth = JWTAuthentication()
+            validated_token = jwt_auth.get_validated_token(token)
+            user = jwt_auth.get_user(validated_token)
+
+            # 구글 인증 URL 생성
             calendar_service = GoogleCalendarService()
-            auth_url = calendar_service.get_authorization_url(request.user.id)
+            auth_url = calendar_service.get_authorization_url(user.id)
 
             # 구글 로그인 페이지로 리디렉션
             return redirect(auth_url)
 
+        except AuthenticationFailed:
+            return Response({
+                "error": "유효하지 않은 토큰입니다."
+            }, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             return Response({
                 "error": f"인증 URL 생성 실패: {str(e)}"
@@ -246,10 +281,11 @@ class GoogleCalendarAuthView(APIView):
 
 class GoogleCalendarCallbackView(APIView):
     """구글 캘린더 OAuth 콜백 처리"""
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(
         operation_summary="구글 캘린더 OAuth 콜백 처리",
-        operation_description="구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다. 액세스 토큰을 받아 사용자 정보를 저장합니다.",
+        operation_description="구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다. 액세스 토큰을 받아 사용자 정보를 저장하고 원래 페이지로 돌아갑니다.",
         manual_parameters=[
             openapi.Parameter(
                 "code",
@@ -267,18 +303,8 @@ class GoogleCalendarCallbackView(APIView):
             )
         ],
         responses={
-            200: openapi.Response(
-                description="인증 성공",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "message": openapi.Schema(type=openapi.TYPE_STRING, example="구글 캘린더 연동 성공"),
-                        "google_email": openapi.Schema(type=openapi.TYPE_STRING, example="user@gmail.com")
-                    }
-                )
-            ),
-            400: openapi.Response(description="인증 코드 누락 또는 잘못됨"),
-            500: openapi.Response(description="인증 처리 실패")
+            302: openapi.Response(description="프론트엔드로 리디렉션"),
+            400: openapi.Response(description="인증 코드 누락 또는 잘못됨")
         },
         tags=["내보내기"]
     )
@@ -286,31 +312,33 @@ class GoogleCalendarCallbackView(APIView):
         authorization_code = request.GET.get("code")
         state = request.GET.get("state")
 
+        # 프론트엔드 URL
+        frontend_url = settings.FRONTEND_URL
+
+        # 인증 코드나 state가 없으면 그냥 프론트로 돌아가기
         if not authorization_code or not state:
-            return Response({
-                "error": "인증 코드 또는 state가 누락되었습니다."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return redirect(frontend_url)
 
         try:
+            # 구글 토큰 교환 및 사용자 정보 저장
             calendar_service = GoogleCalendarService()
             auth_data = calendar_service.handle_callback(authorization_code, state)
 
-            user_id = auth_data["user_id"]  # handle_callback에서 이미 반환함
+            # 사용자 DB 업데이트
+            user_id = auth_data["user_id"]
             user = CustomUser.objects.get(id=user_id)
             user.google_calendar_token = auth_data["access_token"]
             user.google_calendar_refresh_token = auth_data["refresh_token"]
             user.google_calendar_email = auth_data["google_email"]
             user.save()
 
-            return JsonResponse({
-                "message": "구글 캘린더 연동 성공!",
-                "google_email": auth_data["google_email"]
-            })
+            # 성공하면 프론트로 그냥 돌아가기
+            return redirect(frontend_url)
 
         except Exception as e:
-            return Response({
-                "error": f"인증 처리 실패: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # 실패해도 프론트로 그냥 돌아가기
+            print(f"구글 캘린더 인증 실패: {str(e)}")
+            return redirect(frontend_url)
 
 
 class GoogleCalendarSyncView(APIView):
