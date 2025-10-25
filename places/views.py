@@ -959,13 +959,33 @@ class PlacesBySubCategoryIdAPIView(APIView):
         # K-POP 서브카테고리인지 확인
         is_kpop_subcategory = (subcategory.category.id == settings.KPOP_CATEGORY_ID)
 
-        # K-POP 서브카테고리면 is_kpop_spot으로 검색
+        # K-POP 서브카테고리면 해당 아이돌의 방문 기록으로 검색
         if is_kpop_subcategory:
-            # K-POP은 is_kpop_spot=True인 모든 장소 (원래 카테고리 유지)
-            queryset = Place.objects.filter(is_kpop_spot=True)
+            from places.models import IdolVisit
+
+            # 서브카테고리 이름 가져오기 (예: "BTS", "BLACKPINK")
+            subcategory_name_obj = subcategory.translations.filter(lang='ko').first()
+
+            if subcategory_name_obj:
+                idol_name = subcategory_name_obj.name
+
+                # 해당 아이돌의 방문 기록이 있는 Place들의 ID 가져오기
+                idol_place_ids = IdolVisit.objects.filter(
+                    idol_group__icontains=idol_name
+                ).values_list('place_id', flat=True)
+
+                # 해당 Place들만 필터링
+                queryset = Place.objects.filter(
+                    id__in=idol_place_ids,
+                    is_kpop_spot=True
+                )
+            else:
+                # 이름 못 찾으면 전체 K-POP
+                queryset = Place.objects.filter(is_kpop_spot=True)
         else:
             # 다른 카테고리는 기존대로 sub_category_id로 검색
             queryset = Place.objects.filter(sub_category_id=subcategory_id)
+
         # 지역 필터링 적용
         if region_id:
             queryset = queryset.filter(region_id=region_id)
