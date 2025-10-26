@@ -24,6 +24,7 @@ class CustomUserAdminTest(TestCase):
         """list_display 설정 확인"""
         expected = (
             "email", "nickname", "phone_number", "is_social", 
+            "google_calendar_connected",  # 이 필드가 누락되어 수정했습니다.
             "is_active", "is_staff", "is_superuser", "created_at"
         )
         self.assertEqual(self.admin.list_display, expected)
@@ -40,7 +41,8 @@ class CustomUserAdminTest(TestCase):
         
     def test_readonly_fields(self):
         """readonly_fields 설정 확인"""
-        expected = ("created_at", "updated_at", "last_login")
+        # 'google_calendar_token' 필드 추가
+        expected = ("created_at", "updated_at", "last_login", "google_calendar_token") # 이 필드가 누락되어 수정했습니다.
         self.assertEqual(self.admin.readonly_fields, expected)
 
 

@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from users.serializers.auth.social_login import SocialLoginSerializer
 from exceptions.error_code import ErrorCode
-from exceptions.custom_exception_handler import RequestError
+from exceptions.custom_exception_handler import RequestError, UserError
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import logging
@@ -175,6 +175,7 @@ class SocialLoginAPIView(APIView):
         referer = request.META.get("HTTP_REFERER", "")
 
         # localhost나 127.0.0.1에서 온 요청이면 로컬 callback 사용
+        # postman, swagger 로 테스트하면 항상 "" 값이라 else 로 나옴
         if "localhost" in referer or "127.0.0.1" in referer:
             redirect_uri = "http://localhost:5173/callback"
         else:
@@ -202,15 +203,32 @@ class SocialLoginAPIView(APIView):
                 or f"소셜유저{user_info.get('sub')}"
         )
 
-        user, created = CustomUser.objects.get_or_create(
-            email=email,
-            phone_number=phone_number,
-            defaults={
-                "nickname": nickname,
-                "is_social": True,
-                "login_type": login_type
-            }
-        )
+        user = CustomUser.objects.filter(email=email).first()
+
+        if user:
+            if not user.is_social:
+                raise UserError(ErrorCode.EMAIL_ALREADY_REGISTERED)
+            created = False
+
+        else:
+            user = CustomUser.objects.create(
+                email=email,
+                phone_number=phone_number,
+                nickname=nickname,
+                is_social=True,
+                login_type=login_type
+            )
+            created = True
+
+        # user, created = CustomUser.objects.get_or_create(
+        #     email=email,
+        #     phone_number=phone_number,
+        #     defaults={
+        #         "nickname": nickname,
+        #         "is_social": True,
+        #         "login_type": login_type
+        #     }
+        # )
 
         if created:
             user.set_unusable_password()
