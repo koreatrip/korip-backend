@@ -316,7 +316,7 @@ class GoogleCalendarCallbackView(APIView):
             user.save()
 
             # 성공 메시지만 표시
-            return HttpResponse("구글 캘린더 연동 성공!", status=200)
+            return HttpResponse("구글 캘린더 연동 성공! 팝업을 닫아주세요.", status=200)
 
         except Exception as e:
             # 실패 메시지 표시
