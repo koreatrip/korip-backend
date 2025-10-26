@@ -300,7 +300,7 @@ class GoogleCalendarCallbackView(APIView):
 
         # 인증 코드나 state가 없으면 에러
         if not authorization_code or not state:
-            return HttpResponse("인증 코드가 없습니다.", status=400)
+            return HttpResponse("<script>window.close();</script>", status=400)
 
         try:
             # 구글 토큰 교환 및 사용자 정보 저장
@@ -316,12 +316,12 @@ class GoogleCalendarCallbackView(APIView):
             user.save()
 
             # 성공 메시지만 표시
-            return HttpResponse("구글 캘린더 연동 성공!", status=200)
+            return HttpResponse("<script>window.close();</script>", status=200)
 
         except Exception as e:
             # 실패 메시지 표시
             print(f"구글 캘린더 인증 실패: {str(e)}")
-            return HttpResponse(f"구글 캘린더 연동 실패: {str(e)}", status=500)
+            return HttpResponse("<script>window.close();</script>", status=500)
 
 
 class GoogleCalendarSyncView(APIView):
