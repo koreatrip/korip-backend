@@ -420,6 +420,7 @@ GOOGLE_CALENDAR_SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/calendar",  # 캘린더 읽기/쓰기
     "https://www.googleapis.com/auth/userinfo.email",  # 사용자 이메일
+    "https://www.googleapis.com/auth/userinfo.profile",  # 사용자 프로필
 ]
 
 # S3 설정
