@@ -223,56 +223,41 @@ class PlanPdfDataView(APIView):
 
 class GoogleCalendarAuthView(APIView):
     """구글 캘린더 OAuth 인증 시작"""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_summary="구글 캘린더 OAuth 인증 시작",
-        operation_description="구글 계정으로 로그인하여 캘린더 권한을 받습니다. 이 URL로 접속하면 구글 로그인 페이지로 리디렉션됩니다.",
-        manual_parameters=[
-            openapi.Parameter(
-                "token",
-                openapi.IN_QUERY,
-                description="JWT 액세스 토큰",
-                type=openapi.TYPE_STRING,
-                required=True
-            )
-        ],
+        operation_description="""
+        구글 계정으로 로그인하여 캘린더 권한을 받습니다.""",
         responses={
-            302: openapi.Response(description="구글 OAuth 페이지로 리디렉션"),
+            200: openapi.Response(
+                description="구글 인증 URL 반환",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "auth_url": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description="구글 OAuth 인증 URL"
+                        )
+                    }
+                )
+            ),
             401: openapi.Response(description="인증 실패"),
             500: openapi.Response(description="인증 URL 생성 실패")
         },
         tags=["내보내기"]
     )
     def get(self, request):
-        # 쿼리 파라미터에서 토큰 가져오기
-        token = request.GET.get("token")
-
-        if not token:
-            return Response({
-                "error": "액세스 토큰이 필요합니다."
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
         try:
-            # JWT 토큰 검증 및 사용자 정보 추출
-            from rest_framework_simplejwt.authentication import JWTAuthentication
-            from rest_framework.exceptions import AuthenticationFailed
-
-            jwt_auth = JWTAuthentication()
-            validated_token = jwt_auth.get_validated_token(token)
-            user = jwt_auth.get_user(validated_token)
-
             # 구글 인증 URL 생성
             calendar_service = GoogleCalendarService()
-            auth_url = calendar_service.get_authorization_url(user.id)
+            auth_url = calendar_service.get_authorization_url(request.user.id)
 
-            # 구글 로그인 페이지로 리디렉션
-            return redirect(auth_url)
-
-        except AuthenticationFailed:
+            # JSON으로 URL 반환
             return Response({
-                "error": "유효하지 않은 토큰입니다."
-            }, status=status.HTTP_401_UNAUTHORIZED)
+                "auth_url": auth_url
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({
                 "error": f"인증 URL 생성 실패: {str(e)}"
