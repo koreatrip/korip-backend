@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -270,7 +271,7 @@ class GoogleCalendarCallbackView(APIView):
 
     @swagger_auto_schema(
         operation_summary="구글 캘린더 OAuth 콜백 처리",
-        operation_description="구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다. 액세스 토큰을 받아 사용자 정보를 저장하고 원래 페이지로 돌아갑니다.",
+        operation_description="구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다. 액세스 토큰을 받아 사용자 정보를 저장합니다.",
         manual_parameters=[
             openapi.Parameter(
                 "code",
@@ -288,8 +289,8 @@ class GoogleCalendarCallbackView(APIView):
             )
         ],
         responses={
-            302: openapi.Response(description="프론트엔드로 리디렉션"),
-            400: openapi.Response(description="인증 코드 누락 또는 잘못됨")
+            200: openapi.Response(description="인증 성공"),
+            400: openapi.Response(description="인증 실패")
         },
         tags=["내보내기"]
     )
@@ -297,12 +298,9 @@ class GoogleCalendarCallbackView(APIView):
         authorization_code = request.GET.get("code")
         state = request.GET.get("state")
 
-        # 프론트엔드 URL
-        frontend_url = settings.FRONTEND_URL
-
-        # 인증 코드나 state가 없으면 그냥 프론트로 돌아가기
+        # 인증 코드나 state가 없으면 에러
         if not authorization_code or not state:
-            return redirect(frontend_url)
+            return HttpResponse("인증 코드가 없습니다.", status=400)
 
         try:
             # 구글 토큰 교환 및 사용자 정보 저장
@@ -317,13 +315,13 @@ class GoogleCalendarCallbackView(APIView):
             user.google_calendar_email = auth_data["google_email"]
             user.save()
 
-            # 성공하면 프론트로 그냥 돌아가기
-            return redirect(frontend_url)
+            # 성공 메시지만 표시
+            return HttpResponse("구글 캘린더 연동 성공!", status=200)
 
         except Exception as e:
-            # 실패해도 프론트로 그냥 돌아가기
+            # 실패 메시지 표시
             print(f"구글 캘린더 인증 실패: {str(e)}")
-            return redirect(frontend_url)
+            return HttpResponse(f"구글 캘린더 연동 실패: {str(e)}", status=500)
 
 
 class GoogleCalendarSyncView(APIView):
