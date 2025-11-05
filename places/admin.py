@@ -50,6 +50,20 @@ class PlaceAdminForm(forms.ModelForm):
 
         return cleaned_data
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # latitude, longitude → location 변환
+        latitude = self.cleaned_data.get("latitude")
+        longitude = self.cleaned_data.get("longitude")
+
+        if latitude is not None and longitude is not None:
+            instance.location = Point(longitude, latitude)
+
+        if commit:
+            instance.save()
+
+        return instance
 
 class PlaceTranslationInline(admin.TabularInline):
     model = PlaceTranslation
