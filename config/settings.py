@@ -398,16 +398,17 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour="*/2"),  # 2시간마다 정각 (0시, 2시, 4시, 6시, 8시, 10시, 12시, 14시, 16시, 18시, 20시, 22시)
         "args": (),  # 빈 튜플 = region_id=None = 전체 지역
     },
-    "sync-tour-api-daily": {
-        "task": "places.tasks.sync_tour_api_daily",
-        "schedule": crontab(hour=3, minute=0),  # 매일 새벽 3시
-        "args": (),
-    },
-    "sync-tour-api-weekly": {
-        "task": "places.tasks.sync_tour_api_weekly",
-        "schedule": crontab(hour=1, minute=0, day_of_week=0),  # 매주 일요일 새벽 1시
-        "args": (),
-    },
+    # 관광지 자동 수집 중단 - 2025-11-06
+    # "sync-tour-api-daily": {
+    #     "task": "places.tasks.sync_tour_api_daily",
+    #     "schedule": crontab(hour=3, minute=0),  # 매일 새벽 3시
+    #     "args": (),
+    # },
+    # "sync-tour-api-weekly": {
+    #     "task": "places.tasks.sync_tour_api_weekly",
+    #     "schedule": crontab(hour=1, minute=0, day_of_week=0),  # 매주 일요일 새벽 1시
+    #     "args": (),
+    # },
 }
 
 # Google Calendar API 설정
